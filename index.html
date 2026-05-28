@@ -1,5 +1,139 @@
 <!DOCTYPE html>
-<html>
-<head><title>Potencial Humano</title></head>
-<body><h1>¡El servidor de Potencial Humano está en vivo!</h1></body>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anthropotechnology | Inicializando el Potencial</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --text-main: #c9d1d9;
+            --accent: #58a6ff;
+            --accent-glow: rgba(88, 166, 255, 0.2);
+            --card-bg: #161b22;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+        }
+
+        header {
+            text-align: center;
+            padding: 15vh 20px 10vh;
+            border-bottom: 1px solid #30363d;
+        }
+
+        h1 {
+            font-size: 3rem;
+            color: #ffffff;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #8b949e;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .highlight {
+            color: var(--accent);
+            text-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        main {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 30px;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent);
+        }
+
+        .card h3 {
+            color: #ffffff;
+            margin-top: 0;
+            font-size: 1.5rem;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px;
+            font-size: 0.9rem;
+            color: #8b949e;
+            border-top: 1px solid #30363d;
+            margin-top: 50vh;
+        }
+
+        /* Utilidad de consola simulada */
+        .console {
+            background: #000;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            color: #0f0;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Implementation of <span class="highlight">Anthropotechnology</span></h1>
+        <p class="subtitle">Sistemas e infraestructura diseñados para la expansión del potencial humano y la evolución cognitiva.</p>
+    </header>
+
+    <main>
+        <div class="console">
+            > Estado del sistema: ONLINE<br>
+            > Inicializando protocolos...<br>
+            > Nginx corriendo en AWS EC2 [Puerto 80 Abierto]
+        </div>
+
+        <div class="grid-container">
+            <div class="card">
+                <h3>Sistemas de Vida</h3>
+                <p>Estructuras algorítmicas diseñadas para rastrear, medir y optimizar hábitos. Transformando rutinas diarias en datos accionables para el crecimiento personal.</p>
+            </div>
+            
+            <div class="card">
+                <h3>Neuroplasticidad Activa</h3>
+                <p>Módulos de entrenamiento y exposición a nuevos paradigmas, forzando la adaptabilidad del cerebro a través de la interfaz digital.</p>
+            </div>
+
+            <div class="card">
+                <h3>Meta-Aprendizaje</h3>
+                <p>Arquitectura de conocimiento profundo. Herramientas para aprender a aprender, absorbiendo lógicas complejas de desarrollo y programación de manera sistémica.</p>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>Potencial Humano Web &copy; 2026 | Arquitectura desplegada en la nube.</p>
+    </footer>
+
+</body>
 </html>
