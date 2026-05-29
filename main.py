@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends
+from fastapi.middleware.cors import CORSMiddleware # IMPORTACIÓN CRÍTICA AÑADIDA
 from fastapi.responses import RedirectResponse
 from sqlalchemy import create_engine, text, Column, Integer, String
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
@@ -30,6 +31,15 @@ app = FastAPI(
     version="1.3.0",
     docs_url="/api/docs",
     openapi_url="/api/openapi.json"
+)
+
+# --- CONFIGURACIÓN CORS (ESTO REPARA EL ERROR DEL NAVEGADOR) ---
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # Permite que tu app web en localhost se conecte
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Dependencia para abrir y cerrar la conexión a la base de datos en cada petición
