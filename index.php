@@ -165,7 +165,7 @@
 
         <div class="nav-links">
             <a href="?view=home" class="nav-link <?= $view == 'home' ? 'active' : '' ?>">⌂ Inicio</a>
-            <a href="?view=dashboard" class="nav-link <?= $view == 'dashboard' ? 'active' : '' ?>">⛁ Panel de Control (API)</a>
+            <a href="?view=dashboard" class="nav-link <?= $view == 'dashboard' ? 'active' : '' ?>">⛁ Panel de Control</a>
             <a href="?view=calendar" class="nav-link <?= $view == 'calendar' ? 'active' : '' ?>">⏱ Sistemas de Vida</a>
             <a href="?view=forum" class="nav-link <?= $view == 'forum' ? 'active' : '' ?>">⚑ Comunidad Activa</a>
             <a href="?view=market" class="nav-link <?= $view == 'market' ? 'active' : '' ?>">✦ Hub de Herramientas</a>
