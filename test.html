@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Odisea | Test VOC</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        fondo: '#F8FAFC',
+                        primario: '#0F172A',
+                        acento: '#2563EB'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="bg-fondo text-primario font-sans h-screen flex flex-col items-center justify-center p-4">
+
+    <div class="w-full max-w-2xl mb-8">
+        <div class="flex justify-between text-sm font-bold text-slate-500 mb-2">
+            <span>Progreso</span>
+            <span id="progressText">1 / 12</span>
+        </div>
+        <div class="w-full bg-slate-200 rounded-full h-2.5">
+            <div id="progressBar" class="bg-acento h-2.5 rounded-full transition-all duration-300" style="width: 8.33%"></div>
+        </div>
+    </div>
+
+    <main class="max-w-2xl w-full bg-white p-8 md:p-12 rounded-2xl shadow-xl flex flex-col min-h-[400px]">
+        
+        <div class="flex-grow flex items-center justify-center mb-8">
+            <h2 id="questionText" class="text-2xl md:text-3xl font-extrabold text-center tracking-tight leading-tight">
+                Cargando pregunta...
+            </h2>
+        </div>
+
+        <div class="flex flex-col gap-3 w-full" id="optionsContainer">
+            </div>
+
+    </main>
+
+    <script>
+        // 1. Base de Datos de Preguntas (Las 12 oficiales de Odisea)
+        const questions = [
+            { id: 1, axis: "X", text: "Cuando cometo un error o encuentro un obstáculo serio en un proyecto, mantengo mi ritmo de trabajo en lugar de detenerme." },
+            { id: 2, axis: "X", text: "Frecuentemente me entusiasmo con la idea de crear nuevos hábitos (como madrugar o ir al gimnasio), pero los abandono a las pocas semanas." },
+            { id: 3, axis: "X", text: "Cumplo estrictamente con mis compromisos y rutinas diarias, incluso los días en que mi motivación inicial ha desaparecido por completo." },
+            { id: 4, axis: "X", text: "Tiendo a postergar las tareas complejas si no siento la 'inspiración' o el nivel de energía adecuado para hacerlas." },
+            { id: 5, axis: "X", text: "Soy metódico; organizo mis tareas con anticipación y rara vez dejo responsabilidades importantes para el último minuto." },
+            { id: 6, axis: "X", text: "Mi atención se desvía fácilmente; me cuesta mantener el enfoque en proyectos que requieren un esfuerzo sostenido de varios meses." },
+            { id: 7, axis: "Y", text: "Tengo una visión absolutamente clara de lo que quiero lograr y dónde quiero estar en los próximos cinco años de mi vida." },
+            { id: 8, axis: "Y", text: "Siento que estoy buscando una misión importante, pero en mi día a día todavía no tengo claro hacia dónde dirigir mis esfuerzos." },
+            { id: 9, axis: "Y", text: "Las decisiones cotidianas que tomo (qué estudiar, en qué gastar mi tiempo) están conectadas a una meta a largo plazo previamente definida." },
+            { id: 10, axis: "Y", text: "Mis prioridades cambian constantemente dependiendo de mi entorno, mis emociones temporales o las personas que me rodean." },
+            { id: 11, axis: "Y", text: "Tengo la convicción de que mis proyectos actuales tienen un impacto real y contribuyen a un objetivo que va más allá de lo inmediato." },
+            { id: 12, axis: "Y", text: "Con frecuencia siento que opero en 'modo automático', resolviendo problemas del día a día sin saber exactamente para qué lo hago." }
+        ];
+
+        // Opciones de respuesta fijas (Escala Likert 1-5)
+        const options = [
+            { value: 1, label: "Totalmente en desacuerdo" },
+            { value: 2, label: "Moderadamente en desacuerdo" },
+            { value: 3, label: "Neutral / No estoy seguro" },
+            { value: 4, label: "Moderadamente de acuerdo" },
+            { value: 5, label: "Totalmente de acuerdo" }
+        ];
+
+        // 2. Estado de la Aplicación
+        let currentIndex = 0;
+        let userResponses = [];
+
+        // 3. Captura de Elementos del DOM
+        const questionText = document.getElementById('questionText');
+        const optionsContainer = document.getElementById('optionsContainer');
+        const progressText = document.getElementById('progressText');
+        const progressBar = document.getElementById('progressBar');
+
+        // 4. Función para Renderizar la Pregunta
+        function renderQuestion() {
+            // Actualizar texto
+            questionText.innerText = questions[currentIndex].text;
+            
+            // Actualizar progreso
+            progressText.innerText = `${currentIndex + 1} / ${questions.length}`;
+            progressBar.style.width = `${((currentIndex + 1) / questions.length) * 100}%`;
+
+            // Limpiar opciones anteriores
+            optionsContainer.innerHTML = '';
+
+            // Crear los 5 botones anchos dinámicamente
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left font-semibold text-slate-700 bg-slate-50 border-2 border-slate-200 p-4 rounded-xl hover:border-acento hover:bg-blue-50 transition-all duration-200";
+                btn.innerText = opt.label;
+                
+                // Evento al hacer clic en una respuesta
+                btn.onclick = () => handleAnswer(opt.value);
+                
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        // 5. Lógica al Responder
+        function handleAnswer(value) {
+            // Guardar respuesta (pregunta_id y valor)
+            userResponses.push({
+                question_id: questions[currentIndex].id,
+                axis: questions[currentIndex].axis,
+                score: value
+            });
+
+            // Avanzar a la siguiente o terminar
+            if (currentIndex < questions.length - 1) {
+                currentIndex++;
+                renderQuestion();
+            } else {
+                finishTest();
+            }
+        }
+
+        // 6. Función de Finalización
+        function finishTest() {
+            // Guardar el JSON en el LocalStorage del navegador
+            localStorage.setItem('odisea_voc_responses', JSON.stringify(userResponses));
+            
+            // Redirigir a la Pantalla 3 (Veredicto y Objetivos) que construiremos luego
+            window.location.href = 'objetivos.html';
+        }
+
+        // 7. Inicializar el test al cargar la página
+        renderQuestion();
+
+    </script>
+</body>
+</html>
