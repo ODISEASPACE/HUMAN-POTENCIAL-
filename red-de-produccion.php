@@ -249,7 +249,7 @@
                 <h3>Sandbox SQL / Firebase</h3>
                 <p>Entorno seguro con datos ficticios (Mock Data). Permite ejecutar consultas destructivas, testear migraciones relacionales y validar reglas de seguridad en la nube.</p>
                 <div style="font-size: 0.8rem; color: #A0AEC0; margin-bottom: 15px;">Stack: MySQL, Firebase Firestore</div>
-                <a href="#" class="btn-outline-db">Acceder a Consola DB</a>
+                <a href="Consola.php" target="_blank" class="btn-outline-db">Acceder a Consola DB</a>
             </div>
 
             <div class="card card-algo">
