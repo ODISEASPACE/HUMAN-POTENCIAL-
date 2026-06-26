@@ -1,4 +1,6 @@
 llave_invitado
 llave_invitado.pub
+*.pem
 venv/
 __pycache__/
+*.apk
