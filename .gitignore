@@ -1,0 +1,12 @@
+# Llaves de seguridad (¡Muy importante no subirlas!)
+llave_jorget
+llave_jorget.pub
+
+# Archivos ocultos del sistema operativo (Windows/Mac)
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Carpetas de configuración de editores de código (Opcional)
+.vscode/
+.idea/

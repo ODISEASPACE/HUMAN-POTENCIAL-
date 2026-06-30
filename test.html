@@ -129,11 +129,10 @@
 
         // 6. Función de Finalización
         function finishTest() {
-            // Guardar el JSON en el LocalStorage del navegador
             localStorage.setItem('odisea_voc_responses', JSON.stringify(userResponses));
             
-            // Redirigir a la Pantalla 3 (Veredicto y Objetivos) que construiremos luego
-            window.location.href = 'objetivos.html';
+            // REDIRIGIR A LA PANTALLA DE RESULTADOS
+            window.location.href = 'outcomes.html';
         }
 
         // 7. Inicializar el test al cargar la página

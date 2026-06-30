@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Odisea | Selección de Objetivos</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: { bgMain: '#F8FAFC', primaryText: '#0F172A', accentAction: '#2563EB' }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="bg-bgMain text-primaryText font-sans min-h-screen flex items-center justify-center p-4">
+
+    <main class="max-w-3xl w-full bg-white p-8 md:p-10 rounded-2xl shadow-xl my-8">
+        
+        <div class="mb-8 border-b pb-6">
+            <h1 class="text-3xl font-extrabold mb-2 tracking-tight text-primaryText">Configuración de Trayectoria</h1>
+            <p class="text-slate-600 text-base">
+                Para que el sistema TrackTime funcione sin saturarte, debes definir tu foco. Elige estrictamente un (1) objetivo primario y hasta dos (2) secundarios.
+            </p>
+        </div>
+
+        <section class="mb-10">
+            <h2 class="text-xl font-bold mb-4 text-primaryText flex items-center gap-2">
+                <span class="bg-primaryText text-white w-8 h-8 rounded-full flex items-center justify-center text-sm">1</span>
+                Objetivo Primario (Foco Central)
+            </h2>
+            <div id="primaryGoalsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                </div>
+        </section>
+
+        <section class="mb-10">
+            <h2 class="text-xl font-bold mb-4 text-primaryText flex items-center gap-2">
+                <span class="bg-slate-300 text-primaryText w-8 h-8 rounded-full flex items-center justify-center text-sm">2</span>
+                Objetivos Secundarios (Máximo 2)
+            </h2>
+            <div id="secondaryGoalsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                </div>
+            
+            <div class="mt-4">
+                <label class="block text-sm font-bold text-slate-700 mb-2">¿Otro? (Personalizado - Máx 30 caracteres)</label>
+                <input type="text" id="customGoalInput" maxlength="30" placeholder="Ej: Aprender a programar en Python" 
+                    class="w-full p-4 border-2 border-slate-200 rounded-xl focus:border-accentAction focus:ring-0 outline-none transition-colors text-slate-700">
+            </div>
+        </section>
+
+        <button id="btnSaveGoals" disabled class="w-full bg-slate-300 text-slate-500 font-bold py-4 rounded-xl cursor-not-allowed transition-all duration-300 text-lg uppercase tracking-wide">
+            Guardar y Continuar
+        </button>
+
+    </main>
+
+    <script>
+        // Data Base of Standard Categories
+        const goalCategories = [
+            { id: "academic", label: "Académico Universitario" },
+            { id: "career", label: "Carrera y Finanzas" },
+            { id: "health", label: "Salud y Fisiología" },
+            { id: "learning", label: "Aprendizaje Autónomo" },
+            { id: "social", label: "Desarrollo Creativo / Social" }
+        ];
+
+        // Application State
+        let selectedPrimary = null;
+        let selectedSecondary = [];
+
+        // DOM Elements
+        const primaryContainer = document.getElementById('primaryGoalsContainer');
+        const secondaryContainer = document.getElementById('secondaryGoalsContainer');
+        const customGoalInput = document.getElementById('customGoalInput');
+        const btnSaveGoals = document.getElementById('btnSaveGoals');
+
+        // 1. Render Goal Cards
+        function renderGoals() {
+            goalCategories.forEach(category => {
+                // Create Primary Cards
+                const pCard = document.createElement('div');
+                pCard.className = `cursor-pointer border-2 p-4 rounded-xl font-semibold transition-all duration-200 primary-card`;
+                pCard.dataset.id = category.id;
+                pCard.innerText = category.label;
+                pCard.onclick = () => handlePrimarySelection(category.id, pCard);
+                primaryContainer.appendChild(pCard);
+
+                // Create Secondary Cards
+                const sCard = document.createElement('div');
+                sCard.className = `cursor-pointer border-2 p-4 rounded-xl font-semibold transition-all duration-200 secondary-card`;
+                sCard.dataset.id = category.id;
+                sCard.innerText = category.label;
+                sCard.onclick = () => handleSecondarySelection(category.id, sCard);
+                secondaryContainer.appendChild(sCard);
+            });
+            updateUI();
+        }
+
+        // 2. Handle Selections
+        function handlePrimarySelection(id, element) {
+            // Deselect if already selected, otherwise set new
+            selectedPrimary = selectedPrimary === id ? null : id;
+            
+            // Cannot be primary and secondary at the same time
+            if (selectedSecondary.includes(id)) {
+                selectedSecondary = selectedSecondary.filter(item => item !== id);
+            }
+            updateUI();
+        }
+
+        function handleSecondarySelection(id, element) {
+            // Cannot be primary and secondary at the same time
+            if (selectedPrimary === id) return; 
+
+            if (selectedSecondary.includes(id)) {
+                // Remove if already selected
+                selectedSecondary = selectedSecondary.filter(item => item !== id);
+            } else {
+                // Add if under limit
+                if (selectedSecondary.length < 2) {
+                    selectedSecondary.push(id);
+                }
+            }
+            updateUI();
+        }
+
+        // 3. Update Visual State
+        function updateUI() {
+            // Update Primary Cards Visuals
+            document.querySelectorAll('.primary-card').forEach(card => {
+                if (card.dataset.id === selectedPrimary) {
+                    card.classList.replace('border-slate-200', 'border-accentAction');
+                    card.classList.add('bg-blue-50', 'text-accentAction');
+                } else {
+                    card.classList.replace('border-accentAction', 'border-slate-200');
+                    card.classList.remove('bg-blue-50', 'text-accentAction');
+                    card.classList.add('text-slate-600', 'hover:border-slate-300');
+                }
+            });
+
+            // Update Secondary Cards Visuals
+            document.querySelectorAll('.secondary-card').forEach(card => {
+                // Disabled state if it's the primary goal
+                if (card.dataset.id === selectedPrimary) {
+                    card.classList.add('opacity-50', 'cursor-not-allowed', 'bg-slate-100');
+                    card.classList.remove('border-accentAction', 'bg-blue-50', 'text-accentAction');
+                    return;
+                } else {
+                    card.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-slate-100');
+                }
+
+                if (selectedSecondary.includes(card.dataset.id)) {
+                    card.classList.replace('border-slate-200', 'border-slate-800');
+                    card.classList.add('bg-slate-800', 'text-white');
+                } else {
+                    card.classList.replace('border-slate-800', 'border-slate-200');
+                    card.classList.remove('bg-slate-800', 'text-white');
+                    card.classList.add('text-slate-600', 'hover:border-slate-300');
+                }
+            });
+
+            validateForm();
+        }
+
+        // 4. Validate and Enable Submit
+        function validateForm() {
+            // Must have at least 1 primary goal
+            if (selectedPrimary) {
+                btnSaveGoals.disabled = false;
+                btnSaveGoals.classList.remove('bg-slate-300', 'text-slate-500', 'cursor-not-allowed');
+                btnSaveGoals.classList.add('bg-accentAction', 'text-white', 'hover:bg-blue-700', 'shadow-lg');
+            } else {
+                btnSaveGoals.disabled = true;
+                btnSaveGoals.classList.add('bg-slate-300', 'text-slate-500', 'cursor-not-allowed');
+                btnSaveGoals.classList.remove('bg-accentAction', 'text-white', 'hover:bg-blue-700', 'shadow-lg');
+            }
+        }
+
+        // 5. Save Data and Route
+        btnSaveGoals.onclick = () => {
+            const customGoal = customGoalInput.value.trim();
+            if (customGoal && selectedSecondary.length < 2) {
+                selectedSecondary.push(`custom_${customGoal}`);
+            }
+
+            const trackTimeConfig = {
+                primary_goal: selectedPrimary,
+                secondary_goals: selectedSecondary
+            };
+
+            // Save to browser memory alongside the test responses
+            localStorage.setItem('odisea_tracktime_config', JSON.stringify(trackTimeConfig));
+            console.log("TrackTime Configuration Saved:", trackTimeConfig);
+
+            // Redirect to Final Feedback Screen
+            window.location.href = 'feedback.html';
+        };
+
+        // Initialize UI
+        renderGoals();
+
+    </script>
+</body>
+</html>

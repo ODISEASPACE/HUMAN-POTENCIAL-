@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Odisea | Tu Arquetipo</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: { bgMain: '#F8FAFC', primaryText: '#0F172A', accentAction: '#2563EB' }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="bg-bgMain text-primaryText font-sans min-h-screen flex items-center justify-center p-4">
+
+    <main class="max-w-2xl w-full bg-white p-8 md:p-10 rounded-2xl shadow-xl">
+        
+        <div id="loadingState" class="text-center py-10 font-bold text-slate-500">Calculando tus coordenadas...</div>
+
+        <div id="outcomeContainer" class="hidden">
+            <h3 class="text-sm font-bold text-accentAction uppercase tracking-widest mb-2">Tu Arquetipo Conductual</h3>
+            <h1 id="archetypeName" class="text-4xl font-extrabold mb-4 tracking-tight text-primaryText">Nombre</h1>
+            
+            <p id="archetypeDescription" class="text-slate-600 mb-8 text-lg leading-relaxed">
+                Descripción...
+            </p>
+
+            <hr class="border-slate-200 mb-8">
+
+            <h3 class="text-xl font-bold mb-4 text-primaryText">Validación de Identidad</h3>
+            <p class="text-sm text-slate-500 mb-4">
+                El sistema te ha clasificado. ¿Sientes que este resultado refleja brutalmente la realidad de cómo actúas frente a tus metas? Justifica tu respuesta brevemente.
+            </p>
+            
+            <textarea id="feedbackInput" rows="4" class="w-full p-4 border-2 border-slate-200 rounded-xl focus:border-accentAction focus:ring-0 outline-none transition-colors mb-6 text-slate-700" placeholder="Escribe aquí tus comentarios..."></textarea>
+
+            <button id="btnNextStep" class="w-full bg-accentAction text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 hover:scale-[1.02] transition-all text-lg">
+                Siguiente Paso (Objetivos)
+            </button>
+        </div>
+    </main>
+
+    <script>
+        // Archetype Database
+        const archetypesDB = {
+            "Executor": {
+                name: "El Ejecutor",
+                description: "Eres disciplinado y con propósito. Sabes exactamente lo que quieres y tienes la capacidad operativa para soportar la fricción y el aburrimiento necesarios para conseguirlo."
+            },
+            "Soldier": {
+                name: "El Soldado",
+                description: "Eres disciplinado pero careces de un propósito claro. Trabajas duro y eres ordenado, pero tus acciones no apuntan a una meta central. Corres el riesgo de agotarte haciendo cosas irrelevantes."
+            },
+            "Dreamer": {
+                name: "El Soñador",
+                description: "Tienes grandes visiones y un propósito claro, pero careces de disciplina. Te rindes rápido ante el aburrimiento o el esfuerzo sostenido. Tienes grandes ideas, pero cero ejecución."
+            },
+            "Wanderer": {
+                name: "El Vagabundo",
+                description: "Te falta disciplina y no tienes un propósito definido. Operas en piloto automático resolviendo el día a día sin saber hacia dónde vas ni forzar la constancia."
+            }
+        };
+
+        // 1. Fetch data from Local Storage
+        const rawStorageData = localStorage.getItem('odisea_voc_responses');
+        
+        if (!rawStorageData) {
+            alert("Error: No test data found. Redirecting to home.");
+            window.location.href = 'index.html';
+        } else {
+            const userResponses = JSON.parse(rawStorageData);
+            
+            // 2. Calculate Axis Scores
+            let scoreX = 0; // Discipline
+            let scoreY = 0; // Purpose
+
+            userResponses.forEach(item => {
+                if (item.axis === 'X') scoreX += item.score;
+                if (item.axis === 'Y') scoreY += item.score;
+            });
+
+            // 3. Evaluate Thresholds (18 points is the mathematical threshold)
+            let assignedArchetype = "";
+
+            if (scoreX >= 18 && scoreY >= 18) assignedArchetype = "Executor";
+            else if (scoreX >= 18 && scoreY < 18) assignedArchetype = "Soldier";
+            else if (scoreX < 18 && scoreY >= 18) assignedArchetype = "Dreamer";
+            else if (scoreX < 18 && scoreY < 18) assignedArchetype = "Wanderer";
+
+            // 4. Inject Data into the DOM
+            document.getElementById('archetypeName').innerText = archetypesDB[assignedArchetype].name;
+            document.getElementById('archetypeDescription').innerText = archetypesDB[assignedArchetype].description;
+
+            // Show UI Elements
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('outcomeContainer').classList.remove('hidden');
+        }
+
+            // 5. Next Step Action
+                    document.getElementById('btnNextStep').onclick = () => {
+                        const userFeedback = document.getElementById('feedbackInput').value;
+                        console.log("Captured Alpha Feedback:", userFeedback);
+                        
+                        // Redirigir a la pantalla de Selección de Objetivos
+                        window.location.href = 'selection_goals.html';
+                    };
+    </script>
+</body>
+</html>
