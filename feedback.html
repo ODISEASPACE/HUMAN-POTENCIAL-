@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Odisea | Feedback Alpha</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: { bgMain: '#F8FAFC', primaryText: '#0F172A', accentAction: '#2563EB' }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="bg-bgMain text-primaryText font-sans min-h-screen flex items-center justify-center p-4">
+
+    <main id="feedbackContainer" class="max-w-3xl w-full bg-white p-8 md:p-10 rounded-2xl shadow-xl my-8">
+        
+        <div class="mb-8 border-b pb-6">
+            <h1 class="text-3xl font-extrabold mb-2 tracking-tight text-primaryText">Fase Alpha: Tu Opinión</h1>
+            <p class="text-slate-600 text-base">
+                Como beta tester de septiembre, tu experiencia define la versión final de Odisea. Ayúdanos a pulir el sistema respondiendo estas breves preguntas.
+            </p>
+        </div>
+
+        <div class="flex flex-col gap-8 mb-10">
+            
+            <div>
+                <label class="block text-base font-bold text-primaryText mb-2">
+                    1. ¿En qué momento exacto del registro o durante el test sentiste la tentación de cerrar la aplicación o respondiste sin pensar?
+                </label>
+                <textarea id="frictionInput" rows="3" class="w-full p-4 border-2 border-slate-200 rounded-xl focus:border-accentAction focus:ring-0 outline-none transition-colors text-slate-700" placeholder="Sé brutalmente honesto..."></textarea>
+            </div>
+
+            <div>
+                <label class="block text-base font-bold text-primaryText mb-2">
+                    2. ¿Hubo alguna pregunta del test que te pareciera confusa, ambigua o imposible de responder con las opciones dadas? Indica cuál.
+                </label>
+                <textarea id="clarityInput" rows="3" class="w-full p-4 border-2 border-slate-200 rounded-xl focus:border-accentAction focus:ring-0 outline-none transition-colors text-slate-700" placeholder="Ej: La pregunta sobre mis rutinas me confundió..."></textarea>
+            </div>
+
+            <div>
+                <label class="block text-base font-bold text-primaryText mb-2">
+                    3. Ahora que conoces tu perfil y has seleccionado tus metas, ¿qué esperas que haga esta plataforma por ti todos los días al registrar tus habitos?
+                </label>
+                <textarea id="expectationInput" rows="3" class="w-full p-4 border-2 border-slate-200 rounded-xl focus:border-accentAction focus:ring-0 outline-none transition-colors text-slate-700" placeholder="Espero que me regañe si fallo, que me muestre gráficas de..."></textarea>
+            </div>
+
+        </div>
+
+        <button id="btnSubmitFinal" class="w-full bg-accentAction text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 hover:scale-[1.02] transition-all text-lg uppercase tracking-wide">
+            Finalizar Odisea
+        </button>
+
+    </main>
+
+    <main id="successContainer" class="hidden max-w-xl w-full bg-white p-10 text-center rounded-2xl shadow-xl">
+        <div class="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+        </div>
+        <h1 class="text-3xl font-extrabold mb-4 text-primaryText">¡Misión Cumplida!</h1>
+        <p class="text-slate-600 mb-8">
+            Tus datos han sido procesados. Bienvenido al ecosistema de Odisea. Pronto se desbloqueará tu TrackTime diario.
+        </p>
+    </main>
+
+    <main id="registerContainer" class="hidden max-w-xl w-full bg-white p-10 text-center rounded-2xl shadow-xl">
+        <div class="w-20 h-20 bg-blue-100 text-accentAction rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+        </div>
+        <h1 class="text-3xl font-extrabold mb-4 text-primaryText">¡Test Completado!</h1>
+        <p class="text-slate-600 mb-8">
+            Para asignarte una <strong>Ruta de Hábitos Personalizada</strong> basada en tu Arquetipo y notificarte cuando tu TrackTime esté listo, necesitamos que crees tu cuenta.
+        </p>
+        
+        <div class="flex flex-col gap-4">
+            <input type="email" id="emailInput" placeholder="Tu correo electrónico" class="w-full p-4 border-2 border-slate-200 rounded-xl focus:border-accentAction focus:ring-0 outline-none text-slate-700">
+            
+            <button id="btnRegisterNew" class="w-full bg-primaryText text-white font-bold py-4 rounded-xl shadow-lg hover:bg-slate-800 transition-all text-lg">
+                Crear Cuenta y Guardar Ruta
+            </button>
+            
+            <button id="btnSkipRegistration" class="text-slate-500 font-semibold hover:text-primaryText mt-2 transition-colors">
+                Saltar por ahora, ya estoy registrado
+            </button>
+        </div>
+    </main>
+
+    <script>
+        const btnSubmitFinal = document.getElementById('btnSubmitFinal');
+        
+        // Función para mostrar la pantalla final de éxito
+        function showSuccessScreen() {
+            document.getElementById('feedbackContainer').classList.add('hidden');
+            document.getElementById('registerContainer').classList.add('hidden');
+            document.getElementById('successContainer').classList.remove('hidden');
+            // Limpiamos memoria
+            localStorage.removeItem('odisea_voc_responses');
+            localStorage.removeItem('odisea_tracktime_config');
+        }
+
+        btnSubmitFinal.onclick = () => {
+            // 1. Capturar Feedback
+            const alphaFeedback = {
+                friction: document.getElementById('frictionInput').value.trim(),
+                clarity: document.getElementById('clarityInput').value.trim(),
+                expectations: document.getElementById('expectationInput').value.trim()
+            };
+
+            // 2. Recuperar datos previos
+            const testResponses = JSON.parse(localStorage.getItem('odisea_voc_responses')) || [];
+            const trackTimeConfig = JSON.parse(localStorage.getItem('odisea_tracktime_config')) || {};
+
+            // 3. Empaquetar
+            const finalPayload = {
+                timestamp: new Date().toISOString(),
+                test_responses: testResponses,
+                tracktime_configuration: trackTimeConfig,
+                alpha_qa_feedback: alphaFeedback
+            };
+
+            console.log("FINAL PAYLOAD READY FOR BACKEND:", JSON.stringify(finalPayload, null, 2));
+
+            // 4. LÓGICA DE RUTEO CONDICIONAL
+            // Simulamos preguntar: "¿El usuario inició sesión en la Pantalla 0?"
+            // (Si en tu index.html hicieran login, guardarías esto en true)
+            const isRegistered = localStorage.getItem('is_logged_in') === 'true'; 
+
+            document.getElementById('feedbackContainer').classList.add('hidden');
+
+            if (isRegistered) {
+                // Si ya está registrado, vamos directo a Misión Cumplida
+                showSuccessScreen();
+            } else {
+                // Si es un invitado, le mostramos la pantalla para pedir su correo
+                document.getElementById('registerContainer').classList.remove('hidden');
+            }
+        };
+
+        // Lógica de botones de la pantalla de registro
+        document.getElementById('btnRegisterNew').onclick = () => {
+            const email = document.getElementById('emailInput').value;
+            if(email) {
+                console.log("Usuario registrado con email:", email);
+                // Simulamos que ya se registró para el futuro
+                localStorage.setItem('is_logged_in', 'true');
+                showSuccessScreen();
+            } else {
+                alert("Por favor ingresa un correo.");
+            }
+        };
+
+        document.getElementById('btnSkipRegistration').onclick = () => {
+            showSuccessScreen();
+        };
+    </script>
+
+</body>
+</html>
