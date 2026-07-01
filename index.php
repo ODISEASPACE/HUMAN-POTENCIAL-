@@ -173,7 +173,7 @@
 
         <div class="bottom-actions">
             <a href="/anthropotechnology.apk" class="btn-download">↓ Descargar APH App</a>
-            <a href="red-de-produccion.php" target="_blank" class="btn-api">Red de Producción ↗</a>
+            <a href="prod_space.php" target="_blank" class="btn-api">Red de Producción ↗</a>
         </div>
     </nav>
 
