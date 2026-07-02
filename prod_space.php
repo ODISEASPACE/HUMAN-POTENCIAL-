@@ -201,21 +201,20 @@
 
         </div>
     </main>
-
-    <div class="modal-overlay" id="authModal">
+<div class="modal-overlay" id="authModal">
         <div class="modal-content">
             <span class="close-btn" id="closeModal">&times;</span>
-            
+                        
             <div id="loginForm">
                 <h2>Acceso al Sistema</h2>
-                <form action="#" method="POST">
+                <form id="formLoginAPI">
                     <div class="form-group">
                         <label>Email</label>
-                        <input type="email" placeholder="usuario@aph.os" required>
+                        <input type="email" id="loginEmail" placeholder="usuario@aph.os" required>
                     </div>
                     <div class="form-group">
                         <label>Contraseña</label>
-                        <input type="password" placeholder="••••••••" required>
+                        <input type="password" id="loginPassword" placeholder="••••••••" required>
                     </div>
                     <button type="submit" class="btn-primary btn-full">Ingresar</button>
                 </form>
@@ -224,24 +223,23 @@
 
             <div id="registerForm">
                 <h2>Crear Cuenta</h2>
-                <form action="#" method="POST">
+                <form id="formRegisterAPI">
                     <div class="form-group">
                         <label>Nombre Completo</label>
-                        <input type="text" placeholder="Tu Nombre" required>
+                        <input type="text" id="regName" placeholder="Tu Nombre" required>
                     </div>
                     <div class="form-group">
                         <label>Email</label>
-                        <input type="email" placeholder="usuario@aph.os" required>
+                        <input type="email" id="regEmail" placeholder="usuario@aph.os" required>
                     </div>
                     <div class="form-group">
                         <label>Contraseña</label>
-                        <input type="password" placeholder="••••••••" required>
+                        <input type="password" id="regPassword" placeholder="••••••••" required>
                     </div>
                     <button type="submit" class="btn-primary btn-full btn-success">Registrarse</button>
                 </form>
                 <div class="toggle-form" onclick="toggleAuth('login')">¿Ya tienes cuenta? <span>Ingresa aquí</span></div>
             </div>
-
         </div>
     </div>
 
@@ -252,25 +250,26 @@
         const loginForm = document.getElementById('loginForm');
         const registerForm = document.getElementById('registerForm');
 
-        // Abrir Modal
+        // Dirección IP/Local del Core API en Python (Ajustar si cambia de puerto)
+        const API_BASE_URL = "http://127.0.0.1:8000/api/v1";
+
+        // Control de Apertura y Cierre de Modal
         loginBtnTrigger.addEventListener('click', (e) => {
             e.preventDefault();
             authModal.style.display = 'flex';
         });
 
-        // Cerrar Modal (botón X)
         closeModal.addEventListener('click', () => {
             authModal.style.display = 'none';
         });
 
-        // Cerrar Modal haciendo clic fuera del contenido
         window.addEventListener('click', (e) => {
             if (e.target === authModal) {
                 authModal.style.display = 'none';
             }
         });
 
-        // Intercambiar entre Login y Registro
+        // Alternar vistas de formularios en pantalla
         function toggleAuth(view) {
             if(view === 'register') {
                 loginForm.style.display = 'none';
@@ -280,6 +279,81 @@
                 loginForm.style.display = 'block';
             }
         }
+
+        // =========================================================================
+        // PROCESAMIENTO DE LOGIN MEDIANTE FETCH API (FASTAPI)
+        // =========================================================================
+        document.getElementById('formLoginAPI').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert(`Autenticación Exitosa. Bienvenido ${data.nombre}.\nRol detectado: ${data.rol}`);
+                    
+                    // Almacenar temporalmente los datos del usuario logueado en la sesión web
+                    sessionStorage.setItem('sessionUser', JSON.stringify(data));
+
+                    // REDIRECCIÓN DINÁMICA SEGÚN EL ROL DE TU BASE DE DATOS POSTGRESQL
+                    if (data.rol === 'Administrador') {
+                        window.location.href = 'dashboards/admin.php';
+                    } else if (data.rol === 'Desarrollador') {
+                        window.location.href = 'dashboards/developer.php';
+                    } else if (data.rol === 'Usuario_Estandar') {
+                        window.location.href = 'dashboards/user.php';
+                    } else {
+                        alert('Rol desconocido en el sistema.');
+                    }
+                } else {
+                    alert("Fallo en inicio de sesión: " + data.detail);
+                }
+            } catch (error) {
+                console.error("Error de red:", error);
+                alert("Imposible establecer comunicación con el Core API (FastAPI). Verifica que esté encendido.");
+            }
+        });
+
+        // =========================================================================
+        // PROCESAMIENTO DE REGISTRO MEDIANTE FETCH API (FASTAPI)
+        // =========================================================================
+        document.getElementById('formRegisterAPI').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const nombre_completo = document.getElementById('regName').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nombre_completo, email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert("¡Registro completo con éxito! Ahora puedes iniciar sesión.");
+                    toggleAuth('login');
+                    document.getElementById('formRegisterAPI').reset();
+                } else {
+                    alert("Fallo en registro: " + data.detail);
+                }
+            } catch (error) {
+                console.error("Error de red:", error);
+                alert("Error de enlace con el servidor de registros.");
+            }
+        });
     </script>
 </body>
 </html>
