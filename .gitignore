@@ -4,3 +4,4 @@ llave_invitado.pub
 venv/
 __pycache__/
 *.apk
+*.env
