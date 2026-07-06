@@ -250,8 +250,10 @@
         const loginForm = document.getElementById('loginForm');
         const registerForm = document.getElementById('registerForm');
 
-        // Dirección IP/Local del Core API en Python (Ajustar si cambia de puerto)
-        const API_BASE_URL = "https://52.87.151.219:8000/api/v1";
+        // ====== SOLUCIÓN APLICADA AQUÍ ======
+        // Se revierte a http:// porque tu infraestructura actual (como se ve en la URL del navegador) 
+        // no tiene un certificado SSL configurado en el puerto 8000. Usar https:// generaba un rechazo de conexión.
+        const API_BASE_URL = "http://52.87.151.219:8000/api/v1";
 
         // Control de Apertura y Cierre de Modal
         loginBtnTrigger.addEventListener('click', (e) => {
@@ -318,8 +320,8 @@
                     alert("Fallo en inicio de sesión: " + data.detail);
                 }
             } catch (error) {
-                console.error("Error de red:", error);
-                alert("Imposible establecer comunicación con el Core API (FastAPI). Verifica que esté encendido.");
+                console.error("Error de red detallado:", error);
+                alert("Imposible establecer comunicación con el Core API (FastAPI). Verifica que esté encendido y el puerto 8000 esté abierto en AWS.");
             }
         });
 
@@ -350,8 +352,8 @@
                     alert("Fallo en registro: " + data.detail);
                 }
             } catch (error) {
-                console.error("Error de red:", error);
-                alert("Error de enlace con el servidor de registros.");
+                console.error("Error de red detallado:", error);
+                alert("Error de enlace con el servidor de registros. Revisa la consola (F12) para más detalles.");
             }
         });
     </script>

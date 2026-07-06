@@ -91,3 +91,15 @@ def get_modulos(db: Session = Depends(get_db)):
         modulos = db.query(Modulo).all() # Volvemos a leer
 
     return modulos
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()
+
+# Configuración necesaria para permitir conexiones desde tu Canvas
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # Permitir todos los orígenes (para desarrollo)
+    allow_credentials=True,
+    allow_methods=["*"], # Permitir todos los métodos (GET, POST, etc.)
+    allow_headers=["*"], # Permitir todos los encabezados
+)
