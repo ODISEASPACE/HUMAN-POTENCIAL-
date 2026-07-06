@@ -152,7 +152,7 @@
 
         <div class="bottom-actions">
             <a href="/anthropotechnology.apk" class="btn-download">↓ Descargar APH App</a>
-            <a href="#" class="btn-api active">Red de Producción ◉</a>
+            <a href="#" id="sessionStatusBtn" class="btn-api active">Red de Producción ◉</a>
         </div>
     </nav>
 
@@ -249,11 +249,25 @@
         const closeModal = document.getElementById('closeModal');
         const loginForm = document.getElementById('loginForm');
         const registerForm = document.getElementById('registerForm');
+        const sessionBtn = document.getElementById('sessionStatusBtn');
 
-        // ====== SOLUCIÓN APLICADA AQUÍ ======
-        // Se revierte a http:// porque tu infraestructura actual (como se ve en la URL del navegador) 
-        // no tiene un certificado SSL configurado en el puerto 8000. Usar https:// generaba un rechazo de conexión.
-        const API_BASE_URL = "http://52.87.151.219:8000";
+        // ====================================================================
+        // AQUÍ ESTÁ LA MAGIA: Añadimos "/api/v1" para que coincida exactamente
+        // con los endpoints de tu nuevo y unificado backend.py
+        // ====================================================================
+        const API_BASE_URL = "http://52.87.151.219:8000/api/v1";
+
+        // VERIFICAR SESIÓN AL CARGAR LA PÁGINA
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedUser = sessionStorage.getItem('sessionUser');
+            if (savedUser) {
+                const user = JSON.parse(savedUser);
+                sessionBtn.textContent = `Usuario: ${user.nombre}`;
+                sessionBtn.style.background = 'rgba(56, 161, 105, 0.1)';
+                sessionBtn.style.color = 'var(--success)';
+                sessionBtn.style.borderColor = 'var(--success)';
+            }
+        });
 
         // Control de Apertura y Cierre de Modal
         loginBtnTrigger.addEventListener('click', (e) => {
@@ -292,6 +306,7 @@
             const password = document.getElementById('loginPassword').value;
 
             try {
+                // Al hacer esto, la URL final será: http://52.87.151.219:8000/api/v1/auth/login
                 const response = await fetch(`${API_BASE_URL}/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -305,6 +320,13 @@
                     
                     // Almacenar temporalmente los datos del usuario logueado en la sesión web
                     sessionStorage.setItem('sessionUser', JSON.stringify(data));
+                    
+                    // Actualizar UI inmediatamente
+                    sessionBtn.textContent = `Usuario: ${data.nombre}`;
+                    sessionBtn.style.background = 'rgba(56, 161, 105, 0.1)';
+                    sessionBtn.style.color = 'var(--success)';
+                    sessionBtn.style.borderColor = 'var(--success)';
+                    authModal.style.display = 'none';
 
                     // REDIRECCIÓN DINÁMICA SEGÚN EL ROL DE TU BASE DE DATOS POSTGRESQL
                     if (data.rol === 'Administrador') {
@@ -336,6 +358,7 @@
             const password = document.getElementById('regPassword').value;
 
             try {
+                // Al hacer esto, la URL final será: http://52.87.151.219:8000/api/v1/auth/register
                 const response = await fetch(`${API_BASE_URL}/auth/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
