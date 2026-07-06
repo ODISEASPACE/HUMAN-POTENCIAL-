@@ -6,7 +6,7 @@ from sqlalchemy.orm import declarative_base, sessionmaker, Session
 from sqlalchemy.exc import OperationalError
 
 # 1. Configuración de la Base de Datos
-DATABASE_URL = "postgresql://postgres:Daniel_2419@aph-database.cy78m00i65y5.us-east-1.rds.amazonaws.com:5432/postgres"
+DATABASE_URL = "postgresql://postgres:Limitless20xx@aph-database.cy78m00i65y5.us-east-1.rds.amazonaws.com:5432/postgres"
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
