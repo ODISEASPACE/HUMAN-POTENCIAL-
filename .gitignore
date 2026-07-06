@@ -4,4 +4,3 @@ llave_invitado.pub
 venv/
 __pycache__/
 *.apk
-generar_test_users.py

@@ -251,7 +251,7 @@
         const registerForm = document.getElementById('registerForm');
 
         // Dirección IP/Local del Core API en Python (Ajustar si cambia de puerto)
-        const API_BASE_URL = "http://52.87.151.219:8000/api/v1";
+        const API_BASE_URL = "https://52.87.151.219:8000/api/v1";
 
         // Control de Apertura y Cierre de Modal
         loginBtnTrigger.addEventListener('click', (e) => {
