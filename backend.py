@@ -2,7 +2,7 @@ import os
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker, Session
+import sqlalchemy.orm
 from dotenv import load_dotenv
 from pydantic import BaseModel
 from passlib.context import CryptContext
@@ -16,7 +16,7 @@ if not DATABASE_URL:
 
 # 2. Configuración del Motor de Base de Datos (SQLAlchemy)
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+SessionLocal = sqlalchemy.orm.sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # 3. Inicialización de la aplicación FastAPI
 app = FastAPI(title="APH OS Core API", version="1.0")
@@ -69,7 +69,7 @@ def read_root():
     return {"status": "online", "system": "APH OS Core System"}
 
 @app.get("/api/v1/health/db")
-def check_db_connection(db: Session = Depends(get_db)):
+def check_db_connection(db: sqlalchemy.orm.Session = Depends(get_db)):
     try:
         result = db.execute(text("SELECT 1")).scalar()
         if result == 1:
@@ -82,7 +82,7 @@ def check_db_connection(db: Session = Depends(get_db)):
 # =========================================================================
 
 @app.post("/api/v1/auth/register")
-def register_user(user: UserRegister, db: Session = Depends(get_db)):
+def register_user(user: UserRegister, db: sqlalchemy.orm.Session = Depends(get_db)):
     try:
         # 1. Validar si el email ya existe en la base de datos
         check_query = text("SELECT id FROM usuarios WHERE email = :email")
@@ -138,7 +138,7 @@ def register_user(user: UserRegister, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Error en el servidor: {str(e)}")
 
 @app.post("/api/v1/auth/login")
-def login_user(user: UserLogin, db: Session = Depends(get_db)):
+def login_user(user: UserLogin, db: sqlalchemy.orm.Session = Depends(get_db)):
     # Buscar el usuario vinculando su ID de rol con el nombre real en la tabla roles
     query = text("""
         SELECT u.id, u.nombre_completo, u.password_hash, r.nombre as rol_nombre 

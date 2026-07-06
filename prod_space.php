@@ -253,7 +253,7 @@
         // ====== SOLUCIÓN APLICADA AQUÍ ======
         // Se revierte a http:// porque tu infraestructura actual (como se ve en la URL del navegador) 
         // no tiene un certificado SSL configurado en el puerto 8000. Usar https:// generaba un rechazo de conexión.
-        const API_BASE_URL = "http://52.87.151.219:8000/api/v1";
+        const API_BASE_URL = "http://52.87.151.219:8000";
 
         // Control de Apertura y Cierre de Modal
         loginBtnTrigger.addEventListener('click', (e) => {
