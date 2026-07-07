@@ -1,3 +1,89 @@
+<?php
+session_start();
+require 'db.php'; // Asegúrate de que este archivo siga teniendo el endpoint de AWS RDS
+
+$error_msg = '';
+$success_msg = '';
+$active_modal = ''; // 'login' o 'register'
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $action = $_POST['action'] ?? '';
+
+    // LÓGICA DE LOGIN
+    if ($action === 'login') {
+        $email = trim($_POST['email']);
+        $password = $_POST['password'];
+
+        $stmt = $pdo->prepare("SELECT id, password_hash FROM users WHERE email = ?");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch();
+
+        if ($user && password_verify($password, $user['password_hash'])) {
+            $_SESSION['user_id'] = $user['id'];
+            header("Location: dashboard.php");
+            exit;
+        } else {
+            $error_msg = "Credenciales no válidas.";
+            $active_modal = 'login';
+        }
+    }
+
+    // LÓGICA DE REGISTRO
+    if ($action === 'register') {
+        $username = trim($_POST['username']);
+        $email = trim($_POST['email']);
+        $password = $_POST['password'];
+        $birth_date = $_POST['birth_date'];
+        $profession = trim($_POST['profession']);
+        $bio = trim($_POST['bio']);
+        $consent = isset($_POST['consent']) ? true : false;
+        
+        $profile_pic_path = null;
+
+        // Manejo de la foto de perfil
+        if (isset($_FILES['profile_pic']) && $_FILES['profile_pic']['error'] == 0) {
+            $ext = pathinfo($_FILES['profile_pic']['name'], PATHINFO_EXTENSION);
+            $filename = uniqid('profile_') . '.' . $ext;
+            $destination = 'uploads/' . $filename;
+            
+            if (move_uploaded_file($_FILES['profile_pic']['tmp_name'], $destination)) {
+                $profile_pic_path = $destination;
+            }
+        }
+
+        if (empty($email) || empty($password) || empty($username) || !$consent) {
+            $error_msg = "Los campos obligatorios y el consentimiento son requeridos.";
+            $active_modal = 'register';
+        } else {
+            $password_hash = password_hash($password, PASSWORD_BCRYPT);
+            
+            try {
+                $stmt = $pdo->prepare("INSERT INTO users (email, password_hash, consent_given, consent_timestamp, username, profile_picture, bio, birth_date, profession) VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)");
+                $stmt->execute([
+                    $email, 
+                    $password_hash, 
+                    $consent ? 'true' : 'false',
+                    $username,
+                    $profile_pic_path,
+                    $bio,
+                    $birth_date,
+                    $profession
+                ]);
+                
+                $success_msg = "Registro exitoso. Ya puedes iniciar sesión.";
+                $active_modal = 'login';
+            } catch (PDOException $e) {
+                if ($e->getCode() == '23505') { 
+                    $error_msg = "El correo o nombre de usuario ya están registrados.";
+                } else {
+                    $error_msg = "Error: " . $e->getMessage();
+                }
+                $active_modal = 'register';
+            }
+        }
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -18,234 +104,201 @@
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-base); color: var(--text-main); line-height: 1.6; overflow-x: hidden; }
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-base);
-            color: var(--text-main);
-            line-height: 1.6;
-            overflow-x: hidden;
-        }
-
-        /* --- NAVEGACIÓN --- */
-        header {
-            position: fixed;
-            top: 0;
-            width: 100%;
-            background: var(--nav-bg);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 5%;
-            z-index: 100;
-        }
-
+        /* --- NAVEGACIÓN Y HERO --- (Se mantienen igual a tu versión anterior) */
+        header { position: fixed; top: 0; width: 100%; background: var(--nav-bg); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; padding: 15px 5%; z-index: 50; }
         .brand { display: flex; align-items: baseline; gap: 10px; text-decoration: none; }
         .brand h2 { font-weight: 800; letter-spacing: 2px; font-size: 1.5rem; color: var(--text-main); }
         .brand span { font-size: 0.75rem; color: var(--accent); letter-spacing: 1px; text-transform: uppercase; font-weight: 700; }
-
         .nav-actions { display: flex; gap: 20px; align-items: center; }
-        .btn-ghost { text-decoration: none; color: var(--text-muted); font-weight: 600; transition: color 0.3s; font-size: 0.95rem; }
+        
+        .btn-ghost { text-decoration: none; color: var(--text-muted); font-weight: 600; cursor: pointer; background: none; border: none; font-size: 0.95rem; font-family: inherit; }
         .btn-ghost:hover { color: var(--text-main); }
+        .btn-primary { background: var(--accent); color: #fff; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; text-decoration: none; transition: all 0.3s ease; font-size: 0.95rem; font-family: inherit; }
+        .btn-primary:hover { background: var(--accent-hover); transform: translateY(-2px); }
 
-        .btn-primary {
-            background: var(--accent); color: #fff; border: none; padding: 10px 24px;
-            border-radius: 8px; font-weight: 600; cursor: pointer; text-decoration: none;
-            transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(128, 90, 213, 0.25);
-            font-size: 0.95rem;
-        }
-        .btn-primary:hover { background: var(--accent-hover); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(128, 90, 213, 0.35); }
-        .btn-secondary { background: #fff; color: var(--text-main); border: 1px solid var(--border-color); padding: 12px 28px; border-radius: 8px; font-weight: 600; text-decoration: none; transition: all 0.3s ease; font-size: 1.05rem; }
-        .btn-secondary:hover { border-color: var(--text-muted); }
-
-        /* --- SECCIONES COMUNES --- */
-        section { padding: 100px 5%; max-width: 1200px; margin: 0 auto; }
-        .section-title { text-align: center; font-size: 2.5rem; font-weight: 800; margin-bottom: 20px; color: var(--text-main); }
-        .section-subtitle { text-align: center; color: var(--text-muted); font-size: 1.1rem; max-width: 600px; margin: 0 auto 60px auto; }
-
-        /* --- HERO --- */
-        .hero {
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            text-align: center; padding: 180px 5% 100px;
-            background: radial-gradient(circle at top, #ffffff 0%, #FAFAFC 100%);
-        }
-        .hero-badge { background: rgba(128, 90, 213, 0.1); color: var(--accent); padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; margin-bottom: 24px; letter-spacing: 0.5px; }
-        .hero h1 { font-size: 4rem; font-weight: 800; line-height: 1.1; max-width: 850px; margin-bottom: 24px; letter-spacing: -1.5px; color: var(--text-main); }
+        .hero { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 180px 5% 100px; background: radial-gradient(circle at top, #ffffff 0%, #FAFAFC 100%); min-height: 100vh; }
+        .hero h1 { font-size: 4rem; font-weight: 800; line-height: 1.1; max-width: 850px; margin-bottom: 24px; letter-spacing: -1.5px; }
         .hero h1 span { color: var(--accent); }
         .hero p.subtitle { font-size: 1.25rem; color: var(--text-muted); max-width: 600px; margin-bottom: 45px; }
-        .hero-actions { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; }
+        .hero-actions { display: flex; gap: 15px; }
 
-        /* --- CARACTERÍSTICAS (CARDS) --- */
-        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
-        .feature-card {
-            background: var(--card-bg); border: 1px solid var(--border-color); padding: 40px 30px;
-            border-radius: 16px; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-            text-align: left;
+        /* --- MODALES (NUEVO) --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
+            display: none; justify-content: center; align-items: center; z-index: 100;
+            opacity: 0; transition: opacity 0.3s ease; padding: 20px;
         }
-        .feature-card:hover { transform: translateY(-5px); border-color: var(--accent); box-shadow: 0 12px 25px rgba(0,0,0,0.05); }
-        .feature-icon { width: 50px; height: 50px; background: rgba(128, 90, 213, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: var(--accent); margin-bottom: 20px; }
-        .feature-card h3 { font-size: 1.25rem; font-weight: 700; margin-bottom: 15px; }
-        .feature-card p { color: var(--text-muted); font-size: 0.95rem; line-height: 1.7; }
-
-        /* --- INTERACTIVO (MOCKUP DASHBOARD) --- */
-        .interactive-section { background: #FFFFFF; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); padding-top: 100px; padding-bottom: 100px; }
-        .dashboard-mockup {
-            background: var(--bg-base); border: 1px solid var(--border-color); border-radius: 16px;
-            overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.08); margin: 0 auto; max-width: 900px;
+        .modal-overlay.active { display: flex; opacity: 1; }
+        
+        .modal-content {
+            background: #fff; width: 100%; max-width: 450px; border-radius: 16px;
+            padding: 40px; box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            position: relative; transform: translateY(20px); transition: transform 0.3s ease;
+            max-height: 90vh; overflow-y: auto; /* Permite scroll si el formulario es largo */
         }
-        .mockup-header { background: #fff; padding: 15px 20px; border-bottom: 1px solid var(--border-color); display: flex; gap: 10px; }
-        .dot { width: 12px; height: 12px; border-radius: 50%; background: #E2E8F0; }
-        .dot.r { background: #FC8181; } .dot.y { background: #F6E05E; } .dot.g { background: #68D391; }
-        
-        .mockup-body { padding: 40px; display: flex; gap: 40px; align-items: center; }
-        
-        /* Pestañas */
-        .mockup-tabs { display: flex; flex-direction: column; gap: 10px; flex: 1; }
-        .tab-btn {
-            background: transparent; border: 1px solid transparent; padding: 15px 20px; text-align: left;
-            border-radius: 8px; font-family: 'Inter', sans-serif; font-weight: 600; color: var(--text-muted);
-            cursor: pointer; transition: 0.3s;
-        }
-        .tab-btn:hover { background: rgba(0,0,0,0.02); }
-        .tab-btn.active { background: #fff; border: 1px solid var(--border-color); color: var(--accent); box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
-        
-        /* Gráfica animada */
-        .mockup-graph-container { flex: 1.5; background: #fff; padding: 30px; border-radius: 12px; border: 1px solid var(--border-color); height: 250px; display: flex; align-items: flex-end; gap: 15px; justify-content: space-between; }
-        .bar-wrapper { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; gap: 10px; }
-        .bar { width: 100%; background: rgba(128, 90, 213, 0.2); border-radius: 6px 6px 0 0; transition: height 0.8s ease; position: relative; }
-        .bar.active { background: var(--accent); }
-        .bar-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; }
+        .modal-overlay.active .modal-content { transform: translateY(0); }
 
-        /* --- CTA FINAL --- */
-        .cta-section { text-align: center; padding: 120px 5%; background: var(--accent); color: #fff; }
-        .cta-section h2 { font-size: 3rem; font-weight: 800; margin-bottom: 20px; color: #fff;}
-        .cta-section p { font-size: 1.2rem; opacity: 0.9; margin-bottom: 40px; }
-        .btn-white { background: #fff; color: var(--accent); padding: 14px 32px; border-radius: 8px; font-weight: 700; text-decoration: none; transition: 0.3s; font-size: 1.1rem; border: none; }
-        .btn-white:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
-
-        /* Animación general */
-        .fade-in { animation: fadeIn 0.8s ease forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
+        .close-btn { position: absolute; top: 20px; right: 20px; font-size: 1.5rem; cursor: pointer; color: var(--text-muted); border: none; background: none; }
+        .modal-content h2 { color: var(--accent); text-align: center; margin-bottom: 25px; }
+        
+        /* Formularios */
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; margin-bottom: 6px; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
+        .input-group input, .input-group textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 8px; font-family: inherit; font-size: 0.95rem; }
+        .input-group input:focus, .input-group textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(128, 90, 213, 0.1); }
+        .input-group textarea { resize: vertical; min-height: 80px; }
+        
+        .checkbox-group { display: flex; gap: 10px; margin-bottom: 20px; font-size: 0.8rem; color: var(--text-muted); align-items: flex-start; }
+        .btn-full { width: 100%; padding: 12px; margin-top: 10px; }
+        
+        .toggle-text { text-align: center; margin-top: 20px; font-size: 0.9rem; }
+        .toggle-text a { color: var(--accent); cursor: pointer; font-weight: 600; text-decoration: none; }
+        
+        .msg-error { background: #FED7D7; color: #C53030; padding: 10px; border-radius: 8px; margin-bottom: 20px; font-size: 0.85rem; text-align: center; }
+        .msg-success { background: #C6F6D5; color: #276749; padding: 10px; border-radius: 8px; margin-bottom: 20px; font-size: 0.85rem; text-align: center; }
     </style>
 </head>
 <body>
 
     <header>
-        <a href="/" class="brand">
-            <h2>A P H</h2>
-            <span>Core System V3.1</span>
-        </a>
+        <a href="/" class="brand"><h2>A P H</h2><span>Core System V3.1</span></a>
         <div class="nav-actions">
-            <a href="login.php" class="btn-ghost">Iniciar Sesión</a>
-            <a href="registro.php" class="btn-primary">Registrarse</a>
+            <button onclick="openModal('loginModal')" class="btn-ghost">Iniciar Sesión</button>
+            <button onclick="openModal('registerModal')" class="btn-primary">Registrarse</button>
         </div>
     </header>
 
-    <div class="hero fade-in">
-        <div class="hero-badge">Infraestructura Central</div>
+    <div class="hero">
+        <div style="background: rgba(128, 90, 213, 0.1); color: var(--accent); padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; margin-bottom: 24px;">Infraestructura Central</div>
         <h1>El entorno para tu <span>expansión cognitiva.</span></h1>
         <p class="subtitle">Descubre un ecosistema minimalista diseñado para maximizar tu enfoque, estructurar tus herramientas y tomar el control de tus hábitos de vida.</p>
-        
         <div class="hero-actions">
-            <a href="registro.php" class="btn-primary" style="padding: 14px 32px; font-size: 1.05rem;">Comenzar ahora</a>
-            <a href="/anthropotechnology.apk" class="btn-secondary">Descargar App</a>
+            <button onclick="openModal('registerModal')" class="btn-primary" style="padding: 14px 32px; font-size: 1.05rem;">Comenzar ahora</button>
         </div>
     </div>
 
-    <section class="features" id="caracteristicas">
-        <h2 class="section-title">Ingeniería para tu rutina</h2>
-        <p class="section-subtitle">Módulos integrados que operan en segundo plano para que tú te enfoques en ejecutar.</p>
-        
-        <div class="features-grid">
-            <div class="feature-card">
-                <div class="feature-icon">⏱</div>
-                <h3>Sistemas de Vida</h3>
-                <p>Métricas precisas y seguimiento de hábitos mediante algoritmos y temporizadores integrados. Diseñado para mantener la constancia sin fricción.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">🧠</div>
-                <h3>Expansión Cognitiva</h3>
-                <p>Estructuras y bases de datos preparadas para el meta-aprendizaje. Registra tu progreso y aprovecha los picos de neuroplasticidad.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">⛁</div>
-                <h3>Control Centralizado</h3>
-                <p>Una API robusta que sincroniza tu aplicación móvil y tu panel web en tiempo real. Todos tus datos alojados de manera segura en un solo ecosistema.</p>
-            </div>
-        </div>
-    </section>
-
-    <div class="interactive-section">
-        <section style="padding-top: 0; padding-bottom: 0;">
-            <h2 class="section-title">Visualiza tu progreso</h2>
-            <p class="section-subtitle">El panel de control transforma tus registros diarios en métricas de rendimiento accionables.</p>
+    <div id="loginModal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModals()">&times;</button>
+            <h2>Acceso al Sistema</h2>
             
-            <div class="dashboard-mockup">
-                <div class="mockup-header">
-                    <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+            <?php if($error_msg && $active_modal == 'login'): ?> <div class="msg-error"><?= $error_msg ?></div> <?php endif; ?>
+            <?php if($success_msg && $active_modal == 'login'): ?> <div class="msg-success"><?= $success_msg ?></div> <?php endif; ?>
+
+            <form method="POST" action="">
+                <input type="hidden" name="action" value="login">
+                <div class="input-group">
+                    <label>Correo Electrónico</label>
+                    <input type="email" name="email" required>
                 </div>
-                <div class="mockup-body">
-                    <div class="mockup-tabs">
-                        <button class="tab-btn active" onclick="changeGraph(0, this)">Rendimiento Semanal</button>
-                        <button class="tab-btn" onclick="changeGraph(1, this)">Hábitos Completados</button>
-                        <button class="tab-btn" onclick="changeGraph(2, this)">Horas de Enfoque</button>
-                    </div>
-                    <div class="mockup-graph-container" id="graph-container">
-                        </div>
+                <div class="input-group">
+                    <label>Contraseña</label>
+                    <input type="password" name="password" required>
                 </div>
+                <button type="submit" class="btn-primary btn-full">Iniciar Sesión</button>
+            </form>
+            <div class="toggle-text">
+                ¿No tienes un ecosistema? <a onclick="switchModal('loginModal', 'registerModal')">Regístrate aquí</a>
             </div>
-        </section>
+        </div>
     </div>
 
-    <div class="cta-section">
-        <h2>Listo para el siguiente nivel.</h2>
-        <p>Únete y comienza a estructurar tu sistema de vida hoy mismo.</p>
-        <a href="registro.php" class="btn-white">Crear mi cuenta gratis</a>
+    <div id="registerModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 550px;">
+            <button class="close-btn" onclick="closeModals()">&times;</button>
+            <h2>Inicializar Sistema (Registro)</h2>
+
+            <?php if($error_msg && $active_modal == 'register'): ?> <div class="msg-error"><?= $error_msg ?></div> <?php endif; ?>
+
+            <form method="POST" action="" enctype="multipart/form-data">
+                <input type="hidden" name="action" value="register">
+                
+                <div style="display: flex; gap: 15px;">
+                    <div class="input-group" style="flex: 1;">
+                        <label>Usuario (Alias) *</label>
+                        <input type="text" name="username" required>
+                    </div>
+                    <div class="input-group" style="flex: 1;">
+                        <label>Foto de Perfil</label>
+                        <input type="file" name="profile_pic" accept="image/png, image/jpeg">
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 15px;">
+                    <div class="input-group" style="flex: 1;">
+                        <label>Correo Electrónico *</label>
+                        <input type="email" name="email" required>
+                    </div>
+                    <div class="input-group" style="flex: 1;">
+                        <label>Contraseña *</label>
+                        <input type="password" name="password" required>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 15px;">
+                    <div class="input-group" style="flex: 1;">
+                        <label>Fecha de Nacimiento</label>
+                        <input type="date" name="birth_date">
+                    </div>
+                    <div class="input-group" style="flex: 1;">
+                        <label>Profesión / Estudio</label>
+                        <input type="text" name="profession" placeholder="Ej. Ing. Sistemas">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Biografía / Descripción</label>
+                    <textarea name="bio" placeholder="Describe brevemente tus objetivos..."></textarea>
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" name="consent" id="consent" required style="margin-top: 3px;">
+                    <label for="consent" style="margin:0;">Autorizo el tratamiento de mis datos personales según la Ley 1581 de 2012 para el análisis vocacional y de productividad.</label>
+                </div>
+
+                <button type="submit" class="btn-primary btn-full">Registrar y Crear Perfil</button>
+            </form>
+            <div class="toggle-text">
+                ¿Ya tienes un sistema activo? <a onclick="switchModal('registerModal', 'loginModal')">Inicia sesión</a>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Lógica simple para la gráfica interactiva de demostración
-        const graphData = [
-            [40, 60, 45, 80, 55, 90, 70], // Datos pestaña 1
-            [20, 30, 80, 40, 100, 60, 50], // Datos pestaña 2
-            [80, 70, 90, 60, 50, 85, 95]   // Datos pestaña 3
-        ];
-        const labels = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'];
-        const container = document.getElementById('graph-container');
+        // Funciones para controlar los modales
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+            document.body.style.overflow = 'hidden'; // Evita que el fondo haga scroll
+        }
 
-        function renderGraph(dataIndex) {
-            container.innerHTML = '';
-            const data = graphData[dataIndex];
-            data.forEach((val, index) => {
-                const wrapper = document.createElement('div');
-                wrapper.className = 'bar-wrapper';
-                
-                const bar = document.createElement('div');
-                bar.className = 'bar ' + (val > 75 ? 'active' : '');
-                // Animación de entrada
-                setTimeout(() => { bar.style.height = val + '%'; }, 50);
-                
-                const label = document.createElement('div');
-                label.className = 'bar-label';
-                label.innerText = labels[index];
-
-                wrapper.appendChild(bar);
-                wrapper.appendChild(label);
-                container.appendChild(wrapper);
+        function closeModals() {
+            document.querySelectorAll('.modal-overlay').forEach(modal => {
+                modal.classList.remove('active');
             });
+            document.body.style.overflow = 'auto'; // Reactiva el scroll
         }
 
-        function changeGraph(index, btn) {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            renderGraph(index);
+        function switchModal(closeId, openId) {
+            document.getElementById(closeId).classList.remove('active');
+            openModal(openId);
         }
 
-        // Render inicial
-        renderGraph(0);
+        // Si PHP detecta un error/éxito, abre el modal correspondiente automáticamente
+        <?php if($active_modal): ?>
+            openModal('<?= $active_modal ?>Modal');
+        <?php endif; ?>
+
+        // Cerrar modal si se hace clic fuera del contenido blanco
+        document.querySelectorAll('.modal-overlay').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeModals();
+                }
+            });
+        });
     </script>
 </body>
 </html>
