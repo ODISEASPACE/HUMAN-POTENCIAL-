@@ -119,10 +119,10 @@ function renderAvatar($avatarData) {
             <h2>A P H</h2>
         </div>
         <div class="nav-links">
-            <a href="#" class="nav-link active">⌂ Panel Central</a>
-            <a href="#" class="nav-link">⏱ Hábitos</a>
-            <a href="#" class="nav-link">🧠 Expansión Cognitiva</a>
-            <a href="#" class="nav-link">⛁ Repositorio</a>
+            <a href="dashboard.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active' : ''; ?>">⌂ Panel Central</a>
+            <a href="estado-humano.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'estado-humano.php' ? 'active' : ''; ?>">👤 Estado Humano</a>
+            <a href="registro-diario.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'registro-diario.php' ? 'active' : ''; ?>">⏱ Registro Diario</a>
+            <a href="proyectos.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'proyectos.php' ? 'active' : ''; ?>">🚀 Proyectos</a>
         </div>
         
         <div class="user-mini">
@@ -132,7 +132,7 @@ function renderAvatar($avatarData) {
                 <p><?= htmlspecialchars($user['profession'] ?? 'Sin asignar') ?></p>
             </div>
         </div>
-        <a href="index.php" class="btn-logout" onclick="/* Idealmente redirigir a un script de logout */">Cerrar Sesión</a>
+        <a href="logout.php" class="btn-logout">Cerrar Sesión</a>
     </nav>
 
     <main>
