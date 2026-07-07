@@ -1,10 +1,10 @@
 <?php
 session_start();
-require 'db.php'; // Asegúrate de que este archivo siga teniendo el endpoint de AWS RDS
+require 'db.php'; // Asegúrate de que tenga el endpoint de AWS RDS
 
 $error_msg = '';
 $success_msg = '';
-$active_modal = ''; // 'login' o 'register'
+$active_modal = ''; 
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $action = $_POST['action'] ?? '';
@@ -33,14 +33,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $username = trim($_POST['username']);
         $email = trim($_POST['email']);
         $password = $_POST['password'];
-        $birth_date = $_POST['birth_date'];
+        $birth_date = $_POST['birth_date'] ?: null; // Null si está vacío
         $profession = trim($_POST['profession']);
         $bio = trim($_POST['bio']);
         $consent = isset($_POST['consent']) ? true : false;
         
         $profile_pic_path = null;
 
-        // Manejo de la foto de perfil
+        // 1. Verificar si seleccionó un avatar predefinido
+        if (!empty($_POST['selected_avatar'])) {
+            $profile_pic_path = $_POST['selected_avatar'];
+        }
+
+        // 2. Verificar si subió un archivo (esto sobrescribe el avatar si hay ambos)
         if (isset($_FILES['profile_pic']) && $_FILES['profile_pic']['error'] == 0) {
             $ext = pathinfo($_FILES['profile_pic']['name'], PATHINFO_EXTENSION);
             $filename = uniqid('profile_') . '.' . $ext;
@@ -52,7 +57,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
 
         if (empty($email) || empty($password) || empty($username) || !$consent) {
-            $error_msg = "Los campos obligatorios y el consentimiento son requeridos.";
+            $error_msg = "Los campos con (*) y el consentimiento son obligatorios.";
             $active_modal = 'register';
         } else {
             $password_hash = password_hash($password, PASSWORD_BCRYPT);
@@ -106,7 +111,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background-color: var(--bg-base); color: var(--text-main); line-height: 1.6; overflow-x: hidden; }
 
-        /* --- NAVEGACIÓN Y HERO --- (Se mantienen igual a tu versión anterior) */
+        /* --- HEADER Y HERO --- */
         header { position: fixed; top: 0; width: 100%; background: var(--nav-bg); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; padding: 15px 5%; z-index: 50; }
         .brand { display: flex; align-items: baseline; gap: 10px; text-decoration: none; }
         .brand h2 { font-weight: 800; letter-spacing: 2px; font-size: 1.5rem; color: var(--text-main); }
@@ -117,14 +122,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         .btn-ghost:hover { color: var(--text-main); }
         .btn-primary { background: var(--accent); color: #fff; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; text-decoration: none; transition: all 0.3s ease; font-size: 0.95rem; font-family: inherit; }
         .btn-primary:hover { background: var(--accent-hover); transform: translateY(-2px); }
+        .btn-secondary { background: #fff; color: var(--text-main); border: 1px solid var(--border-color); padding: 10px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.3s; font-size: 0.95rem; font-family: inherit; }
+        .btn-secondary:hover { border-color: var(--text-muted); }
 
         .hero { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 180px 5% 100px; background: radial-gradient(circle at top, #ffffff 0%, #FAFAFC 100%); min-height: 100vh; }
         .hero h1 { font-size: 4rem; font-weight: 800; line-height: 1.1; max-width: 850px; margin-bottom: 24px; letter-spacing: -1.5px; }
         .hero h1 span { color: var(--accent); }
         .hero p.subtitle { font-size: 1.25rem; color: var(--text-muted); max-width: 600px; margin-bottom: 45px; }
-        .hero-actions { display: flex; gap: 15px; }
 
-        /* --- MODALES (NUEVO) --- */
+        /* --- MODALES GENERALES --- */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
@@ -132,19 +138,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             opacity: 0; transition: opacity 0.3s ease; padding: 20px;
         }
         .modal-overlay.active { display: flex; opacity: 1; }
-        
         .modal-content {
             background: #fff; width: 100%; max-width: 450px; border-radius: 16px;
             padding: 40px; box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             position: relative; transform: translateY(20px); transition: transform 0.3s ease;
-            max-height: 90vh; overflow-y: auto; /* Permite scroll si el formulario es largo */
+            max-height: 90vh; overflow-y: auto;
         }
         .modal-overlay.active .modal-content { transform: translateY(0); }
-
         .close-btn { position: absolute; top: 20px; right: 20px; font-size: 1.5rem; cursor: pointer; color: var(--text-muted); border: none; background: none; }
         .modal-content h2 { color: var(--accent); text-align: center; margin-bottom: 25px; }
         
-        /* Formularios */
+        /* --- FORMULARIOS --- */
         .input-group { margin-bottom: 15px; }
         .input-group label { display: block; margin-bottom: 6px; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
         .input-group input, .input-group textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 8px; font-family: inherit; font-size: 0.95rem; }
@@ -159,6 +163,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         
         .msg-error { background: #FED7D7; color: #C53030; padding: 10px; border-radius: 8px; margin-bottom: 20px; font-size: 0.85rem; text-align: center; }
         .msg-success { background: #C6F6D5; color: #276749; padding: 10px; border-radius: 8px; margin-bottom: 20px; font-size: 0.85rem; text-align: center; }
+
+        /* --- SECCIÓN AVATAR PERSONALIZADA --- */
+        .avatar-selector-btn {
+            display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 12px;
+            border: 1px dashed var(--accent); border-radius: 8px; background: rgba(128, 90, 213, 0.05);
+            cursor: pointer; transition: 0.3s;
+        }
+        .avatar-selector-btn:hover { background: rgba(128, 90, 213, 0.1); }
+        .avatar-preview-circle {
+            width: 36px; height: 36px; border-radius: 50%; background-color: #fff;
+            display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+            border: 1px solid var(--border-color); background-size: cover; background-position: center;
+        }
+        .avatar-text { font-size: 0.9rem; font-weight: 600; color: var(--accent); }
+
+        .avatar-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+        .avatar-option {
+            font-size: 2rem; cursor: pointer; padding: 10px; border-radius: 12px;
+            background: var(--bg-base); transition: 0.2s; border: 2px solid transparent; text-align: center;
+        }
+        .avatar-option:hover { transform: scale(1.1); border-color: var(--accent); background: rgba(128, 90, 213, 0.1); }
+        
+        /* Asegurar que el modal del avatar esté por encima del de registro */
+        #avatarModal { z-index: 150; }
     </style>
 </head>
 <body>
@@ -182,7 +210,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     <div id="loginModal" class="modal-overlay">
         <div class="modal-content">
-            <button class="close-btn" onclick="closeModals()">&times;</button>
+            <button class="close-btn" type="button" onclick="closeModal('loginModal')">&times;</button>
             <h2>Acceso al Sistema</h2>
             
             <?php if($error_msg && $active_modal == 'login'): ?> <div class="msg-error"><?= $error_msg ?></div> <?php endif; ?>
@@ -208,7 +236,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     <div id="registerModal" class="modal-overlay">
         <div class="modal-content" style="max-width: 550px;">
-            <button class="close-btn" onclick="closeModals()">&times;</button>
+            <button class="close-btn" type="button" onclick="closeModal('registerModal')">&times;</button>
             <h2>Inicializar Sistema (Registro)</h2>
 
             <?php if($error_msg && $active_modal == 'register'): ?> <div class="msg-error"><?= $error_msg ?></div> <?php endif; ?>
@@ -223,7 +251,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     </div>
                     <div class="input-group" style="flex: 1;">
                         <label>Foto de Perfil</label>
-                        <input type="file" name="profile_pic" accept="image/png, image/jpeg">
+                        <div class="avatar-selector-btn" onclick="openModal('avatarModal')">
+                            <div class="avatar-preview-circle" id="mainAvatarPreview">👤</div>
+                            <span class="avatar-text" id="mainAvatarText">Elegir Imagen</span>
+                        </div>
+                        
+                        <input type="hidden" name="selected_avatar" id="hiddenAvatarData">
+                        <input type="file" name="profile_pic" id="hiddenFileInput" accept="image/png, image/jpeg" style="display: none;" onchange="handleFileUpload(this)">
                     </div>
                 </div>
 
@@ -267,38 +301,100 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </div>
     </div>
 
+    <div id="avatarModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 350px; text-align: center;">
+            <button class="close-btn" type="button" onclick="closeModal('avatarModal')">&times;</button>
+            <h2>Elige tu Avatar</h2>
+            
+            <div class="avatar-grid">
+                <div class="avatar-option" onclick="selectAvatar('🧠')">🧠</div>
+                <div class="avatar-option" onclick="selectAvatar('⚡')">⚡</div>
+                <div class="avatar-option" onclick="selectAvatar('🚀')">🚀</div>
+                <div class="avatar-option" onclick="selectAvatar('💻')">💻</div>
+                <div class="avatar-option" onclick="selectAvatar('🦊')">🦊</div>
+                <div class="avatar-option" onclick="selectAvatar('🦉')">🦉</div>
+                <div class="avatar-option" onclick="selectAvatar('🤖')">🤖</div>
+                <div class="avatar-option" onclick="selectAvatar('👽')">👽</div>
+            </div>
+            
+            <div style="margin: 20px 0; color: var(--text-muted); font-size: 0.9rem;">o si prefieres</div>
+            
+            <button type="button" class="btn-secondary btn-full" onclick="document.getElementById('hiddenFileInput').click();">
+                Subir foto desde el equipo
+            </button>
+        </div>
+    </div>
+
     <script>
-        // Funciones para controlar los modales
+        // --- CONTROL DE MODALES ---
         function openModal(id) {
             document.getElementById(id).classList.add('active');
-            document.body.style.overflow = 'hidden'; // Evita que el fondo haga scroll
+            if(id !== 'avatarModal') { 
+                document.body.style.overflow = 'hidden'; 
+            }
         }
 
-        function closeModals() {
-            document.querySelectorAll('.modal-overlay').forEach(modal => {
-                modal.classList.remove('active');
-            });
-            document.body.style.overflow = 'auto'; // Reactiva el scroll
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+            // Si cerramos el modal principal, devolvemos el scroll
+            if(id === 'loginModal' || id === 'registerModal') {
+                document.body.style.overflow = 'auto'; 
+            }
         }
 
         function switchModal(closeId, openId) {
-            document.getElementById(closeId).classList.remove('active');
+            closeModal(closeId);
             openModal(openId);
         }
 
-        // Si PHP detecta un error/éxito, abre el modal correspondiente automáticamente
+        // Auto-abrir modal si PHP detectó un error
         <?php if($active_modal): ?>
             openModal('<?= $active_modal ?>Modal');
         <?php endif; ?>
 
-        // Cerrar modal si se hace clic fuera del contenido blanco
+        // Cerrar modales haciendo clic fuera del cuadro blanco
         document.querySelectorAll('.modal-overlay').forEach(modal => {
             modal.addEventListener('click', function(e) {
                 if (e.target === this) {
-                    closeModals();
+                    closeModal(this.id);
                 }
             });
         });
+
+        // --- LÓGICA DE SELECCIÓN DE IMAGEN/AVATAR ---
+        function selectAvatar(emoji) {
+            // Guardar en el input oculto
+            document.getElementById('hiddenAvatarData').value = emoji;
+            // Limpiar el input de archivo por si había algo antes
+            document.getElementById('hiddenFileInput').value = ''; 
+            
+            // Actualizar la vista previa visual
+            const preview = document.getElementById('mainAvatarPreview');
+            preview.innerText = emoji;
+            preview.style.backgroundImage = 'none';
+            document.getElementById('mainAvatarText').innerText = 'Avatar Seleccionado';
+            
+            closeModal('avatarModal');
+        }
+
+        function handleFileUpload(input) {
+            if (input.files && input.files[0]) {
+                // Limpiar la selección de avatar predefinido
+                document.getElementById('hiddenAvatarData').value = ''; 
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // Actualizar la vista previa con la imagen real
+                    const preview = document.getElementById('mainAvatarPreview');
+                    preview.innerText = '';
+                    preview.style.backgroundImage = `url('${e.target.result}')`;
+                    document.getElementById('mainAvatarText').innerText = 'Foto Cargada';
+                    
+                    closeModal('avatarModal');
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
     </script>
 </body>
 </html>
