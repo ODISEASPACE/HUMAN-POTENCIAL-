@@ -121,28 +121,69 @@
         /* --- CONTENIDO PRINCIPAL --- */
         main {
             flex: 1;
-            padding: 50px;
+            padding: 30px 50px 50px 50px;
             overflow-y: auto;
             position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- BARRA SUPERIOR DE INVITADO --- */
+        .top-bar-guest {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid transparent; /* Transparente en vista guest para más limpieza */
+        }
+
+        .btn-login-outline {
+            background: transparent;
+            color: var(--accent);
+            border: 2px solid var(--accent);
+            padding: 8px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-login-outline:hover {
+            background: rgba(49, 130, 206, 0.08);
+            transform: translateY(-2px);
         }
 
         .welcome-card {
             background: var(--card-bg);
             border: 1px solid var(--border-color);
-            padding: 50px;
+            padding: 60px 50px;
             border-radius: 16px;
             text-align: center;
             max-width: 800px;
-            margin: 0 auto;
+            margin: 40px auto 0 auto;
             box-shadow: 0 10px 30px rgba(0,0,0,0.05);
         }
 
         .welcome-card h1 { font-size: 3rem; margin-bottom: 20px; color: var(--text-main); }
-        .welcome-card p { color: var(--text-muted); font-size: 1.2rem; line-height: 1.8; }
+        .welcome-card p { color: var(--text-muted); font-size: 1.2rem; line-height: 1.8; margin-bottom: 35px; }
 
         /* Componentes globales para las vistas */
-        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; border-bottom: 1px solid var(--border-color); padding-bottom: 20px; }
-        .btn-primary { background: var(--accent); color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 10px rgba(49, 130, 206, 0.2); }
+        .btn-primary { 
+            background: var(--accent); 
+            color: #fff; 
+            border: none; 
+            padding: 12px 28px; 
+            border-radius: 8px; 
+            font-size: 1.1rem;
+            font-weight: 600; 
+            cursor: pointer; 
+            text-decoration: none;
+            transition: 0.3s; 
+            box-shadow: 0 4px 10px rgba(49, 130, 206, 0.2); 
+            display: inline-block;
+        }
         .btn-primary:hover { background: var(--accent-hover); transform: translateY(-2px); box-shadow: 0 6px 15px rgba(49, 130, 206, 0.3); }
         .grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; }
         .card { background: var(--card-bg); border: 1px solid var(--border-color); padding: 30px; border-radius: 16px; transition: 0.3s; position: relative; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
@@ -178,12 +219,18 @@
     </nav>
 
     <main class="fade-in">
+        
+        <div class="top-bar-guest">
+            <a href="login.php" class="btn-login-outline">Acceder al Sistema</a>
+        </div>
+
         <?php
             if ($view === 'home') {
                 echo '
                 <div class="welcome-card">
                     <h1>Ecosistema APH</h1>
                     <p>Bienvenido a la infraestructura central. Este entorno claro y minimalista está diseñado para maximizar el enfoque y control sobre tus herramientas de expansión cognitiva y hábitos de vida.</p>
+                    <a href="login.php" class="btn-primary">Comenzar / Iniciar Sesión</a>
                 </div>';
             } elseif (file_exists("views/{$view}.php")) {
                 include("views/{$view}.php");
