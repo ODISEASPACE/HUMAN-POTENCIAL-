@@ -37,10 +37,10 @@ $stmtLogs = $pdo->prepare("
 $stmtLogs->execute([$user_id]);
 $logs = $stmtLogs->fetchAll();
 
-// 4. DATOS: PROYECTOS (Conteo por categorías)
-$stmtProj = $pdo->prepare("SELECT category, COUNT(*) as total, SUM(CASE WHEN status = 'Completado' THEN 1 ELSE 0 END) as completados FROM projects_items WHERE user_id = ? GROUP BY category");
+// 4. DATOS: PROYECTOS (Conteo por categorías - CORREGIDO PARA FETCH_KEY_PAIR)
+$stmtProj = $pdo->prepare("SELECT category, COUNT(*) as total FROM projects_items WHERE user_id = ? GROUP BY category");
 $stmtProj->execute([$user_id]);
-$projectsData = $stmtProj->fetchAll(PDO::FETCH_KEY_PAIR); // Crea un array asociativo [categoria => total]
+$projectsData = $stmtProj->fetchAll(PDO::FETCH_KEY_PAIR); 
 
 // Preparar arrays para Chart.js
 $log_labels = json_encode(array_column($logs, 'f_date'));
