@@ -124,6 +124,7 @@ function renderAvatar($avatarData) {
             <a href="estado-humano.php" class="nav-link">👤 Estado Humano</a>
             <a href="registro-diario.php" class="nav-link">⏱ Registro Diario</a>
             <a href="proyectos.php" class="nav-link">🚀 Proyectos</a>
+            <a href="arbol_de_decisiones.php" class="nav-link">🌳 Árbol de Decisiones</a>
         </div>
         <div class="user-mini">
             <?= renderAvatar($user['profile_picture']) ?>
