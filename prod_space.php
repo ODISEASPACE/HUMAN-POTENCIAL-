@@ -255,7 +255,7 @@
         // AQUÍ ESTÁ LA MAGIA: Añadimos "/api/v1" para que coincida exactamente
         // con los endpoints de tu nuevo y unificado backend.py
         // ====================================================================
-        const API_BASE_URL = "http://52.87.151.219:8000"; // Quita el /api/v1
+        const API_BASE_URL = "http://52.87.151.219:8002"; // Quita el /api/v1
 
         // VERIFICAR SESIÓN AL CARGAR LA PÁGINA
         window.addEventListener('DOMContentLoaded', () => {
