@@ -117,7 +117,7 @@ function renderAvatar($avatarData) {
             
             <div class="canvas-wrapper">
                 <div id="canvas-container"></div>
-                <button class="btn-tree-access" onclick="window.location.href='skill_tree/index.php'">Acceder al Árbol de Habilidades</button>
+                <button class="btn-tree-access" onclick="window.location.href='habilidades.php'">Acceder al Árbol de Habilidades</button>
             </div>
 
             <div class="customization-panel">
@@ -164,6 +164,9 @@ function renderAvatar($avatarData) {
         </div>
     </main>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <script>
         // --- 1. CONFIGURACIÓN BÁSICA DE THREE.JS ---
 const container = document.getElementById('canvas-container');
@@ -301,8 +304,6 @@ window.addEventListener('resize', () => {
     }
 });
     </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    
 </body>
 </html>
