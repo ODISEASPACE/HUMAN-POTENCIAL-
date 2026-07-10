@@ -303,6 +303,7 @@ function renderAvatar($avatarData) {
         }
 
         // --- 5. LECTURA ESTRICTA DE ARCHIVOS GLTF ---
+        // --- 5. LECTURA ESTRICTA DE ARCHIVOS GLTF Y CORRECCIÓN DE POSE ---
         const loader = new THREE.GLTFLoader();
         const avatarGroup = new THREE.Group();
         // Ajustamos la posición para que el punto central (0,0,0) esté a la altura del pecho/cintura
@@ -315,18 +316,16 @@ function renderAvatar($avatarData) {
             loadedParts.forEach(part => avatarGroup.remove(part));
             loadedParts = [];
 
-            // MAPEADO EXACTO DE TUS ARCHIVOS (Sin asumir nada, todo hardcodeado para evitar 404s)
+            // Definimos las partes a cargar basadas en tus archivos
             let partsToLoad = [];
             
             if (currentGender === 'Male' && currentOutfit === 'Peasant') {
-                partsToLoad = ['_Arms', '_Body', '_Feet', '_Legs']; // Prefix: Male_Peasant
+                partsToLoad = ['_Arms', '_Body', '_Feet', '_Legs'];
             } else if (currentGender === 'Female' && currentOutfit === 'Peasant') {
-                partsToLoad = ['_Arms', '_Body', '_Feet', '_Legs']; // Prefix: Female_Peasant
+                partsToLoad = ['_Arms', '_Body', '_Feet', '_Legs'];
             } else if (currentGender === 'Male' && currentOutfit === 'Ranger') {
-                // Ojo aquí: El Ranger hombre tiene _Feet_Boots y _Acc_Pauldron
                 partsToLoad = ['_Acc_Pauldron', '_Arms', '_Body', '_Feet_Boots', '_Head_Hood', '_Legs']; 
             } else if (currentGender === 'Female' && currentOutfit === 'Ranger') {
-                // Ojo aquí: La Ranger mujer tiene _Feet y _Acc_Pauldrons
                 partsToLoad = ['_Acc_Pauldrons', '_Arms', '_Body', '_Feet', '_Head_Hood', '_Legs']; 
             }
 
@@ -335,14 +334,31 @@ function renderAvatar($avatarData) {
             let loadPromises = partsToLoad.map(part => {
                 return new Promise((resolve) => {
                     let filename = `${prefix}${part}.gltf`;
-                    let path = `assets/3d/avatar/${filename}`;
+                    // ATENCIÓN: Asegúrate de que esta ruta apunte a tu nueva carpeta glTF
+                    let path = `assets/3d/avatar/${filename}`; 
 
                     loader.load(path, (gltf) => {
                         let model = gltf.scene;
+                        
                         model.traverse((node) => {
+                            // Configurar sombras
                             if (node.isMesh) {
                                 node.castShadow = true;
                                 node.receiveShadow = true;
+                            }
+                            
+                            // --- CORRECCIÓN DE LA T-POSE A A-POSE ---
+                            if (node.isBone) {
+                                const boneName = node.name.toLowerCase();
+                                
+                                // Buscar los huesos de los brazos/hombros. 
+                                // Nombres comunes en Unity/Mixamo: LeftArm, RightArm, upperarm_l, upperarm_r
+                                if (boneName.includes('leftarm') || boneName.includes('upperarm_l') || (boneName.includes('shoulder') && boneName.includes('l'))) {
+                                    node.rotation.z += 1.0; // Baja el brazo izquierdo unos ~60 grados
+                                }
+                                if (boneName.includes('rightarm') || boneName.includes('upperarm_r') || (boneName.includes('shoulder') && boneName.includes('r'))) {
+                                    node.rotation.z -= 1.0; // Baja el brazo derecho unos ~60 grados
+                                }
                             }
                         });
                         resolve(model);
