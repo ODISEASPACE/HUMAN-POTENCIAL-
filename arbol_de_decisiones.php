@@ -27,7 +27,6 @@ function renderAvatar($avatarData) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Árbol de Decisiones | APH OS</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         :root { 
             --bg-base: #FAFAFC; 
@@ -41,7 +40,7 @@ function renderAvatar($avatarData) {
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background-color: var(--bg-base); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
         
-        /* Sidebar (Mantenido intacto) */
+        /* Sidebar */
         nav.sidebar { width: 260px; background: var(--bg-panel); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 30px 20px; z-index: 10; flex-shrink: 0; }
         .brand { text-align: center; margin-bottom: 40px; } .brand h2 { font-weight: 800; letter-spacing: 2px; font-size: 1.5rem; color: var(--accent); }
         .nav-links { flex: 1; display: flex; flex-direction: column; gap: 5px; }
@@ -53,7 +52,7 @@ function renderAvatar($avatarData) {
         .user-info-mini p { font-size: 0.75rem; color: var(--text-muted); }
         .btn-logout { margin-top: 15px; text-align: center; font-size: 0.85rem; color: #E53E3E; text-decoration: none; font-weight: 600; padding: 8px; border-radius: 6px; }
         
-        /* Layout Principal del Avatar */
+        /* Layout Principal */
         main { flex: 1; padding: 40px; display: flex; flex-direction: column; overflow: hidden; }
         .header-dash { margin-bottom: 30px; flex-shrink: 0; }
         .header-dash h1 { font-size: 2rem; font-weight: 800; margin-bottom: 5px; }
@@ -61,16 +60,19 @@ function renderAvatar($avatarData) {
         
         .avatar-workspace { display: flex; gap: 30px; flex: 1; overflow: hidden; }
         
-        /* Contenedor 3D */
+        /* Contenedor 3D y Pantalla de Carga */
         .canvas-wrapper { flex: 2; position: relative; background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.02); display: flex; align-items: center; justify-content: center; }
         #canvas-container { width: 100%; height: 100%; cursor: grab; }
         #canvas-container:active { cursor: grabbing; }
         
-        /* Botón Flotante para ir al Árbol */
+        #loading-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); display: flex; align-items: center; justify-content: center; z-index: 5; backdrop-filter: blur(5px); flex-direction: column; gap: 10px; }
+        .spinner { width: 40px; height: 40px; border: 4px solid var(--border-color); border-top: 4px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
         .btn-tree-access { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--accent); color: white; border: none; padding: 15px 30px; border-radius: 30px; font-weight: 700; font-size: 1rem; cursor: pointer; box-shadow: 0 10px 20px rgba(128, 90, 213, 0.3); transition: 0.3s; z-index: 10; }
         .btn-tree-access:hover { transform: translateX(-50%) translateY(-5px); box-shadow: 0 15px 25px rgba(128, 90, 213, 0.4); }
 
-        /* Panel Lateral Derecho (Personalización) */
+        /* Panel Lateral Derecho */
         .customization-panel { flex: 1; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; padding-right: 10px; }
         .custom-card { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 16px; padding: 25px; box-shadow: 0 5px 15px rgba(0,0,0,0.02); }
         .custom-card h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; }
@@ -81,7 +83,6 @@ function renderAvatar($avatarData) {
         .option-btn:hover { border-color: var(--accent); color: var(--text-main); }
         .option-btn.active { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
 
-        /* Scrollbar personalizado para el panel derecho */
         .customization-panel::-webkit-scrollbar { width: 6px; }
         .customization-panel::-webkit-scrollbar-thumb { background: #CBD5E0; border-radius: 10px; }
     </style>
@@ -116,6 +117,10 @@ function renderAvatar($avatarData) {
         <div class="avatar-workspace">
             
             <div class="canvas-wrapper">
+                <div id="loading-overlay">
+                    <div class="spinner"></div>
+                    <span style="font-weight: 600; color: var(--text-muted); font-size: 0.85rem;">Sincronizando Malla...</span>
+                </div>
                 <div id="canvas-container"></div>
                 <button class="btn-tree-access" onclick="window.location.href='habilidades.php'">Acceder al Árbol de Habilidades</button>
             </div>
@@ -125,28 +130,16 @@ function renderAvatar($avatarData) {
                 <div class="custom-card">
                     <h3>Atributos Base <span>Genética</span></h3>
                     <div class="options-grid">
-                        <button class="option-btn active" onclick="selectOption('gender', 'm', this)">Cuerpo A</button>
-                        <button class="option-btn" onclick="selectOption('gender', 'f', this)">Cuerpo B</button>
-                    </div>
-                </div>
-
-                <div class="custom-card">
-                    <h3>Cabello <span>Estilo</span></h3>
-                    <div class="options-grid">
-                        <button class="option-btn active" onclick="selectOption('hair', 'style1', this)">Corto</button>
-                        <button class="option-btn" onclick="selectOption('hair', 'style2', this)">Largo</button>
-                        <button class="option-btn" onclick="selectOption('hair', 'style3', this)">Recogido</button>
-                        <button class="option-btn" onclick="selectOption('hair', 'none', this)">Rapado</button>
+                        <button class="option-btn active" onclick="selectOption('gender', 'Male', this)">Cuerpo A</button>
+                        <button class="option-btn" onclick="selectOption('gender', 'Female', this)">Cuerpo B</button>
                     </div>
                 </div>
 
                 <div class="custom-card">
                     <h3>Indumentaria <span>Equipamiento</span></h3>
                     <div class="options-grid">
-                        <button class="option-btn active" onclick="selectOption('clothes', 'casual', this)">Casual</button>
-                        <button class="option-btn" onclick="selectOption('clothes', 'tech', this)">Techwear</button>
-                        <button class="option-btn" onclick="selectOption('clothes', 'suit', this)">Formal</button>
-                        <button class="option-btn" onclick="selectOption('clothes', 'sport', this)">Deportivo</button>
+                        <button class="option-btn active" onclick="selectOption('clothes', 'Peasant', this)">Campesino</button>
+                        <button class="option-btn" onclick="selectOption('clothes', 'Ranger', this)">Explorador</button>
                     </div>
                 </div>
 
@@ -165,145 +158,154 @@ function renderAvatar($avatarData) {
     </main>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    
     <script>
         // --- 1. CONFIGURACIÓN BÁSICA DE THREE.JS ---
-const container = document.getElementById('canvas-container');
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xFFFFFF); 
+        const container = document.getElementById('canvas-container');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xFFFFFF); 
 
-const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
-camera.position.set(0, 1.2, 4); // Ajustado para ver el cuerpo completo
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+        camera.position.set(0, 1.2, 4.5); // Cámara ajustada para ver todo el modelo
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(container.clientWidth, container.clientHeight);
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-container.appendChild(renderer.domElement);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
 
-// --- 2. ILUMINACIÓN ---
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-scene.add(ambientLight);
+        // --- 2. ILUMINACIÓN ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
 
-const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
-dirLight.position.set(2, 5, 5);
-dirLight.castShadow = true;
-scene.add(dirLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(2, 5, 5);
+        dirLight.castShadow = true;
+        scene.add(dirLight);
 
-let auraLight = new THREE.PointLight(0x805AD5, 2, 10);
-auraLight.position.set(0, 1.5, -1.5);
-scene.add(auraLight);
+        let auraLight = new THREE.PointLight(0x805AD5, 2, 10);
+        auraLight.position.set(0, 1.5, -1.5);
+        scene.add(auraLight);
 
-// --- 3. SISTEMA DE ENSAMBLAJE MODULAR ---
-const loader = new THREE.GLTFLoader();
-const avatarGroup = new THREE.Group();
-scene.add(avatarGroup);
+        // --- 3. SISTEMA DE ENSAMBLAJE MODULAR OPTIMIZADO ---
+        const loader = new THREE.GLTFLoader();
+        const avatarGroup = new THREE.Group();
+        avatarGroup.position.y = -0.5; // Elevamos el avatar completo para que no quede cortado
+        scene.add(avatarGroup);
 
-// Estado actual del avatar
-let currentGender = 'Male'; 
-let currentOutfit = 'Peasant';
-let loadedParts = []; // Aquí guardaremos las mallas cargadas para borrarlas al cambiar
+        let currentGender = 'Male'; 
+        let currentOutfit = 'Peasant';
+        let loadedParts = []; 
 
-function assembleAvatar() {
-    // 1. Limpiar las partes cargadas anteriormente
-    loadedParts.forEach(part => avatarGroup.remove(part));
-    loadedParts = [];
+        function assembleAvatar() {
+            // Mostrar pantalla de carga
+            loadingOverlay.style.display = 'flex';
 
-    // 2. Definir qué piezas componen el traje actual
-    let partsToLoad = [];
-    
-    if (currentOutfit === 'Peasant') {
-        partsToLoad = ['_Body', '_Arms', '_Legs', '_Feet'];
-    } else if (currentOutfit === 'Ranger') {
-        // Nota: En tus archivos, Female tiene 'Pauldrons' (plural) y Male 'Pauldron' (singular)
-        let pauldronSuffix = (currentGender === 'Female') ? '_Acc_Pauldrons' : '_Acc_Pauldron';
-        partsToLoad = ['_Body', '_Arms', '_Legs', '_Feet_Boots', '_Head_Hood', pauldronSuffix];
-    }
+            // Limpiar modelos anteriores
+            loadedParts.forEach(part => avatarGroup.remove(part));
+            loadedParts = [];
 
-    // 3. Cargar cada pieza dinámicamente
-    partsToLoad.forEach(part => {
-        let filename = `${currentGender}_${currentOutfit}${part}.gltf`;
-        let path = `assets/3d/avatar/${filename}`;
+            // Definir piezas
+            let partsToLoad = [];
+            if (currentOutfit === 'Peasant') {
+                // NOTA: Falta la cabeza base en tus archivos, por eso se verá sin cabeza
+                partsToLoad = ['_Body', '_Arms', '_Legs', '_Feet'];
+            } else if (currentOutfit === 'Ranger') {
+                let pauldronSuffix = (currentGender === 'Female') ? '_Acc_Pauldrons' : '_Acc_Pauldron';
+                partsToLoad = ['_Body', '_Arms', '_Legs', '_Feet_Boots', '_Head_Hood', pauldronSuffix];
+            }
 
-        loader.load(path, function(gltf) {
-            let model = gltf.scene;
-            
-            // Habilitar sombras en todas las mallas de la pieza
-            model.traverse((node) => {
-                if (node.isMesh) {
-                    node.castShadow = true;
-                    node.receiveShadow = true;
-                }
+            // Cargar en Paralelo (Alta Velocidad)
+            let loadPromises = partsToLoad.map(part => {
+                return new Promise((resolve, reject) => {
+                    let filename = `${currentGender}_${currentOutfit}${part}.gltf`;
+                    let path = `assets/3d/avatar/${filename}`;
+
+                    loader.load(path, (gltf) => {
+                        let model = gltf.scene;
+                        model.traverse((node) => {
+                            if (node.isMesh) {
+                                node.castShadow = true;
+                                node.receiveShadow = true;
+                            }
+                        });
+                        resolve(model);
+                    }, undefined, (error) => {
+                        console.error(`Error cargando pieza: ${filename}`, error);
+                        resolve(null); // Resolvemos null para no bloquear toda la promesa si falta un archivo
+                    });
+                });
             });
 
-            // Ajustar posición si es necesario (depende de cómo se exportó el 3D)
-            model.position.y = -1; 
+            // Cuando TODAS las piezas terminan de descargar
+            Promise.all(loadPromises).then(models => {
+                models.forEach(model => {
+                    if(model) {
+                        avatarGroup.add(model);
+                        loadedParts.push(model);
+                    }
+                });
+                // Ocultar pantalla de carga
+                loadingOverlay.style.display = 'none';
+            });
+        }
+
+        assembleAvatar();
+
+        // --- 4. INTERACCIÓN CON LA INTERFAZ ---
+        function selectOption(category, value, btnElement) {
+            const grid = btnElement.parentElement;
+            grid.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('active'));
+            btnElement.classList.add('active');
             
-            avatarGroup.add(model);
-            loadedParts.push(model); // Guardar referencia
-        }, undefined, function(error) {
-            console.error(`Error cargando la pieza: ${filename}`, error);
+            if (category === 'gender') {
+                currentGender = value;
+                assembleAvatar();
+            } 
+            else if (category === 'clothes') {
+                currentOutfit = value;
+                assembleAvatar();
+            }
+        }
+
+        function changeAuraColor(hexColor, btnElement) {
+            const grid = btnElement.parentElement;
+            grid.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('active'));
+            btnElement.classList.add('active');
+            auraLight.color.setHex(hexColor);
+        }
+
+        // --- 5. CONTROLES Y ANIMACIÓN ---
+        let isDragging = false;
+        let previousMousePosition = { x: 0 };
+
+        container.addEventListener('mousedown', () => isDragging = true);
+        window.addEventListener('mouseup', () => isDragging = false);
+        window.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                avatarGroup.rotation.y += (e.offsetX - previousMousePosition.x) * 0.01;
+            }
+            previousMousePosition = { x: e.offsetX };
         });
-    });
-}
 
-// Cargar el avatar por defecto al iniciar
-assembleAvatar();
+        function animate() {
+            requestAnimationFrame(animate);
+            // Animación de respiración sutil
+            avatarGroup.position.y = -0.5 + Math.sin(Date.now() * 0.002) * 0.02; 
+            renderer.render(scene, camera);
+        }
 
-// --- 4. INTERACCIÓN CON LA INTERFAZ ---
-function selectOption(category, value, btnElement) {
-    const grid = btnElement.parentElement;
-    grid.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('active'));
-    btnElement.classList.add('active');
-    
-    if (category === 'gender') {
-        currentGender = (value === 'm') ? 'Male' : 'Female';
-        assembleAvatar();
-    } 
-    else if (category === 'clothes') {
-        // Mapeamos los botones a los sets que tienes en tu carpeta
-        currentOutfit = (value === 'casual') ? 'Peasant' : 'Ranger';
-        assembleAvatar();
-    }
-}
+        animate();
 
-function changeAuraColor(hexColor, btnElement) {
-    const grid = btnElement.parentElement;
-    grid.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('active'));
-    btnElement.classList.add('active');
-    auraLight.color.setHex(hexColor);
-}
-
-// --- 5. CONTROLES Y ANIMACIÓN ---
-let isDragging = false;
-let previousMousePosition = { x: 0 };
-
-container.addEventListener('mousedown', () => isDragging = true);
-window.addEventListener('mouseup', () => isDragging = false);
-window.addEventListener('mousemove', (e) => {
-    if (isDragging) {
-        avatarGroup.rotation.y += (e.offsetX - previousMousePosition.x) * 0.01;
-    }
-    previousMousePosition = { x: e.offsetX };
-});
-
-function animate() {
-    requestAnimationFrame(animate);
-    avatarGroup.position.y = Math.sin(Date.now() * 0.002) * 0.02; // Animación de respiración
-    renderer.render(scene, camera);
-}
-
-animate();
-
-window.addEventListener('resize', () => {
-    if(container) {
-        camera.aspect = container.clientWidth / container.clientHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(container.clientWidth, container.clientHeight);
-    }
-});
+        window.addEventListener('resize', () => {
+            if(container) {
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
+            }
+        });
     </script>
-    
 </body>
 </html>
