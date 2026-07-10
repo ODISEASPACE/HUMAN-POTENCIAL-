@@ -9,10 +9,38 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 
+// --- NUEVO: API INTERNA PARA GUARDAR CONFIGURACIÓN ---
+// Si el script recibe un POST con JSON, actualiza la base de datos y termina la ejecución.
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $inputJSON = file_get_contents('php://input');
+    $input = json_decode($inputJSON, true);
+    
+    if (isset($input['action']) && $input['action'] === 'save_avatar') {
+        $configToSave = json_encode([
+            'gender' => $input['gender'],
+            'clothes' => $input['clothes'],
+            'aura' => $input['aura']
+        ]);
+        
+        // Asume que agregaste la columna avatar_config tipo JSON o TEXT a tu tabla users
+        $stmtSave = $pdo->prepare("UPDATE users SET avatar_config = ? WHERE id = ?");
+        $success = $stmtSave->execute([$configToSave, $user_id]);
+        
+        echo json_encode(['success' => $success]);
+        exit;
+    }
+}
+
 // 1. DATOS DEL USUARIO
-$stmtUser = $pdo->prepare("SELECT username, profile_picture, profession FROM users WHERE id = ?");
+$stmtUser = $pdo->prepare("SELECT username, profile_picture, profession, avatar_config FROM users WHERE id = ?");
 $stmtUser->execute([$user_id]);
 $user = $stmtUser->fetch();
+
+// Extraer configuración guardada o usar valores por defecto
+$savedConfig = json_decode($user['avatar_config'] ?? '{}', true);
+$defaultGender = $savedConfig['gender'] ?? 'Male';
+$defaultClothes = $savedConfig['clothes'] ?? 'Peasant';
+$defaultAura = $savedConfig['aura'] ?? 'none';
 
 function renderAvatar($avatarData) {
     if (empty($avatarData)) return "<div class='avatar-circle' style='background: #E2E8F0; color: #4A5568;'>👤</div>";
@@ -25,7 +53,7 @@ function renderAvatar($avatarData) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Árbol de Decisiones | APH OS</title>
+    <title>Identidad | APH OS</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root { 
@@ -40,7 +68,6 @@ function renderAvatar($avatarData) {
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background-color: var(--bg-base); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
         
-        /* Sidebar */
         nav.sidebar { width: 260px; background: var(--bg-panel); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 30px 20px; z-index: 10; flex-shrink: 0; }
         .brand { text-align: center; margin-bottom: 40px; } .brand h2 { font-weight: 800; letter-spacing: 2px; font-size: 1.5rem; color: var(--accent); }
         .nav-links { flex: 1; display: flex; flex-direction: column; gap: 5px; }
@@ -52,33 +79,41 @@ function renderAvatar($avatarData) {
         .user-info-mini p { font-size: 0.75rem; color: var(--text-muted); }
         .btn-logout { margin-top: 15px; text-align: center; font-size: 0.85rem; color: #E53E3E; text-decoration: none; font-weight: 600; padding: 8px; border-radius: 6px; }
         
-        /* Layout Principal */
         main { flex: 1; padding: 40px; display: flex; flex-direction: column; overflow: hidden; }
-        .header-dash { margin-bottom: 30px; flex-shrink: 0; }
+        .header-dash { margin-bottom: 30px; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; }
         .header-dash h1 { font-size: 2rem; font-weight: 800; margin-bottom: 5px; }
         .header-dash p { color: var(--text-muted); }
         
+        /* Botón Guardar Sincronización */
+        .btn-save-sync { background: var(--bg-panel); border: 2px solid var(--accent); color: var(--accent); padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 8px; }
+        .btn-save-sync:hover { background: var(--accent); color: white; }
+        .btn-save-sync.saving { opacity: 0.7; cursor: wait; }
+
         .avatar-workspace { display: flex; gap: 30px; flex: 1; overflow: hidden; }
         
-        /* Contenedor 3D y Pantalla de Carga */
         .canvas-wrapper { flex: 2; position: relative; background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.02); display: flex; align-items: center; justify-content: center; }
-        #canvas-container { width: 100%; height: 100%; cursor: grab; }
+        #canvas-container { width: 100%; height: 100%; cursor: grab; outline: none; }
         #canvas-container:active { cursor: grabbing; }
         
         #loading-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); display: flex; align-items: center; justify-content: center; z-index: 5; backdrop-filter: blur(5px); flex-direction: column; gap: 10px; }
         .spinner { width: 40px; height: 40px; border: 4px solid var(--border-color); border-top: 4px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
+        /* Controles de cámara en el lienzo */
+        .camera-controls { position: absolute; top: 20px; left: 20px; display: flex; gap: 10px; z-index: 10; }
+        .cam-btn { background: rgba(255,255,255,0.9); border: 1px solid var(--border-color); padding: 8px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; color: var(--text-muted); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .cam-btn.active { color: var(--accent); border-color: var(--accent); }
+
         .btn-tree-access { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--accent); color: white; border: none; padding: 15px 30px; border-radius: 30px; font-weight: 700; font-size: 1rem; cursor: pointer; box-shadow: 0 10px 20px rgba(128, 90, 213, 0.3); transition: 0.3s; z-index: 10; }
         .btn-tree-access:hover { transform: translateX(-50%) translateY(-5px); box-shadow: 0 15px 25px rgba(128, 90, 213, 0.4); }
 
-        /* Panel Lateral Derecho */
         .customization-panel { flex: 1; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; padding-right: 10px; }
         .custom-card { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 16px; padding: 25px; box-shadow: 0 5px 15px rgba(0,0,0,0.02); }
         .custom-card h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; }
         .custom-card h3 span { font-size: 0.8rem; color: var(--accent); font-weight: 600; background: var(--accent-light); padding: 4px 10px; border-radius: 12px; }
         
         .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .options-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
         .option-btn { background: var(--bg-base); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px; font-weight: 600; font-size: 0.85rem; color: var(--text-muted); cursor: pointer; transition: 0.2s; }
         .option-btn:hover { border-color: var(--accent); color: var(--text-main); }
         .option-btn.active { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
@@ -110,17 +145,28 @@ function renderAvatar($avatarData) {
 
     <main>
         <div class="header-dash">
-            <h1>Identidad y Proyección</h1>
-            <p>Configura tu representación virtual antes de adentrarte en el sistema de competencias.</p>
+            <div>
+                <h1>Identidad y Proyección</h1>
+                <p>Configura tu representación virtual antes de adentrarte en el sistema de competencias.</p>
+            </div>
+            <button class="btn-save-sync" id="btnSaveConfig" onclick="saveConfiguration()">
+                <span>Guardar Sincronización</span>
+            </button>
         </div>
 
         <div class="avatar-workspace">
             
             <div class="canvas-wrapper">
+                <div class="camera-controls">
+                    <button class="cam-btn active" id="btnCam3D" onclick="setCameraMode('3d')">Exploración 3D</button>
+                    <button class="cam-btn" id="btnCam2D" onclick="setCameraMode('2d')">Bloqueo Frontal 2D</button>
+                </div>
+
                 <div id="loading-overlay">
                     <div class="spinner"></div>
                     <span style="font-weight: 600; color: var(--text-muted); font-size: 0.85rem;">Sincronizando Malla...</span>
                 </div>
+                
                 <div id="canvas-container"></div>
                 <button class="btn-tree-access" onclick="window.location.href='habilidades.php'">Acceder al Árbol de Habilidades</button>
             </div>
@@ -130,26 +176,27 @@ function renderAvatar($avatarData) {
                 <div class="custom-card">
                     <h3>Atributos Base <span>Genética</span></h3>
                     <div class="options-grid">
-                        <button class="option-btn active" onclick="selectOption('gender', 'Male', this)">Cuerpo A</button>
-                        <button class="option-btn" onclick="selectOption('gender', 'Female', this)">Cuerpo B</button>
+                        <button class="option-btn <?= $defaultGender === 'Male' ? 'active' : '' ?>" onclick="selectOption('gender', 'Male', this)">Cuerpo A</button>
+                        <button class="option-btn <?= $defaultGender === 'Female' ? 'active' : '' ?>" onclick="selectOption('gender', 'Female', this)">Cuerpo B</button>
                     </div>
                 </div>
 
                 <div class="custom-card">
                     <h3>Indumentaria <span>Equipamiento</span></h3>
                     <div class="options-grid">
-                        <button class="option-btn active" onclick="selectOption('clothes', 'Peasant', this)">Campesino</button>
-                        <button class="option-btn" onclick="selectOption('clothes', 'Ranger', this)">Explorador</button>
+                        <button class="option-btn <?= $defaultClothes === 'Peasant' ? 'active' : '' ?>" onclick="selectOption('clothes', 'Peasant', this)">Campesino</button>
+                        <button class="option-btn <?= $defaultClothes === 'Ranger' ? 'active' : '' ?>" onclick="selectOption('clothes', 'Ranger', this)">Explorador</button>
                     </div>
                 </div>
 
                 <div class="custom-card">
                     <h3>Aura del Sistema <span>Energía</span></h3>
-                    <div class="options-grid">
-                        <button class="option-btn active" onclick="changeAuraColor(0x805AD5, this)">Psique (Violeta)</button>
-                        <button class="option-btn" onclick="changeAuraColor(0x38A169, this)">Soma (Verde)</button>
-                        <button class="option-btn" onclick="changeAuraColor(0x3182CE, this)">Pneuma (Azul)</button>
-                        <button class="option-btn" onclick="changeAuraColor(0xE53E3E, this)">Pathos (Rojo)</button>
+                    <div class="options-grid cols-3">
+                        <button class="option-btn <?= $defaultAura === 'none' ? 'active' : '' ?>" onclick="changeAuraColor('none', this)">Apagado</button>
+                        <button class="option-btn <?= $defaultAura === '0x805AD5' ? 'active' : '' ?>" onclick="changeAuraColor('0x805AD5', this)">Psique</button>
+                        <button class="option-btn <?= $defaultAura === '0x38A169' ? 'active' : '' ?>" onclick="changeAuraColor('0x38A169', this)">Soma</button>
+                        <button class="option-btn <?= $defaultAura === '0x3182CE' ? 'active' : '' ?>" onclick="changeAuraColor('0x3182CE', this)">Pneuma</button>
+                        <button class="option-btn <?= $defaultAura === '0xE53E3E' ? 'active' : '' ?>" onclick="changeAuraColor('0xE53E3E', this)">Pathos</button>
                     </div>
                 </div>
 
@@ -159,8 +206,14 @@ function renderAvatar($avatarData) {
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     
     <script>
+        // --- ESTADO INICIAL DESDE PHP ---
+        let currentGender = '<?= $defaultGender ?>'; 
+        let currentOutfit = '<?= $defaultClothes ?>';
+        let currentAura = '<?= $defaultAura ?>';
+
         // --- 1. CONFIGURACIÓN BÁSICA DE THREE.JS ---
         const container = document.getElementById('canvas-container');
         const loadingOverlay = document.getElementById('loading-overlay');
@@ -168,7 +221,8 @@ function renderAvatar($avatarData) {
         scene.background = new THREE.Color(0xFFFFFF); 
 
         const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
-        camera.position.set(0, 1.2, 4.5); // Cámara ajustada para ver todo el modelo
+        // Acercamos y subimos la cámara para que el avatar no se vea tan pequeño
+        camera.position.set(0, 1.5, 3.5); 
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(container.clientWidth, container.clientHeight);
@@ -176,8 +230,16 @@ function renderAvatar($avatarData) {
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         container.appendChild(renderer.domElement);
 
-        // --- 2. ILUMINACIÓN ---
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        // --- 2. CONTROLES DE CÁMARA (ORBIT CONTROLS) ---
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true; // Movimiento suave
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 1.5; // Zoom máximo
+        controls.maxDistance = 6;   // Zoom mínimo
+        controls.target.set(0, 1, 0); // Apuntar al pecho del avatar, no a los pies
+
+        // --- 3. ILUMINACIÓN ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
         scene.add(ambientLight);
 
         const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
@@ -185,39 +247,39 @@ function renderAvatar($avatarData) {
         dirLight.castShadow = true;
         scene.add(dirLight);
 
-        let auraLight = new THREE.PointLight(0x805AD5, 2, 10);
-        auraLight.position.set(0, 1.5, -1.5);
-        scene.add(auraLight);
+        // --- 4. AURA HOLOGRÁFICA (FÍSICA) ---
+        // En lugar de una luz invisible, creamos una esfera tipo holograma alrededor del jugador
+        const auraGeo = new THREE.SphereGeometry(1.2, 16, 16);
+        const auraMat = new THREE.MeshBasicMaterial({ 
+            color: 0x805AD5, 
+            wireframe: true, 
+            transparent: true, 
+            opacity: 0.15 
+        });
+        const auraMesh = new THREE.Mesh(auraGeo, auraMat);
+        auraMesh.position.set(0, 1, 0); // Centrarla en el cuerpo
+        auraMesh.visible = false; // Oculta por defecto
+        scene.add(auraMesh);
 
-        // --- 3. SISTEMA DE ENSAMBLAJE MODULAR OPTIMIZADO ---
+        // --- 5. SISTEMA DE ENSAMBLAJE MODULAR OPTIMIZADO ---
         const loader = new THREE.GLTFLoader();
         const avatarGroup = new THREE.Group();
-        avatarGroup.position.y = -0.5; // Elevamos el avatar completo para que no quede cortado
         scene.add(avatarGroup);
-
-        let currentGender = 'Male'; 
-        let currentOutfit = 'Peasant';
         let loadedParts = []; 
 
         function assembleAvatar() {
-            // Mostrar pantalla de carga
             loadingOverlay.style.display = 'flex';
-
-            // Limpiar modelos anteriores
             loadedParts.forEach(part => avatarGroup.remove(part));
             loadedParts = [];
 
-            // Definir piezas
             let partsToLoad = [];
             if (currentOutfit === 'Peasant') {
-                // NOTA: Falta la cabeza base en tus archivos, por eso se verá sin cabeza
                 partsToLoad = ['_Body', '_Arms', '_Legs', '_Feet'];
             } else if (currentOutfit === 'Ranger') {
                 let pauldronSuffix = (currentGender === 'Female') ? '_Acc_Pauldrons' : '_Acc_Pauldron';
                 partsToLoad = ['_Body', '_Arms', '_Legs', '_Feet_Boots', '_Head_Hood', pauldronSuffix];
             }
 
-            // Cargar en Paralelo (Alta Velocidad)
             let loadPromises = partsToLoad.map(part => {
                 return new Promise((resolve, reject) => {
                     let filename = `${currentGender}_${currentOutfit}${part}.gltf`;
@@ -233,13 +295,12 @@ function renderAvatar($avatarData) {
                         });
                         resolve(model);
                     }, undefined, (error) => {
-                        console.error(`Error cargando pieza: ${filename}`, error);
-                        resolve(null); // Resolvemos null para no bloquear toda la promesa si falta un archivo
+                        console.error(`Falta la pieza: ${filename}`);
+                        resolve(null); 
                     });
                 });
             });
 
-            // Cuando TODAS las piezas terminan de descargar
             Promise.all(loadPromises).then(models => {
                 models.forEach(model => {
                     if(model) {
@@ -247,14 +308,32 @@ function renderAvatar($avatarData) {
                         loadedParts.push(model);
                     }
                 });
-                // Ocultar pantalla de carga
+                
+                // Inicializar el Aura según configuración guardada
+                applyAura(currentAura);
                 loadingOverlay.style.display = 'none';
             });
         }
 
         assembleAvatar();
 
-        // --- 4. INTERACCIÓN CON LA INTERFAZ ---
+        // --- 6. FUNCIONES DE INTERFAZ Y CÁMARA ---
+        function setCameraMode(mode) {
+            document.getElementById('btnCam3D').classList.remove('active');
+            document.getElementById('btnCam2D').classList.remove('active');
+            
+            if (mode === '2d') {
+                document.getElementById('btnCam2D').classList.add('active');
+                // Bloquear en vista frontal
+                camera.position.set(0, 1.2, 3.5);
+                controls.target.set(0, 1, 0);
+                controls.enableRotate = false; // Bloquea rotación
+            } else {
+                document.getElementById('btnCam3D').classList.add('active');
+                controls.enableRotate = true; // Libera rotación
+            }
+        }
+
         function selectOption(category, value, btnElement) {
             const grid = btnElement.parentElement;
             grid.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('active'));
@@ -263,37 +342,76 @@ function renderAvatar($avatarData) {
             if (category === 'gender') {
                 currentGender = value;
                 assembleAvatar();
-            } 
-            else if (category === 'clothes') {
+            } else if (category === 'clothes') {
                 currentOutfit = value;
                 assembleAvatar();
             }
         }
 
-        function changeAuraColor(hexColor, btnElement) {
+        function changeAuraColor(hexString, btnElement) {
             const grid = btnElement.parentElement;
             grid.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('active'));
             btnElement.classList.add('active');
-            auraLight.color.setHex(hexColor);
+            
+            currentAura = hexString;
+            applyAura(currentAura);
         }
 
-        // --- 5. CONTROLES Y ANIMACIÓN ---
-        let isDragging = false;
-        let previousMousePosition = { x: 0 };
-
-        container.addEventListener('mousedown', () => isDragging = true);
-        window.addEventListener('mouseup', () => isDragging = false);
-        window.addEventListener('mousemove', (e) => {
-            if (isDragging) {
-                avatarGroup.rotation.y += (e.offsetX - previousMousePosition.x) * 0.01;
+        function applyAura(hexString) {
+            if (hexString === 'none') {
+                auraMesh.visible = false;
+            } else {
+                auraMesh.visible = true;
+                auraMesh.material.color.setHex(parseInt(hexString, 16));
             }
-            previousMousePosition = { x: e.offsetX };
-        });
+        }
 
+        // --- 7. GUARDAR CONFIGURACIÓN (AJAX) ---
+        function saveConfiguration() {
+            const btn = document.getElementById('btnSaveConfig');
+            btn.classList.add('saving');
+            btn.innerHTML = '<span>Guardando...</span>';
+
+            const payload = {
+                action: 'save_avatar',
+                gender: currentGender,
+                clothes: currentOutfit,
+                aura: currentAura
+            };
+
+            fetch('arbol_de_decisiones.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.success) {
+                    btn.innerHTML = '<span>✅ Sincronizado</span>';
+                    setTimeout(() => {
+                        btn.innerHTML = '<span>Guardar Sincronización</span>';
+                        btn.classList.remove('saving');
+                    }, 2000);
+                }
+            })
+            .catch(error => {
+                console.error('Error guardando:', error);
+                btn.innerHTML = '<span>❌ Error</span>';
+                btn.classList.remove('saving');
+            });
+        }
+
+        // --- 8. ANIMACIÓN GLOBAL ---
         function animate() {
             requestAnimationFrame(animate);
-            // Animación de respiración sutil
-            avatarGroup.position.y = -0.5 + Math.sin(Date.now() * 0.002) * 0.02; 
+            controls.update(); // Necesario para la fluidez (Damping) del OrbitControls
+            
+            // Animación de Aura rotatoria si está activa
+            if(auraMesh.visible) {
+                auraMesh.rotation.y += 0.005;
+                auraMesh.rotation.x += 0.002;
+            }
+
             renderer.render(scene, camera);
         }
 
