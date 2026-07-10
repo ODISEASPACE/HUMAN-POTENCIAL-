@@ -9,8 +9,7 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 
-// --- NUEVO: API INTERNA PARA GUARDAR CONFIGURACIÓN ---
-// Si el script recibe un POST con JSON, actualiza la base de datos y termina la ejecución.
+// --- API INTERNA PARA GUARDAR CONFIGURACIÓN ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $inputJSON = file_get_contents('php://input');
     $input = json_decode($inputJSON, true);
@@ -22,7 +21,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'aura' => $input['aura']
         ]);
         
-        // Asume que agregaste la columna avatar_config tipo JSON o TEXT a tu tabla users
         $stmtSave = $pdo->prepare("UPDATE users SET avatar_config = ? WHERE id = ?");
         $success = $stmtSave->execute([$configToSave, $user_id]);
         
@@ -68,6 +66,7 @@ function renderAvatar($avatarData) {
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background-color: var(--bg-base); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
         
+        /* Sidebar */
         nav.sidebar { width: 260px; background: var(--bg-panel); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 30px 20px; z-index: 10; flex-shrink: 0; }
         .brand { text-align: center; margin-bottom: 40px; } .brand h2 { font-weight: 800; letter-spacing: 2px; font-size: 1.5rem; color: var(--accent); }
         .nav-links { flex: 1; display: flex; flex-direction: column; gap: 5px; }
@@ -84,7 +83,6 @@ function renderAvatar($avatarData) {
         .header-dash h1 { font-size: 2rem; font-weight: 800; margin-bottom: 5px; }
         .header-dash p { color: var(--text-muted); }
         
-        /* Botón Guardar Sincronización */
         .btn-save-sync { background: var(--bg-panel); border: 2px solid var(--accent); color: var(--accent); padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 8px; }
         .btn-save-sync:hover { background: var(--accent); color: white; }
         .btn-save-sync.saving { opacity: 0.7; cursor: wait; }
@@ -99,10 +97,9 @@ function renderAvatar($avatarData) {
         .spinner { width: 40px; height: 40px; border: 4px solid var(--border-color); border-top: 4px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Controles de cámara en el lienzo */
         .camera-controls { position: absolute; top: 20px; left: 20px; display: flex; gap: 10px; z-index: 10; }
-        .cam-btn { background: rgba(255,255,255,0.9); border: 1px solid var(--border-color); padding: 8px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; color: var(--text-muted); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .cam-btn.active { color: var(--accent); border-color: var(--accent); }
+        .cam-btn { background: rgba(255,255,255,0.9); border: 1px solid var(--border-color); padding: 8px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; color: var(--text-muted); box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: 0.2s; }
+        .cam-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-light); }
 
         .btn-tree-access { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--accent); color: white; border: none; padding: 15px 30px; border-radius: 30px; font-weight: 700; font-size: 1rem; cursor: pointer; box-shadow: 0 10px 20px rgba(128, 90, 213, 0.3); transition: 0.3s; z-index: 10; }
         .btn-tree-access:hover { transform: translateX(-50%) translateY(-5px); box-shadow: 0 15px 25px rgba(128, 90, 213, 0.4); }
@@ -159,7 +156,7 @@ function renderAvatar($avatarData) {
             <div class="canvas-wrapper">
                 <div class="camera-controls">
                     <button class="cam-btn active" id="btnCam3D" onclick="setCameraMode('3d')">Exploración 3D</button>
-                    <button class="cam-btn" id="btnCam2D" onclick="setCameraMode('2d')">Bloqueo Frontal 2D</button>
+                    <button class="cam-btn" id="btnCam2D" onclick="setCameraMode('2d')">Vista Frontal 2D</button>
                 </div>
 
                 <div id="loading-overlay">
@@ -182,21 +179,21 @@ function renderAvatar($avatarData) {
                 </div>
 
                 <div class="custom-card">
-                    <h3>Indumentaria <span>Equipamiento</span></h3>
+                    <h3>Proyección <span>Estado</span></h3>
                     <div class="options-grid">
-                        <button class="option-btn <?= $defaultClothes === 'Peasant' ? 'active' : '' ?>" onclick="selectOption('clothes', 'Peasant', this)">Campesino</button>
-                        <button class="option-btn <?= $defaultClothes === 'Ranger' ? 'active' : '' ?>" onclick="selectOption('clothes', 'Ranger', this)">Explorador</button>
+                        <button class="option-btn <?= $defaultClothes === 'Peasant' ? 'active' : '' ?>" onclick="selectOption('clothes', 'Peasant', this)">Base Sintética (Anónimo)</button>
+                        <button class="option-btn <?= $defaultClothes === 'Ranger' ? 'active' : '' ?>" onclick="selectOption('clothes', 'Ranger', this)">Identidad Despierta (Explorador)</button>
                     </div>
                 </div>
 
                 <div class="custom-card">
-                    <h3>Aura del Sistema <span>Energía</span></h3>
+                    <h3>Entorno Artístico <span>Aura</span></h3>
                     <div class="options-grid cols-3">
-                        <button class="option-btn <?= $defaultAura === 'none' ? 'active' : '' ?>" onclick="changeAuraColor('none', this)">Apagado</button>
-                        <button class="option-btn <?= $defaultAura === '0x805AD5' ? 'active' : '' ?>" onclick="changeAuraColor('0x805AD5', this)">Psique</button>
-                        <button class="option-btn <?= $defaultAura === '0x38A169' ? 'active' : '' ?>" onclick="changeAuraColor('0x38A169', this)">Soma</button>
-                        <button class="option-btn <?= $defaultAura === '0x3182CE' ? 'active' : '' ?>" onclick="changeAuraColor('0x3182CE', this)">Pneuma</button>
-                        <button class="option-btn <?= $defaultAura === '0xE53E3E' ? 'active' : '' ?>" onclick="changeAuraColor('0xE53E3E', this)">Pathos</button>
+                        <button class="option-btn <?= $defaultAura === 'none' ? 'active' : '' ?>" onclick="changeAuraColor('none', this)">Fondo Neutro</button>
+                        <button class="option-btn <?= $defaultAura === '0x805AD5' ? 'active' : '' ?>" onclick="changeAuraColor('0x805AD5', this)">Psique (Polvo Estelar)</button>
+                        <button class="option-btn <?= $defaultAura === '0x38A169' ? 'active' : '' ?>" onclick="changeAuraColor('0x38A169', this)">Soma (Anillos)</button>
+                        <button class="option-btn <?= $defaultAura === '0x3182CE' ? 'active' : '' ?>" onclick="changeAuraColor('0x3182CE', this)">Pneuma (Geometría)</button>
+                        <button class="option-btn <?= $defaultAura === '0xE53E3E' ? 'active' : '' ?>" onclick="changeAuraColor('0xE53E3E', this)">Pathos (Nudo Caótico)</button>
                     </div>
                 </div>
 
@@ -214,56 +211,102 @@ function renderAvatar($avatarData) {
         let currentOutfit = '<?= $defaultClothes ?>';
         let currentAura = '<?= $defaultAura ?>';
 
-        // --- 1. CONFIGURACIÓN BÁSICA DE THREE.JS ---
+        // --- 1. CONFIGURACIÓN BÁSICA ---
         const container = document.getElementById('canvas-container');
         const loadingOverlay = document.getElementById('loading-overlay');
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xFFFFFF); 
+        scene.background = new THREE.Color(0xFAFAFC); 
 
         const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
-        // Acercamos y subimos la cámara para que el avatar no se vea tan pequeño
-        camera.position.set(0, 1.5, 3.5); 
+        camera.position.set(0, 1, 4); // Más centrado en el modelo
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(container.clientWidth, container.clientHeight);
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         container.appendChild(renderer.domElement);
 
-        // --- 2. CONTROLES DE CÁMARA (ORBIT CONTROLS) ---
+        // --- 2. CONTROLES DE CÁMARA ---
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true; // Movimiento suave
+        controls.enableDamping = true;
         controls.dampingFactor = 0.05;
-        controls.minDistance = 1.5; // Zoom máximo
-        controls.maxDistance = 6;   // Zoom mínimo
-        controls.target.set(0, 1, 0); // Apuntar al pecho del avatar, no a los pies
+        controls.minDistance = 1.5; 
+        controls.maxDistance = 7;
+        controls.target.set(0, 0, 0); // Apunta al centro (0,0,0)
 
         // --- 3. ILUMINACIÓN ---
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
         scene.add(ambientLight);
-
         const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
         dirLight.position.set(2, 5, 5);
         dirLight.castShadow = true;
         scene.add(dirLight);
 
-        // --- 4. AURA HOLOGRÁFICA (FÍSICA) ---
-        // En lugar de una luz invisible, creamos una esfera tipo holograma alrededor del jugador
-        const auraGeo = new THREE.SphereGeometry(1.2, 16, 16);
-        const auraMat = new THREE.MeshBasicMaterial({ 
-            color: 0x805AD5, 
-            wireframe: true, 
-            transparent: true, 
-            opacity: 0.15 
-        });
-        const auraMesh = new THREE.Mesh(auraGeo, auraMat);
-        auraMesh.position.set(0, 1, 0); // Centrarla en el cuerpo
-        auraMesh.visible = false; // Oculta por defecto
-        scene.add(auraMesh);
+        // --- 4. ENTORNOS ARTÍSTICOS (BACKGROUNDS) ---
+        const backgroundGroup = new THREE.Group();
+        scene.add(backgroundGroup);
 
-        // --- 5. SISTEMA DE ENSAMBLAJE MODULAR OPTIMIZADO ---
+        function generateArtisticBackground(type) {
+            // Limpiar fondo anterior
+            while(backgroundGroup.children.length > 0){ 
+                backgroundGroup.remove(backgroundGroup.children[0]); 
+            }
+            scene.background = new THREE.Color(0xFAFAFC); // Reset color
+
+            if (type === '0x805AD5') {
+                // PSIQUE: Polvo estelar (Partículas)
+                scene.background = new THREE.Color(0xF5F0FA); // Tint violeta muy sutil
+                const geo = new THREE.BufferGeometry();
+                const vertices = [];
+                for (let i = 0; i < 500; i++) {
+                    vertices.push((Math.random() - 0.5) * 10, (Math.random() - 0.5) * 10, (Math.random() - 0.5) * 10);
+                }
+                geo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+                const mat = new THREE.PointsMaterial({ color: 0x805AD5, size: 0.05 });
+                const points = new THREE.Points(geo, mat);
+                points.userData = { animationType: 'rotate_slow' };
+                backgroundGroup.add(points);
+            } 
+            else if (type === '0x38A169') {
+                // SOMA: Anillos de crecimiento (Toroides)
+                scene.background = new THREE.Color(0xF0FAF5);
+                for (let i = 1; i <= 3; i++) {
+                    const geo = new THREE.TorusGeometry(1.5 + (i * 0.5), 0.01, 16, 100);
+                    const mat = new THREE.MeshBasicMaterial({ color: 0x38A169, wireframe: true, transparent: true, opacity: 0.3 });
+                    const torus = new THREE.Mesh(geo, mat);
+                    torus.rotation.x = Math.random() * Math.PI;
+                    torus.userData = { animationType: 'spin', speed: i * 0.002 };
+                    backgroundGroup.add(torus);
+                }
+            }
+            else if (type === '0x3182CE') {
+                // PNEUMA: Geometría sagrada flotante
+                scene.background = new THREE.Color(0xF0F7FA);
+                for (let i = 0; i < 5; i++) {
+                    const geo = new THREE.IcosahedronGeometry(0.3, 0);
+                    const mat = new THREE.MeshBasicMaterial({ color: 0x3182CE, wireframe: true, transparent: true, opacity: 0.5 });
+                    const mesh = new THREE.Mesh(geo, mat);
+                    mesh.position.set((Math.random() - 0.5) * 5, (Math.random() - 0.5) * 5, -2);
+                    mesh.userData = { animationType: 'float', startY: mesh.position.y, speed: Math.random() * 0.02 };
+                    backgroundGroup.add(mesh);
+                }
+            }
+            else if (type === '0xE53E3E') {
+                // PATHOS: Nudo Gordiano caótico
+                scene.background = new THREE.Color(0xFAF0F0);
+                const geo = new THREE.TorusKnotGeometry(2, 0.2, 100, 16);
+                const mat = new THREE.MeshBasicMaterial({ color: 0xE53E3E, wireframe: true, transparent: true, opacity: 0.1 });
+                const knot = new THREE.Mesh(geo, mat);
+                knot.userData = { animationType: 'pulse' };
+                backgroundGroup.add(knot);
+            }
+        }
+
+        // --- 5. LECTURA ESTRICTA DE ARCHIVOS GLTF ---
         const loader = new THREE.GLTFLoader();
         const avatarGroup = new THREE.Group();
+        // Ajustamos la posición para que el punto central (0,0,0) esté a la altura del pecho/cintura
+        avatarGroup.position.y = -1; 
         scene.add(avatarGroup);
         let loadedParts = []; 
 
@@ -272,17 +315,26 @@ function renderAvatar($avatarData) {
             loadedParts.forEach(part => avatarGroup.remove(part));
             loadedParts = [];
 
+            // MAPEADO EXACTO DE TUS ARCHIVOS (Sin asumir nada, todo hardcodeado para evitar 404s)
             let partsToLoad = [];
-            if (currentOutfit === 'Peasant') {
-                partsToLoad = ['_Body', '_Arms', '_Legs', '_Feet'];
-            } else if (currentOutfit === 'Ranger') {
-                let pauldronSuffix = (currentGender === 'Female') ? '_Acc_Pauldrons' : '_Acc_Pauldron';
-                partsToLoad = ['_Body', '_Arms', '_Legs', '_Feet_Boots', '_Head_Hood', pauldronSuffix];
+            
+            if (currentGender === 'Male' && currentOutfit === 'Peasant') {
+                partsToLoad = ['_Arms', '_Body', '_Feet', '_Legs']; // Prefix: Male_Peasant
+            } else if (currentGender === 'Female' && currentOutfit === 'Peasant') {
+                partsToLoad = ['_Arms', '_Body', '_Feet', '_Legs']; // Prefix: Female_Peasant
+            } else if (currentGender === 'Male' && currentOutfit === 'Ranger') {
+                // Ojo aquí: El Ranger hombre tiene _Feet_Boots y _Acc_Pauldron
+                partsToLoad = ['_Acc_Pauldron', '_Arms', '_Body', '_Feet_Boots', '_Head_Hood', '_Legs']; 
+            } else if (currentGender === 'Female' && currentOutfit === 'Ranger') {
+                // Ojo aquí: La Ranger mujer tiene _Feet y _Acc_Pauldrons
+                partsToLoad = ['_Acc_Pauldrons', '_Arms', '_Body', '_Feet', '_Head_Hood', '_Legs']; 
             }
 
+            let prefix = `${currentGender}_${currentOutfit}`;
+
             let loadPromises = partsToLoad.map(part => {
-                return new Promise((resolve, reject) => {
-                    let filename = `${currentGender}_${currentOutfit}${part}.gltf`;
+                return new Promise((resolve) => {
+                    let filename = `${prefix}${part}.gltf`;
                     let path = `assets/3d/avatar/${filename}`;
 
                     loader.load(path, (gltf) => {
@@ -295,7 +347,7 @@ function renderAvatar($avatarData) {
                         });
                         resolve(model);
                     }, undefined, (error) => {
-                        console.error(`Falta la pieza: ${filename}`);
+                        console.error(`No se encontró: ${filename}`);
                         resolve(null); 
                     });
                 });
@@ -309,8 +361,7 @@ function renderAvatar($avatarData) {
                     }
                 });
                 
-                // Inicializar el Aura según configuración guardada
-                applyAura(currentAura);
+                generateArtisticBackground(currentAura);
                 loadingOverlay.style.display = 'none';
             });
         }
@@ -324,14 +375,15 @@ function renderAvatar($avatarData) {
             
             if (mode === '2d') {
                 document.getElementById('btnCam2D').classList.add('active');
-                // Bloquear en vista frontal
-                camera.position.set(0, 1.2, 3.5);
-                controls.target.set(0, 1, 0);
-                controls.enableRotate = false; // Bloquea rotación
+                // Forzar cámara al frente y bloquear orbit
+                camera.position.set(0, 1, 4);
+                controls.target.set(0, 0, 0);
+                controls.enableRotate = false;
             } else {
                 document.getElementById('btnCam3D').classList.add('active');
-                controls.enableRotate = true; // Libera rotación
+                controls.enableRotate = true; // Liberar exploración
             }
+            controls.update();
         }
 
         function selectOption(category, value, btnElement) {
@@ -339,34 +391,21 @@ function renderAvatar($avatarData) {
             grid.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('active'));
             btnElement.classList.add('active');
             
-            if (category === 'gender') {
-                currentGender = value;
-                assembleAvatar();
-            } else if (category === 'clothes') {
-                currentOutfit = value;
-                assembleAvatar();
-            }
+            if (category === 'gender') currentGender = value;
+            if (category === 'clothes') currentOutfit = value;
+            assembleAvatar();
         }
 
-        function changeAuraColor(hexString, btnElement) {
+        function changeAuraColor(type, btnElement) {
             const grid = btnElement.parentElement;
             grid.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('active'));
             btnElement.classList.add('active');
             
-            currentAura = hexString;
-            applyAura(currentAura);
+            currentAura = type;
+            generateArtisticBackground(currentAura);
         }
 
-        function applyAura(hexString) {
-            if (hexString === 'none') {
-                auraMesh.visible = false;
-            } else {
-                auraMesh.visible = true;
-                auraMesh.material.color.setHex(parseInt(hexString, 16));
-            }
-        }
-
-        // --- 7. GUARDAR CONFIGURACIÓN (AJAX) ---
+        // --- 7. GUARDADO ASÍNCRONO ---
         function saveConfiguration() {
             const btn = document.getElementById('btnSaveConfig');
             btn.classList.add('saving');
@@ -394,23 +433,36 @@ function renderAvatar($avatarData) {
                     }, 2000);
                 }
             })
-            .catch(error => {
-                console.error('Error guardando:', error);
-                btn.innerHTML = '<span>❌ Error</span>';
-                btn.classList.remove('saving');
-            });
         }
 
-        // --- 8. ANIMACIÓN GLOBAL ---
+        // --- 8. BUCLE DE ANIMACIÓN ---
         function animate() {
             requestAnimationFrame(animate);
-            controls.update(); // Necesario para la fluidez (Damping) del OrbitControls
+            controls.update();
             
-            // Animación de Aura rotatoria si está activa
-            if(auraMesh.visible) {
-                auraMesh.rotation.y += 0.005;
-                auraMesh.rotation.x += 0.002;
-            }
+            // Animación de respiración del avatar
+            avatarGroup.position.y = -1 + Math.sin(Date.now() * 0.002) * 0.02;
+
+            // Animar los fondos artísticos
+            backgroundGroup.children.forEach(child => {
+                if(child.userData && child.userData.animationType) {
+                    const type = child.userData.animationType;
+                    if(type === 'rotate_slow') {
+                        child.rotation.y += 0.001;
+                        child.rotation.x += 0.0005;
+                    } else if (type === 'spin') {
+                        child.rotation.y += child.userData.speed;
+                        child.rotation.z += child.userData.speed * 0.5;
+                    } else if (type === 'float') {
+                        child.rotation.x += child.userData.speed;
+                        child.position.y = child.userData.startY + Math.sin(Date.now() * 0.001) * 0.5;
+                    } else if (type === 'pulse') {
+                        child.rotation.y -= 0.002;
+                        const scale = 1 + Math.sin(Date.now() * 0.002) * 0.05;
+                        child.scale.set(scale, scale, scale);
+                    }
+                }
+            });
 
             renderer.render(scene, camera);
         }
