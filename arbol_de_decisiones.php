@@ -180,9 +180,10 @@ function renderAvatar($avatarData) {
 
                 <div class="custom-card">
                     <h3>Proyección <span>Estado</span></h3>
-                    <div class="options-grid">
-                        <button class="option-btn <?= $defaultClothes === 'Peasant' ? 'active' : '' ?>" onclick="selectOption('clothes', 'Peasant', this)">Base Sintética (Anónimo)</button>
-                        <button class="option-btn <?= $defaultClothes === 'Ranger' ? 'active' : '' ?>" onclick="selectOption('clothes', 'Ranger', this)">Identidad Despierta (Explorador)</button>
+                    <div class="options-grid cols-3">
+                        <button class="option-btn <?= $defaultClothes === 'Peasant' ? 'active' : '' ?>" onclick="selectOption('clothes', 'Peasant', this)">Base Sintética</button>
+                        <button class="option-btn <?= $defaultClothes === 'Ranger' ? 'active' : '' ?>" onclick="selectOption('clothes', 'Ranger', this)">Explorador</button>
+                        <button class="option-btn <?= $defaultClothes === 'Superhero' ? 'active' : '' ?>" onclick="selectOption('clothes', 'Superhero', this)">Superhéroe</button>
                     </div>
                 </div>
 
@@ -218,7 +219,7 @@ function renderAvatar($avatarData) {
         scene.background = new THREE.Color(0xFAFAFC); 
 
         const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
-        camera.position.set(0, 1, 4); // Más centrado en el modelo
+        camera.position.set(0, 1, 4); 
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(container.clientWidth, container.clientHeight);
@@ -232,7 +233,7 @@ function renderAvatar($avatarData) {
         controls.dampingFactor = 0.05;
         controls.minDistance = 1.5; 
         controls.maxDistance = 7;
-        controls.target.set(0, 0, 0); // Apunta al centro (0,0,0)
+        controls.target.set(0, 0, 0); 
 
         // --- 3. ILUMINACIÓN ---
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
@@ -247,15 +248,13 @@ function renderAvatar($avatarData) {
         scene.add(backgroundGroup);
 
         function generateArtisticBackground(type) {
-            // Limpiar fondo anterior
             while(backgroundGroup.children.length > 0){ 
                 backgroundGroup.remove(backgroundGroup.children[0]); 
             }
-            scene.background = new THREE.Color(0xFAFAFC); // Reset color
+            scene.background = new THREE.Color(0xFAFAFC); 
 
             if (type === '0x805AD5') {
-                // PSIQUE: Polvo estelar (Partículas)
-                scene.background = new THREE.Color(0xF5F0FA); // Tint violeta muy sutil
+                scene.background = new THREE.Color(0xF5F0FA); 
                 const geo = new THREE.BufferGeometry();
                 const vertices = [];
                 for (let i = 0; i < 500; i++) {
@@ -268,7 +267,6 @@ function renderAvatar($avatarData) {
                 backgroundGroup.add(points);
             } 
             else if (type === '0x38A169') {
-                // SOMA: Anillos de crecimiento (Toroides)
                 scene.background = new THREE.Color(0xF0FAF5);
                 for (let i = 1; i <= 3; i++) {
                     const geo = new THREE.TorusGeometry(1.5 + (i * 0.5), 0.01, 16, 100);
@@ -280,7 +278,6 @@ function renderAvatar($avatarData) {
                 }
             }
             else if (type === '0x3182CE') {
-                // PNEUMA: Geometría sagrada flotante
                 scene.background = new THREE.Color(0xF0F7FA);
                 for (let i = 0; i < 5; i++) {
                     const geo = new THREE.IcosahedronGeometry(0.3, 0);
@@ -292,7 +289,6 @@ function renderAvatar($avatarData) {
                 }
             }
             else if (type === '0xE53E3E') {
-                // PATHOS: Nudo Gordiano caótico
                 scene.background = new THREE.Color(0xFAF0F0);
                 const geo = new THREE.TorusKnotGeometry(2, 0.2, 100, 16);
                 const mat = new THREE.MeshBasicMaterial({ color: 0xE53E3E, wireframe: true, transparent: true, opacity: 0.1 });
@@ -302,11 +298,9 @@ function renderAvatar($avatarData) {
             }
         }
 
-        // --- 5. LECTURA ESTRICTA DE ARCHIVOS GLTF ---
         // --- 5. LECTURA ESTRICTA DE ARCHIVOS GLTF Y CORRECCIÓN DE POSE ---
         const loader = new THREE.GLTFLoader();
         const avatarGroup = new THREE.Group();
-        // Ajustamos la posición para que el punto central (0,0,0) esté a la altura del pecho/cintura
         avatarGroup.position.y = -1; 
         scene.add(avatarGroup);
         let loadedParts = []; 
@@ -316,48 +310,47 @@ function renderAvatar($avatarData) {
             loadedParts.forEach(part => avatarGroup.remove(part));
             loadedParts = [];
 
-            // Definimos las partes a cargar basadas en tus archivos
             let partsToLoad = [];
-            
-            if (currentGender === 'Male' && currentOutfit === 'Peasant') {
-                partsToLoad = ['_Arms', '_Body', '_Feet', '_Legs'];
-            } else if (currentGender === 'Female' && currentOutfit === 'Peasant') {
-                partsToLoad = ['_Arms', '_Body', '_Feet', '_Legs'];
-            } else if (currentGender === 'Male' && currentOutfit === 'Ranger') {
-                partsToLoad = ['_Acc_Pauldron', '_Arms', '_Body', '_Feet_Boots', '_Head_Hood', '_Legs']; 
-            } else if (currentGender === 'Female' && currentOutfit === 'Ranger') {
-                partsToLoad = ['_Acc_Pauldrons', '_Arms', '_Body', '_Feet', '_Head_Hood', '_Legs']; 
-            }
-
             let prefix = `${currentGender}_${currentOutfit}`;
+            
+            // Asignación de partes según el atuendo
+            if (currentOutfit === 'Peasant') {
+                partsToLoad = ['_Arms', '_Body', '_Feet', '_Legs'];
+            } else if (currentOutfit === 'Ranger') {
+                if (currentGender === 'Male') {
+                    partsToLoad = ['_Acc_Pauldron', '_Arms', '_Body', '_Feet_Boots', '_Head_Hood', '_Legs']; 
+                } else {
+                    partsToLoad = ['_Acc_Pauldrons', '_Arms', '_Body', '_Feet', '_Head_Hood', '_Legs']; 
+                }
+            } else if (currentOutfit === 'Superhero') {
+                // Altera el prefijo para buscar Superhero_Male_FullBody.gltf o Superhero_Female_FullBody.gltf
+                prefix = `Superhero_${currentGender}`;
+                partsToLoad = ['_FullBody'];
+            }
 
             let loadPromises = partsToLoad.map(part => {
                 return new Promise((resolve) => {
                     let filename = `${prefix}${part}.gltf`;
-                    // ATENCIÓN: Asegúrate de que esta ruta apunte a tu nueva carpeta glTF
                     let path = `assets/3d/avatar/${filename}`; 
 
                     loader.load(path, (gltf) => {
                         let model = gltf.scene;
                         
                         model.traverse((node) => {
-                            // Configurar sombras
                             if (node.isMesh) {
                                 node.castShadow = true;
                                 node.receiveShadow = true;
                             }
                             
-                            // --- CORRECCIÓN DE LA T-POSE A A-POSE ---
+                            // Corrección de pose a A-Pose para todos los modelos
                             if (node.isBone) {
                                 const boneName = node.name.toLowerCase();
                                 
-                                // Buscar los huesos de los brazos/hombros. 
-                                // Nombres comunes en Unity/Mixamo: LeftArm, RightArm, upperarm_l, upperarm_r
                                 if (boneName.includes('leftarm') || boneName.includes('upperarm_l') || (boneName.includes('shoulder') && boneName.includes('l'))) {
-                                    node.rotation.z += 1.0; // Baja el brazo izquierdo unos ~60 grados
+                                    node.rotation.z += 1.0; 
                                 }
                                 if (boneName.includes('rightarm') || boneName.includes('upperarm_r') || (boneName.includes('shoulder') && boneName.includes('r'))) {
-                                    node.rotation.z -= 1.0; // Baja el brazo derecho unos ~60 grados
+                                    node.rotation.z -= 1.0; 
                                 }
                             }
                         });
@@ -391,13 +384,12 @@ function renderAvatar($avatarData) {
             
             if (mode === '2d') {
                 document.getElementById('btnCam2D').classList.add('active');
-                // Forzar cámara al frente y bloquear orbit
                 camera.position.set(0, 1, 4);
                 controls.target.set(0, 0, 0);
                 controls.enableRotate = false;
             } else {
                 document.getElementById('btnCam3D').classList.add('active');
-                controls.enableRotate = true; // Liberar exploración
+                controls.enableRotate = true; 
             }
             controls.update();
         }
