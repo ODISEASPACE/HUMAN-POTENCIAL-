@@ -114,6 +114,8 @@ function renderAvatar($avatarData) {
         .option-btn { background: var(--bg-base); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px; font-weight: 600; font-size: 0.85rem; color: var(--text-muted); cursor: pointer; transition: 0.2s; }
         .option-btn:hover { border-color: var(--accent); color: var(--text-main); }
         .option-btn.active { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+        
+        .section-label { font-size: 0.8rem; font-weight: 700; color: #4A5568; margin: 15px 0 8px 0; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #E2E8F0; padding-bottom: 4px;}
 
         .customization-panel::-webkit-scrollbar { width: 6px; }
         .customization-panel::-webkit-scrollbar-thumb { background: #CBD5E0; border-radius: 10px; }
@@ -173,13 +175,13 @@ function renderAvatar($avatarData) {
                 <div class="custom-card">
                     <h3>Atributos Base <span>Genética</span></h3>
                     <div class="options-grid">
-                        <button class="option-btn <?= $defaultGender === 'Male' ? 'active' : '' ?>" onclick="selectOption('gender', 'Male', this)">Cuerpo A</button>
-                        <button class="option-btn <?= $defaultGender === 'Female' ? 'active' : '' ?>" onclick="selectOption('gender', 'Female', this)">Cuerpo B</button>
+                        <button class="option-btn <?= $defaultGender === 'Male' ? 'active' : '' ?>" onclick="selectOption('gender', 'Male', this)">Cuerpo A (Hombre)</button>
+                        <button class="option-btn <?= $defaultGender === 'Female' ? 'active' : '' ?>" onclick="selectOption('gender', 'Female', this)">Cuerpo B (Mujer)</button>
                     </div>
                 </div>
 
                 <div class="custom-card">
-                    <h3>Proyección <span>Estado</span></h3>
+                    <h3>Proyección <span>Conjuntos Completos</span></h3>
                     <div class="options-grid cols-3">
                         <button class="option-btn <?= $defaultClothes === 'Peasant' ? 'active' : '' ?>" onclick="selectOption('clothes', 'Peasant', this)">Base Sintética</button>
                         <button class="option-btn <?= $defaultClothes === 'Ranger' ? 'active' : '' ?>" onclick="selectOption('clothes', 'Ranger', this)">Explorador</button>
@@ -188,13 +190,41 @@ function renderAvatar($avatarData) {
                 </div>
 
                 <div class="custom-card">
+                    <h3>Prueba de Archivos <span>Piezas Aisladas</span></h3>
+                    <p style="font-size: 0.75rem; color: var(--text-muted);">Haz clic para renderizar un archivo GLTF individual. Depende del Cuerpo seleccionado arriba.</p>
+                    
+                    <div class="section-label">Extras</div>
+                    <div class="options-grid">
+                        <button class="option-btn" onclick="selectOption('clothes', 'scene', this)">Ver scene.gltf</button>
+                    </div>
+
+                    <div class="section-label">Archivos Peasant</div>
+                    <div class="options-grid cols-2">
+                        <button class="option-btn" onclick="selectOption('clothes', 'Peasant_Body', this)">Solo Cuerpo</button>
+                        <button class="option-btn" onclick="selectOption('clothes', 'Peasant_Arms', this)">Solo Brazos</button>
+                        <button class="option-btn" onclick="selectOption('clothes', 'Peasant_Legs', this)">Solo Piernas</button>
+                        <button class="option-btn" onclick="selectOption('clothes', 'Peasant_Feet', this)">Solo Pies</button>
+                    </div>
+
+                    <div class="section-label">Archivos Ranger</div>
+                    <div class="options-grid cols-3">
+                        <button class="option-btn" onclick="selectOption('clothes', 'Ranger_Body', this)">Cuerpo</button>
+                        <button class="option-btn" onclick="selectOption('clothes', 'Ranger_Arms', this)">Brazos</button>
+                        <button class="option-btn" onclick="selectOption('clothes', 'Ranger_Legs', this)">Piernas</button>
+                        <button class="option-btn" onclick="selectOption('clothes', 'Ranger_Feet', this)">Pies/Botas</button>
+                        <button class="option-btn" onclick="selectOption('clothes', 'Ranger_Head_Hood', this)">Capucha</button>
+                        <button class="option-btn" onclick="selectOption('clothes', 'Ranger_Acc', this)">Hombreras</button>
+                    </div>
+                </div>
+
+                <div class="custom-card">
                     <h3>Entorno Artístico <span>Aura</span></h3>
                     <div class="options-grid cols-3">
                         <button class="option-btn <?= $defaultAura === 'none' ? 'active' : '' ?>" onclick="changeAuraColor('none', this)">Fondo Neutro</button>
-                        <button class="option-btn <?= $defaultAura === '0x805AD5' ? 'active' : '' ?>" onclick="changeAuraColor('0x805AD5', this)">Psique (Polvo Estelar)</button>
-                        <button class="option-btn <?= $defaultAura === '0x38A169' ? 'active' : '' ?>" onclick="changeAuraColor('0x38A169', this)">Soma (Anillos)</button>
-                        <button class="option-btn <?= $defaultAura === '0x3182CE' ? 'active' : '' ?>" onclick="changeAuraColor('0x3182CE', this)">Pneuma (Geometría)</button>
-                        <button class="option-btn <?= $defaultAura === '0xE53E3E' ? 'active' : '' ?>" onclick="changeAuraColor('0xE53E3E', this)">Pathos (Nudo Caótico)</button>
+                        <button class="option-btn <?= $defaultAura === '0x805AD5' ? 'active' : '' ?>" onclick="changeAuraColor('0x805AD5', this)">Psique</button>
+                        <button class="option-btn <?= $defaultAura === '0x38A169' ? 'active' : '' ?>" onclick="changeAuraColor('0x38A169', this)">Soma</button>
+                        <button class="option-btn <?= $defaultAura === '0x3182CE' ? 'active' : '' ?>" onclick="changeAuraColor('0x3182CE', this)">Pneuma</button>
+                        <button class="option-btn <?= $defaultAura === '0xE53E3E' ? 'active' : '' ?>" onclick="changeAuraColor('0xE53E3E', this)">Pathos</button>
                     </div>
                 </div>
 
@@ -298,7 +328,7 @@ function renderAvatar($avatarData) {
             }
         }
 
-        // --- 5. LECTURA ESTRICTA DE ARCHIVOS GLTF Y CORRECCIÓN DE POSE ---
+        // --- 5. LECTURA ESTRICTA DE ARCHIVOS Y CORRECCIÓN DE POSE ---
         const loader = new THREE.GLTFLoader();
         const avatarGroup = new THREE.Group();
         avatarGroup.position.y = -1; 
@@ -310,27 +340,59 @@ function renderAvatar($avatarData) {
             loadedParts.forEach(part => avatarGroup.remove(part));
             loadedParts = [];
 
-            let partsToLoad = [];
-            let prefix = `${currentGender}_${currentOutfit}`;
+            let filesToLoad = [];
             
-            // Asignación de partes según el atuendo
+            // --- LÓGICA DE CONJUNTOS COMPLETOS ---
             if (currentOutfit === 'Peasant') {
-                partsToLoad = ['_Arms', '_Body', '_Feet', '_Legs'];
+                filesToLoad = [
+                    `${currentGender}_Peasant_Arms.gltf`,
+                    `${currentGender}_Peasant_Body.gltf`,
+                    `${currentGender}_Peasant_Feet.gltf`,
+                    `${currentGender}_Peasant_Legs.gltf`
+                ];
             } else if (currentOutfit === 'Ranger') {
                 if (currentGender === 'Male') {
-                    partsToLoad = ['_Acc_Pauldron', '_Arms', '_Body', '_Feet_Boots', '_Head_Hood', '_Legs']; 
+                    filesToLoad = [
+                        `${currentGender}_Ranger_Acc_Pauldron.gltf`,
+                        `${currentGender}_Ranger_Arms.gltf`,
+                        `${currentGender}_Ranger_Body.gltf`,
+                        `${currentGender}_Ranger_Feet_Boots.gltf`,
+                        `${currentGender}_Ranger_Head_Hood.gltf`,
+                        `${currentGender}_Ranger_Legs.gltf`
+                    ]; 
                 } else {
-                    partsToLoad = ['_Acc_Pauldrons', '_Arms', '_Body', '_Feet', '_Head_Hood', '_Legs']; 
+                    filesToLoad = [
+                        `${currentGender}_Ranger_Acc_Pauldrons.gltf`,
+                        `${currentGender}_Ranger_Arms.gltf`,
+                        `${currentGender}_Ranger_Body.gltf`,
+                        `${currentGender}_Ranger_Feet.gltf`,
+                        `${currentGender}_Ranger_Head_Hood.gltf`,
+                        `${currentGender}_Ranger_Legs.gltf`
+                    ]; 
                 }
             } else if (currentOutfit === 'Superhero') {
-                // Altera el prefijo para buscar Superhero_Male_FullBody.gltf o Superhero_Female_FullBody.gltf
-                prefix = `Superhero_${currentGender}`;
-                partsToLoad = ['_FullBody'];
+                filesToLoad = [`Superhero_${currentGender}_FullBody.gltf`];
+            } else if (currentOutfit === 'scene') {
+                filesToLoad = [`scene.gltf`];
+            } 
+            // --- LÓGICA DE PIEZAS AISLADAS (DEPURACIÓN) ---
+            else if (currentOutfit === 'Peasant_Body') filesToLoad = [`${currentGender}_Peasant_Body.gltf`];
+            else if (currentOutfit === 'Peasant_Arms') filesToLoad = [`${currentGender}_Peasant_Arms.gltf`];
+            else if (currentOutfit === 'Peasant_Legs') filesToLoad = [`${currentGender}_Peasant_Legs.gltf`];
+            else if (currentOutfit === 'Peasant_Feet') filesToLoad = [`${currentGender}_Peasant_Feet.gltf`];
+            else if (currentOutfit === 'Ranger_Body') filesToLoad = [`${currentGender}_Ranger_Body.gltf`];
+            else if (currentOutfit === 'Ranger_Arms') filesToLoad = [`${currentGender}_Ranger_Arms.gltf`];
+            else if (currentOutfit === 'Ranger_Legs') filesToLoad = [`${currentGender}_Ranger_Legs.gltf`];
+            else if (currentOutfit === 'Ranger_Head_Hood') filesToLoad = [`${currentGender}_Ranger_Head_Hood.gltf`];
+            else if (currentOutfit === 'Ranger_Feet') {
+                filesToLoad = currentGender === 'Male' ? [`Male_Ranger_Feet_Boots.gltf`] : [`Female_Ranger_Feet.gltf`];
+            }
+            else if (currentOutfit === 'Ranger_Acc') {
+                filesToLoad = currentGender === 'Male' ? [`Male_Ranger_Acc_Pauldron.gltf`] : [`Female_Ranger_Acc_Pauldrons.gltf`];
             }
 
-            let loadPromises = partsToLoad.map(part => {
+            let loadPromises = filesToLoad.map(filename => {
                 return new Promise((resolve) => {
-                    let filename = `${prefix}${part}.gltf`;
                     let path = `assets/3d/avatar/${filename}`; 
 
                     loader.load(path, (gltf) => {
@@ -395,8 +457,14 @@ function renderAvatar($avatarData) {
         }
 
         function selectOption(category, value, btnElement) {
-            const grid = btnElement.parentElement;
-            grid.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('active'));
+            // Remueve la clase active de TODOS los botones de ropa si se selecciona ropa
+            if (category === 'clothes') {
+                document.querySelectorAll('.custom-card:nth-child(2) .option-btn, .custom-card:nth-child(3) .option-btn').forEach(btn => btn.classList.remove('active'));
+            } else {
+                const grid = btnElement.parentElement;
+                grid.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('active'));
+            }
+            
             btnElement.classList.add('active');
             
             if (category === 'gender') currentGender = value;
@@ -422,7 +490,7 @@ function renderAvatar($avatarData) {
             const payload = {
                 action: 'save_avatar',
                 gender: currentGender,
-                clothes: currentOutfit,
+                clothes: currentOutfit, // Guarda la pieza individual o el conjunto seleccionado
                 aura: currentAura
             };
 
