@@ -18,33 +18,33 @@ $user = [
 ];
 
 // --- ESTRUCTURA DEL ÁRBOL DE HABILIDADES ---
-// Cada nodo define su posición (x, y) respecto al centro (0,0), su nivel y quién es su padre.
+// Añadida la clave 'route' para asegurar que todos los sub-nodos apunten a su área principal correspondiente.
 $nodes = [
-    'origen' => ['label' => 'Origen APH', 'x' => 0, 'y' => 0, 'level' => 1, 'max' => 1, 'status' => 'maxed', 'parent' => null],
+    'origen' => ['label' => 'Origen APH', 'x' => 0, 'y' => 0, 'level' => 1, 'max' => 1, 'status' => 'maxed', 'parent' => null, 'route' => '#'],
     
-    // RAMA: ESTUDIO (Hacia Arriba)
-    'estudio' => ['label' => 'Estudio', 'x' => 0, 'y' => -160, 'level' => 10, 'max' => 10, 'status' => 'maxed', 'parent' => 'origen'],
-    'logica' => ['label' => 'Lógica', 'x' => -120, 'y' => -300, 'level' => 5, 'max' => 10, 'status' => 'unlocked', 'parent' => 'estudio'],
-    'desarrollo' => ['label' => 'Desarrollo', 'x' => 120, 'y' => -300, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'estudio'],
-    'arquitectura' => ['label' => 'Arquitectura', 'x' => 120, 'y' => -440, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'desarrollo'],
+    // RAMA: ESTUDIO (Ruta: estudio.php)
+    'estudio' => ['label' => 'Estudio', 'x' => 0, 'y' => -160, 'level' => 10, 'max' => 10, 'status' => 'maxed', 'parent' => 'origen', 'route' => 'estudio'],
+    'logica' => ['label' => 'Lógica', 'x' => -120, 'y' => -300, 'level' => 5, 'max' => 10, 'status' => 'unlocked', 'parent' => 'estudio', 'route' => 'estudio'],
+    'desarrollo' => ['label' => 'Desarrollo', 'x' => 120, 'y' => -300, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'estudio', 'route' => 'estudio'],
+    'arquitectura' => ['label' => 'Arquitectura', 'x' => 120, 'y' => -440, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'desarrollo', 'route' => 'estudio'],
 
-    // RAMA: LABORAL (Hacia la Derecha)
-    'laboral' => ['label' => 'Laboral', 'x' => 180, 'y' => 60, 'level' => 4, 'max' => 10, 'status' => 'unlocked', 'parent' => 'origen'],
-    'liderazgo' => ['label' => 'Liderazgo', 'x' => 320, 'y' => 0, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'laboral'],
-    'gestion' => ['label' => 'Gestión', 'x' => 320, 'y' => 120, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'laboral'],
+    // RAMA: LABORAL (Ruta: laboral.php)
+    'laboral' => ['label' => 'Laboral', 'x' => 180, 'y' => 60, 'level' => 4, 'max' => 10, 'status' => 'unlocked', 'parent' => 'origen', 'route' => 'laboral'],
+    'liderazgo' => ['label' => 'Liderazgo', 'x' => 320, 'y' => 0, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'laboral', 'route' => 'laboral'],
+    'gestion' => ['label' => 'Gestión', 'x' => 320, 'y' => 120, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'laboral', 'route' => 'laboral'],
 
-    // RAMA: FINANZAS (Hacia Abajo/Derecha)
-    'finanzas' => ['label' => 'Finanzas', 'x' => 100, 'y' => 200, 'level' => 2, 'max' => 10, 'status' => 'unlocked', 'parent' => 'origen'],
-    'inversion' => ['label' => 'Inversión', 'x' => 100, 'y' => 340, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'finanzas'],
+    // RAMA: FINANZAS (Ruta: finanzas.php)
+    'finanzas' => ['label' => 'Finanzas', 'x' => 100, 'y' => 200, 'level' => 2, 'max' => 10, 'status' => 'unlocked', 'parent' => 'origen', 'route' => 'finanzas'],
+    'inversion' => ['label' => 'Inversión', 'x' => 100, 'y' => 340, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'finanzas', 'route' => 'finanzas'],
 
-    // RAMA: SALUD (Hacia Abajo/Izquierda)
-    'salud' => ['label' => 'Salud', 'x' => -100, 'y' => 200, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'origen'],
-    'nutricion' => ['label' => 'Nutrición', 'x' => -200, 'y' => 300, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'salud'],
-    'entrenamiento' => ['label' => 'Físico', 'x' => 0, 'y' => 340, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'salud'],
+    // RAMA: SALUD (Ruta: salud.php)
+    'salud' => ['label' => 'Salud', 'x' => -100, 'y' => 200, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'origen', 'route' => 'salud'],
+    'nutricion' => ['label' => 'Nutrición', 'x' => -200, 'y' => 300, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'salud', 'route' => 'salud'],
+    'entrenamiento' => ['label' => 'Físico', 'x' => 0, 'y' => 340, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'salud', 'route' => 'salud'],
 
-    // RAMA: ESPÍRITU (Hacia la Izquierda)
-    'espiritu' => ['label' => 'Espíritu', 'x' => -180, 'y' => 60, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'origen'],
-    'meditacion' => ['label' => 'Meditación', 'x' => -320, 'y' => 60, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'espiritu'],
+    // RAMA: ESPÍRITU (Ruta: espiritu.php)
+    'espiritu' => ['label' => 'Espíritu', 'x' => -180, 'y' => 60, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'origen', 'route' => 'espiritu'],
+    'meditacion' => ['label' => 'Meditación', 'x' => -320, 'y' => 60, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'espiritu', 'route' => 'espiritu'],
 ];
 
 function renderAvatar($avatarData) {
@@ -110,7 +110,7 @@ function renderAvatar($avatarData) {
         svg { position: absolute; top: 0; left: 0; width: 0; height: 0; overflow: visible; pointer-events: none; z-index: 1; }
         
         .node { position: absolute; width: 110px; height: 90px; background: var(--bg-panel); border: 2px solid var(--border-color); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; z-index: 5; text-decoration: none; color: var(--text-main); transform: translate(-50%, -50%); }
-        .node.core { width: 140px; height: 140px; background: var(--accent); border-radius: 50%; color: white; border: 6px solid white; box-shadow: 0 0 40px rgba(128, 90, 213, 0.4); }
+        .node.core { width: 140px; height: 140px; background: var(--accent); border-radius: 50%; color: white; border: 6px solid white; box-shadow: 0 0 40px rgba(128, 90, 213, 0.4); cursor: default; }
         .node.core span { font-size: 0.7rem; font-family: 'Inter', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9; }
         .node.core strong { font-size: 1.5rem; font-family: 'Orbitron', sans-serif; }
         
@@ -188,7 +188,7 @@ function renderAvatar($avatarData) {
                             <strong>APH</strong>
                         </div>
                     <?php else: ?>
-                        <a href="skill_tree/<?= strtolower($id) ?>.php" class="node <?= $node['status'] ?>" style="left: <?= $node['x'] ?>px; top: <?= $node['y'] ?>px;">
+                        <a href="skill_tree/<?= $node['route'] ?>.php" class="node <?= $node['status'] ?>" style="left: <?= $node['x'] ?>px; top: <?= $node['y'] ?>px;">
                             <div class="node-level"><?= $node['level'] ?>/<?= $node['max'] ?></div>
                             <div class="node-label"><?= $node['label'] ?></div>
                         </a>
