@@ -89,7 +89,7 @@ function renderAvatar($avatarData) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Árbol de Habilidades | APH OS</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Orbitron:wght@500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         /* === VARIABLES GLOBALES DE LA PLATAFORMA (No cambian) === */
         :root { 
@@ -103,7 +103,11 @@ function renderAvatar($avatarData) {
             --gold: #ecc94b;
         }
 
-        /* === VARIABLES AISLADAS DEL MAPA (Light OS por defecto) === */
+        /* =========================================
+           SISTEMA DE TEMAS AISLADOS DEL MAPA 
+           ========================================= */
+
+        /* 1. Tema por Defecto (Light OS) */
         .tree-viewport {
             --map-bg: #FFFFFF;
             --map-grid: #E2E8F0;
@@ -118,32 +122,55 @@ function renderAvatar($avatarData) {
             --map-backdrop: none;
         }
 
-        /* Tema 2: Cyberpunk (Aplicado SOLO al viewport) */
-        .tree-viewport[data-theme="cyberpunk"] {
-            --map-bg: #0a0a0e;
-            --map-grid: #1a1a24;
-            --node-bg: #13131a;
-            --node-border: #2a2a35;
-            --node-text: #00ffcc;
-            --node-text-muted: #4a5568;
-            --locked-line: #2a2a35;
+        /* 2. Tema Blueprint (Técnico / Ingeniería) - Cambio estructural a Cuadrados y Monospace */
+        .tree-viewport[data-theme="blueprint"] {
+            --map-bg: #0B192C;
+            --map-grid: rgba(255, 255, 255, 0.1);
+            --node-bg: #0B192C;
+            --node-border: #3A86FF;
+            --node-text: #F8F9FA;
+            --node-text-muted: #A0C4FF;
+            --locked-line: rgba(255, 255, 255, 0.15);
             --node-radius: 0px; 
-            --line-filter: drop-shadow(0 0 4px var(--accent));
         }
-
-        /* Tema 3: Orgánico */
-        .tree-viewport[data-theme="organic"] {
-            --map-bg: #f4f1ea;
-            --map-grid: #e8e6df;
-            --node-bg: #ffffff;
-            --node-border: #dcdde1;
-            --node-text: #2c3e50;
-            --node-text-muted: #7f8c8d;
-            --locked-line: #dcdde1;
-            --node-radius: 50%; 
+        .tree-viewport[data-theme="blueprint"] .node:not(.core) {
+            border: 2px dashed var(--node-border);
+            font-family: 'JetBrains Mono', monospace;
+            background-image: repeating-linear-gradient(45deg, rgba(58, 134, 255, 0.05) 25%, transparent 25%, transparent 75%, rgba(58, 134, 255, 0.05) 75%, rgba(58, 134, 255, 0.05)), repeating-linear-gradient(45deg, rgba(58, 134, 255, 0.05) 25%, transparent 25%, transparent 75%, rgba(58, 134, 255, 0.05) 75%, rgba(58, 134, 255, 0.05));
+            background-position: 0 0, 10px 10px; background-size: 20px 20px;
         }
+        .tree-viewport[data-theme="blueprint"] .node-level { font-family: 'JetBrains Mono', monospace; font-size: 1rem; }
+        .tree-viewport[data-theme="blueprint"] .node-label { font-family: 'JetBrains Mono', monospace; font-weight: 400; }
+        .tree-viewport[data-theme="blueprint"] .node.unlocked { border-style: solid; background-color: rgba(58, 134, 255, 0.1); }
+        .tree-viewport[data-theme="blueprint"] .node.maxed { border-style: solid; background-color: rgba(58, 134, 255, 0.3); border-width: 3px; }
+        .tree-viewport[data-theme="blueprint"] .svg-layer path { stroke-linecap: square; }
+        .tree-viewport[data-theme="blueprint"]::before { background-size: 50px 50px; }
 
-        /* Tema 4: Void (Minimalista) */
+        /* 3. Tema Executive (Corporativo / Management) - Cambio estructural a Tarjetas Horizontales */
+        .tree-viewport[data-theme="executive"] {
+            --map-bg: #F1F5F9;
+            --map-grid: transparent;
+            --node-bg: #FFFFFF;
+            --node-border: #CBD5E1;
+            --node-text: #334155;
+            --node-text-muted: #94A3B8;
+            --locked-line: #CBD5E1;
+            --node-radius: 6px;
+            --map-shadow: inset 0 0 50px rgba(0,0,0,0.03);
+        }
+        .tree-viewport[data-theme="executive"] .node:not(.core) {
+            width: 150px; height: 60px; /* Tarjetas anchas y bajas */
+            flex-direction: row; justify-content: flex-start;
+            padding: 0 12px; gap: 10px;
+            border-left-width: 6px; /* Borde izquierdo distintivo */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+        .tree-viewport[data-theme="executive"] .node.unlocked { border-left-color: var(--gold); }
+        .tree-viewport[data-theme="executive"] .node.maxed { border-left-color: var(--accent); }
+        .tree-viewport[data-theme="executive"] .node-level { font-size: 1rem; margin: 0; }
+        .tree-viewport[data-theme="executive"] .node-label { font-size: 0.65rem; text-align: left; margin: 0; }
+
+        /* 4. Tema Void (Minimalista) */
         .tree-viewport[data-theme="void"] {
             --map-bg: #000000;
             --map-grid: #111111;
@@ -152,22 +179,29 @@ function renderAvatar($avatarData) {
             --node-text: #ffffff;
             --node-text-muted: #666666;
             --locked-line: #222222;
-            --node-radius: 30px;
+            --node-radius: 30px; /* Forma de píldora */
         }
 
-        /* Tema 5: Holográfico */
-        .tree-viewport[data-theme="holographic"] {
-            --map-bg: #0f172a;
-            --map-grid: rgba(56, 189, 248, 0.05);
-            --node-bg: rgba(30, 41, 59, 0.6);
-            --node-border: rgba(255, 255, 255, 0.1);
-            --node-text: #e2e8f0;
-            --node-text-muted: #94a3b8;
-            --locked-line: rgba(255, 255, 255, 0.05);
-            --node-radius: 16px;
-            --line-filter: drop-shadow(0 0 3px var(--accent));
-            --map-backdrop: blur(10px);
+        /* 5. Tema Nexus (Creativo / Sci-Fi Brutalista) - Cambio estructural a Sombras Duras */
+        .tree-viewport[data-theme="nexus"] {
+            --map-bg: #121212;
+            --map-grid: rgba(255, 255, 255, 0.03);
+            --node-bg: #1E1E24;
+            --node-border: #444444;
+            --node-text: #F5F5F5;
+            --node-text-muted: #888888;
+            --locked-line: #333333;
+            --node-radius: 0px;
         }
+        .tree-viewport[data-theme="nexus"] .node:not(.core) {
+            border: 1px solid var(--node-border);
+            box-shadow: 5px 5px 0px rgba(0,0,0,0.8); /* Sombra dura estilo retro */
+            background: linear-gradient(135deg, #1E1E24 0%, #111115 100%);
+        }
+        .tree-viewport[data-theme="nexus"] .node.unlocked { box-shadow: 5px 5px 0px var(--gold); border-color: var(--gold); }
+        .tree-viewport[data-theme="nexus"] .node.maxed { box-shadow: 5px 5px 0px var(--accent); border-color: var(--accent); }
+        .tree-viewport[data-theme="nexus"] .node.core { border-radius: 50%; box-shadow: 0 0 0 6px rgba(128, 90, 213, 0.3), 8px 8px 0px rgba(128, 90, 213, 0.8); }
+
 
         /* === ESTILOS GENERALES (Plataforma) === */
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -195,13 +229,13 @@ function renderAvatar($avatarData) {
         .tree-viewport { 
             flex: 1; 
             position: relative; 
-            background: var(--map-bg); /* Usa la variable aislada */
+            background: var(--map-bg); 
             border: 1px solid var(--border-color); 
             border-radius: 16px; 
             overflow: hidden; 
             box-shadow: var(--map-shadow); 
             cursor: grab; 
-            transition: background-color 0.4s;
+            transition: background-color 0.4s, box-shadow 0.4s;
         }
         .tree-viewport:active { cursor: grabbing; }
         .tree-viewport::before { 
@@ -230,17 +264,18 @@ function renderAvatar($avatarData) {
             box-shadow: 0 10px 25px rgba(0,0,0,0.1);
             display: none;
             flex-direction: column;
-            min-width: 150px;
+            min-width: 170px;
             z-index: 100;
         }
         .theme-dropdown.show { display: flex; }
         .theme-option {
-            padding: 10px 20px;
+            padding: 12px 20px;
             font-size: 0.85rem;
             font-weight: 600;
             color: var(--text-main);
             cursor: pointer;
             transition: 0.2s;
+            display: flex; align-items: center; justify-content: space-between;
         }
         .theme-option:hover, .theme-option.active { background: var(--accent-light); color: var(--accent); }
 
@@ -248,20 +283,13 @@ function renderAvatar($avatarData) {
         .tree-canvas.hide-deep .deep-locked { display: none !important; opacity: 0; transition: 0.3s; }
 
         /* === SOLUCIÓN DEFINITIVA A LAS LÍNEAS SVG === */
-        /* Al darle un tamaño gigante y centrarlo con viewBox, garantizamos que ningún navegador recorte las líneas */
         .svg-layer { 
-            position: absolute; 
-            top: -2500px; 
-            left: -2500px; 
-            width: 5000px; 
-            height: 5000px; 
-            pointer-events: none; 
-            z-index: 1; 
-            filter: var(--line-filter); 
+            position: absolute; top: -2500px; left: -2500px; width: 5000px; height: 5000px; 
+            pointer-events: none; z-index: 1; filter: var(--line-filter); 
         }
         .tree-link { transition: stroke 0.4s; }
         
-        /* === ESTILOS DE LOS NODOS (Usando variables del mapa) === */
+        /* === ESTILOS ESTRUCTURALES BASE DE LOS NODOS === */
         .node { 
             position: absolute; width: 120px; height: 100px; 
             background: var(--node-bg); 
@@ -269,12 +297,9 @@ function renderAvatar($avatarData) {
             border-radius: var(--node-radius); 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
             cursor: pointer; z-index: 5; text-decoration: none; color: var(--node-text); 
-            transform: translate(-50%, -50%); transition: 0.3s; backdrop-filter: var(--map-backdrop); 
+            transform: translate(-50%, -50%); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
         }
         
-        /* Ajuste orgánico */
-        .tree-viewport[data-theme="organic"] .node:not(.core) { width: 110px; height: 110px; }
-
         .node.core { width: 150px; height: 150px; background: var(--accent); border-radius: 50%; color: white; border: 6px solid var(--node-bg); box-shadow: 0 0 30px var(--accent-light); cursor: default; }
         .node.core span { font-size: 0.75rem; font-family: 'Inter', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9; }
         .node.core strong { font-size: 1.7rem; font-family: 'Orbitron', sans-serif; }
@@ -282,7 +307,7 @@ function renderAvatar($avatarData) {
         .node.locked { filter: grayscale(100%) opacity(0.5); pointer-events: none; border-color: var(--locked-line); }
         .node.unlocked { border-color: var(--gold); box-shadow: 0 5px 15px rgba(236, 201, 75, 0.15); }
         .node.maxed { border-color: var(--accent); background: var(--accent-light); box-shadow: 0 5px 15px var(--accent-light); }
-        .node:not(.core):not(.locked):hover { transform: translate(-50%, -50%) scale(1.15); z-index: 20; box-shadow: 0 15px 35px rgba(0,0,0,0.2); }
+        .node:not(.core):not(.locked):hover { transform: translate(-50%, -50%) scale(1.1); z-index: 20; }
         
         .node-level { font-family: 'Orbitron', sans-serif; font-size: 1.2rem; font-weight: 700; color: var(--node-text-muted); }
         .node.unlocked .node-level { color: var(--gold); }
@@ -325,18 +350,20 @@ function renderAvatar($avatarData) {
         <div class="tree-viewport" id="viewport" data-theme="default">
             
             <div class="zoom-controls">
+                <!-- CONTENEDOR DEL MENÚ DE CAPAS/TEMAS -->
                 <div class="theme-menu-container">
                     <button class="zoom-btn" onclick="toggleThemeMenu()" title="Capas de Diseño">
                         <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
                             <path d="M12 2L2 7l10 5 10-5-10-5zM2 12l10 5 10-5M2 17l10 5 10-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/>
                         </svg>
                     </button>
+                    <!-- Opciones de temas actualizadas -->
                     <div class="theme-dropdown" id="themeDropdown">
                         <div class="theme-option active" data-theme-val="default" onclick="setTheme('default')">Light OS</div>
-                        <div class="theme-option" data-theme-val="cyberpunk" onclick="setTheme('cyberpunk')">Cyberpunk</div>
-                        <div class="theme-option" data-theme-val="organic" onclick="setTheme('organic')">Orgánico</div>
+                        <div class="theme-option" data-theme-val="blueprint" onclick="setTheme('blueprint')">Blueprint</div>
+                        <div class="theme-option" data-theme-val="executive" onclick="setTheme('executive')">Executive</div>
+                        <div class="theme-option" data-theme-val="nexus" onclick="setTheme('nexus')">Nexus</div>
                         <div class="theme-option" data-theme-val="void" onclick="setTheme('void')">Void</div>
-                        <div class="theme-option" data-theme-val="holographic" onclick="setTheme('holographic')">Holográfico</div>
                     </div>
                 </div>
 
@@ -357,7 +384,7 @@ function renderAvatar($avatarData) {
                             $dash = ($node['status'] == 'locked') ? '5,5' : '0';
                             $width = ($node['status'] == 'maxed') ? '3' : '2';
                             
-                            echo "<path class='tree-link {$node['visibility_class']}' d='M {$parent['x']} {$parent['y']} L {$node['x']} {$node['y']}' stroke='{$statusColor}' stroke-width='{$width}' stroke-dasharray='{$dash}' fill='none' stroke-linecap='round'></path>";
+                            echo "<path class='tree-link {$node['visibility_class']}' d='M {$parent['x']} {$parent['y']} L {$node['x']} {$node['y']}' stroke='{$statusColor}' stroke-width='{$width}' stroke-dasharray='{$dash}' fill='none' stroke-linejoin='round'></path>";
                         }
                     }
                     ?>
@@ -387,19 +414,14 @@ function renderAvatar($avatarData) {
         }
 
         function setTheme(theme) {
-            // Aplicar tema SOLO al viewport
             document.getElementById('viewport').setAttribute('data-theme', theme);
             localStorage.setItem('aph_skill_theme', theme);
             
-            // Cerrar menú
             document.getElementById('themeDropdown').classList.remove('show');
-            
-            // Actualizar estilo visual "activo" en el menú
             document.querySelectorAll('.theme-option').forEach(el => el.classList.remove('active'));
             document.querySelector(`.theme-option[data-theme-val="${theme}"]`).classList.add('active');
         }
 
-        // Cargar tema al iniciar la página
         window.addEventListener('DOMContentLoaded', () => {
             const savedTheme = localStorage.getItem('aph_skill_theme');
             if (savedTheme) {
@@ -407,7 +429,6 @@ function renderAvatar($avatarData) {
             }
         });
 
-        // Cerrar menú de capas si se hace clic afuera
         document.addEventListener('click', function(e) {
             if (!e.target.closest('.theme-menu-container')) {
                 const dropdown = document.getElementById('themeDropdown');
@@ -431,7 +452,6 @@ function renderAvatar($avatarData) {
             canvas.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`;
         }
 
-        // Alejar ligeramente al iniciar para apreciar el mapa
         window.onload = function() {
             scale = 0.85; 
             setTransform();
@@ -439,7 +459,6 @@ function renderAvatar($avatarData) {
 
         viewport.onmousedown = function (e) {
             e.preventDefault();
-            // Evitar que el drag ocurra si se clickea un botón o el menú
             if(e.target.closest('.zoom-controls')) return; 
             
             start = { x: e.clientX - pointX, y: e.clientY - pointY };
