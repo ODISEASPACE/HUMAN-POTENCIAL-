@@ -34,10 +34,10 @@ $stmtUser = $pdo->prepare("SELECT username, profile_picture, profession, avatar_
 $stmtUser->execute([$user_id]);
 $user = $stmtUser->fetch();
 
-// Extraer configuración guardada o usar valores por defecto
+// Extraer configuración guardada o usar valores por defecto actualizados
 $savedConfig = json_decode($user['avatar_config'] ?? '{}', true);
 $defaultGender = $savedConfig['gender'] ?? 'Male';
-$defaultClothes = $savedConfig['clothes'] ?? 'Peasant';
+$defaultClothes = $savedConfig['clothes'] ?? 'monochrome_casual_portrait'; // Fallback a un modelo existente
 $defaultAura = $savedConfig['aura'] ?? 'none';
 
 function renderAvatar($avatarData) {
@@ -115,7 +115,9 @@ function renderAvatar($avatarData) {
         .option-btn:hover { border-color: var(--accent); color: var(--text-main); }
         .option-btn.active { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
         
-        .section-label { font-size: 0.8rem; font-weight: 700; color: #4A5568; margin: 15px 0 8px 0; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #E2E8F0; padding-bottom: 4px;}
+        .slider-container { margin-top: 15px; }
+        .slider-label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .slider-input { width: 100%; cursor: pointer; accent-color: var(--accent); }
 
         .customization-panel::-webkit-scrollbar { width: 6px; }
         .customization-panel::-webkit-scrollbar-thumb { background: #CBD5E0; border-radius: 10px; }
@@ -181,73 +183,46 @@ function renderAvatar($avatarData) {
                 </div>
 
                 <div class="custom-card">
-                    <h3>Modelos Masculinos <span>Nuevos</span></h3>
+                    <h3>Ajustes de Rigging <span>Esqueleto</span></h3>
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>Rotación de Brazos</span>
+                            <span><span id="arm-rot-val">90</span>°</span>
+                        </div>
+                        <input type="range" class="slider-input" id="armRotationSlider" min="0" max="180" value="90" oninput="updateArmRotation(this.value)">
+                    </div>
+                </div>
+
+                <div class="custom-card">
+                    <h3>Modelos Masculinos <span>Distribución</span></h3>
                     <div class="options-grid cols-2">
                         <button class="option-btn <?= $defaultClothes === 'blue_workwear_messenger' ? 'active' : '' ?>" onclick="selectOption('clothes', 'blue_workwear_messenger', this)">Mensajero Workwear</button>
                         <button class="option-btn <?= $defaultClothes === 'cooper' ? 'active' : '' ?>" onclick="selectOption('clothes', 'cooper', this)">Cooper</button>
                         <button class="option-btn <?= $defaultClothes === 'young_guy_keeps_his_hands_in_pockets' ? 'active' : '' ?>" onclick="selectOption('clothes', 'young_guy_keeps_his_hands_in_pockets', this)">Chico Casual</button>
                         <button class="option-btn <?= $defaultClothes === 'navy_minimalist_gentleman' ? 'active' : '' ?>" onclick="selectOption('clothes', 'navy_minimalist_gentleman', this)">Minimalista Navy</button>
-                        <button class="option-btn <?= $defaultClothes === 'casual_cropped_hoodie_portrait' ? 'active' : '' ?>" onclick="selectOption('clothes', 'casual_cropped_hoodie_portrait', this)">Sudadera Casual</button>
                         <button class="option-btn <?= $defaultClothes === 'executive_in_a_navy_suit' ? 'active' : '' ?>" onclick="selectOption('clothes', 'executive_in_a_navy_suit', this)">Ejecutivo Navy</button>
                         <button class="option-btn <?= $defaultClothes === 'noir_ensemble' ? 'active' : '' ?>" onclick="selectOption('clothes', 'noir_ensemble', this)">Conjunto Noir</button>
                         <button class="option-btn <?= $defaultClothes === 'confident_executive_in_a_navy_suit' ? 'active' : '' ?>" onclick="selectOption('clothes', 'confident_executive_in_a_navy_suit', this)">Ejecutivo Confiado</button>
                         <button class="option-btn <?= $defaultClothes === 'rigged_t-pose_human_male_w_50_face_blendshapes' ? 'active' : '' ?>" onclick="selectOption('clothes', 'rigged_t-pose_human_male_w_50_face_blendshapes', this)">Base T-Pose</button>
                         <button class="option-btn <?= $defaultClothes === 'berserk_guts_black_swordsman.glb' ? 'active' : '' ?>" onclick="selectOption('clothes', 'berserk_guts_black_swordsman.glb', this)">Guts (Berserk)</button>
+                        <button class="option-btn <?= $defaultClothes === 'monochrome_casual_portrait' ? 'active' : '' ?>" onclick="selectOption('clothes', 'monochrome_casual_portrait', this)">Retrato Monocromo</button>
+                        <button class="option-btn <?= $defaultClothes === 'hooded_figure_3d_model_free' ? 'active' : '' ?>" onclick="selectOption('clothes', 'hooded_figure_3d_model_free', this)">Túnica Capucha</button>
+                        <button class="option-btn <?= $defaultClothes === 'midnight_outlaw_shadow_character_3d_model_free' ? 'active' : '' ?>" onclick="selectOption('clothes', 'midnight_outlaw_shadow_character_3d_model_free', this)">Sombra Forajido</button>
+                        <button class="option-btn <?= $defaultClothes === 'casual_in_gray.glb' ? 'active' : '' ?>" onclick="selectOption('clothes', 'casual_in_gray.glb', this)">Casual en Gris</button>
                     </div>
                 </div>
 
                 <div class="custom-card">
-                    <h3>Modelos Femeninos <span>Nuevos</span></h3>
+                    <h3>Modelos Femeninos <span>Distribución</span></h3>
                     <div class="options-grid cols-2">
+                        <button class="option-btn <?= $defaultClothes === 'casual_cropped_hoodie_portrait' ? 'active' : '' ?>" onclick="selectOption('clothes', 'casual_cropped_hoodie_portrait', this)">Sudadera Casual</button>
+                        <button class="option-btn <?= $defaultClothes === 'casual_confidence' ? 'active' : '' ?>" onclick="selectOption('clothes', 'casual_confidence', this)">Confianza Casual</button>
+                        <button class="option-btn <?= $defaultClothes === 'midnight_casual.glb' ? 'active' : '' ?>" onclick="selectOption('clothes', 'midnight_casual.glb', this)">Casual Medianoche</button>
+                        <button class="option-btn <?= $defaultClothes === 'dark_astronaut' ? 'active' : '' ?>" onclick="selectOption('clothes', 'dark_astronaut', this)">Astronauta Oscuro</button>
                         <button class="option-btn <?= $defaultClothes === 'girl_speedsculpt' ? 'active' : '' ?>" onclick="selectOption('clothes', 'girl_speedsculpt', this)">Chica Speedsculpt</button>
                         <button class="option-btn <?= $defaultClothes === 'little_witch_academia' ? 'active' : '' ?>" onclick="selectOption('clothes', 'little_witch_academia', this)">Little Witch</button>
                         <button class="option-btn <?= $defaultClothes === 'matilda' ? 'active' : '' ?>" onclick="selectOption('clothes', 'matilda', this)">Matilda</button>
                         <button class="option-btn <?= $defaultClothes === 'carol_tennis_player_girl_animated_3d_character.glb' ? 'active' : '' ?>" onclick="selectOption('clothes', 'carol_tennis_player_girl_animated_3d_character.glb', this)">Carol (Tenis)</button>
-                    </div>
-                </div>
-
-                <div class="custom-card">
-                    <h3>Modelos Neutrales <span>Nuevos</span></h3>
-                    <div class="options-grid cols-2">
-                        <button class="option-btn <?= $defaultClothes === 'monochrome_casual_portrait' ? 'active' : '' ?>" onclick="selectOption('clothes', 'monochrome_casual_portrait', this)">Retrato Monocromo</button>
-                        <button class="option-btn <?= $defaultClothes === 'casual_confidence' ? 'active' : '' ?>" onclick="selectOption('clothes', 'casual_confidence', this)">Confianza Casual</button>
-                        <button class="option-btn <?= $defaultClothes === 'midnight_casual.glb' ? 'active' : '' ?>" onclick="selectOption('clothes', 'midnight_casual.glb', this)">Casual Medianoche</button>
-                        <button class="option-btn <?= $defaultClothes === 'casual_in_gray.glb' ? 'active' : '' ?>" onclick="selectOption('clothes', 'casual_in_gray.glb', this)">Casual en Gris</button>
-                        <button class="option-btn <?= $defaultClothes === 'hooded_figure_3d_model_free' ? 'active' : '' ?>" onclick="selectOption('clothes', 'hooded_figure_3d_model_free', this)">Túnica Capucha</button>
-                        <button class="option-btn <?= $defaultClothes === 'midnight_outlaw_shadow_character_3d_model_free' ? 'active' : '' ?>" onclick="selectOption('clothes', 'midnight_outlaw_shadow_character_3d_model_free', this)">Sombra Forajido</button>
-                        <button class="option-btn <?= $defaultClothes === 'dark_astronaut' ? 'active' : '' ?>" onclick="selectOption('clothes', 'dark_astronaut', this)">Astronauta Oscuro</button>
-                    </div>
-                </div>
-
-                <div class="custom-card">
-                    <h3>Proyección <span>Conjuntos Clásicos</span></h3>
-                    <div class="options-grid cols-3">
-                        <button class="option-btn <?= $defaultClothes === 'Peasant' ? 'active' : '' ?>" onclick="selectOption('clothes', 'Peasant', this)">Base Sintética</button>
-                        <button class="option-btn <?= $defaultClothes === 'Ranger' ? 'active' : '' ?>" onclick="selectOption('clothes', 'Ranger', this)">Explorador</button>
-                        <button class="option-btn <?= $defaultClothes === 'Superhero' ? 'active' : '' ?>" onclick="selectOption('clothes', 'Superhero', this)">Superhéroe</button>
-                    </div>
-                </div>
-
-                <div class="custom-card">
-                    <h3>Prueba de Archivos <span>Piezas Aisladas</span></h3>
-                    <p style="font-size: 0.75rem; color: var(--text-muted);">Haz clic para renderizar un archivo GLTF individual clásico. Depende del Cuerpo seleccionado arriba.</p>
-                    
-                    <div class="section-label">Archivos Peasant</div>
-                    <div class="options-grid cols-2">
-                        <button class="option-btn" onclick="selectOption('clothes', 'Peasant_Body', this)">Solo Cuerpo</button>
-                        <button class="option-btn" onclick="selectOption('clothes', 'Peasant_Arms', this)">Solo Brazos</button>
-                        <button class="option-btn" onclick="selectOption('clothes', 'Peasant_Legs', this)">Solo Piernas</button>
-                        <button class="option-btn" onclick="selectOption('clothes', 'Peasant_Feet', this)">Solo Pies</button>
-                    </div>
-
-                    <div class="section-label">Archivos Ranger</div>
-                    <div class="options-grid cols-3">
-                        <button class="option-btn" onclick="selectOption('clothes', 'Ranger_Body', this)">Cuerpo</button>
-                        <button class="option-btn" onclick="selectOption('clothes', 'Ranger_Arms', this)">Brazos</button>
-                        <button class="option-btn" onclick="selectOption('clothes', 'Ranger_Legs', this)">Piernas</button>
-                        <button class="option-btn" onclick="selectOption('clothes', 'Ranger_Feet', this)">Pies/Botas</button>
-                        <button class="option-btn" onclick="selectOption('clothes', 'Ranger_Head_Hood', this)">Capucha</button>
-                        <button class="option-btn" onclick="selectOption('clothes', 'Ranger_Acc', this)">Hombreras</button>
                     </div>
                 </div>
 
@@ -275,6 +250,11 @@ function renderAvatar($avatarData) {
         let currentGender = '<?= $defaultGender ?>'; 
         let currentOutfit = '<?= $defaultClothes ?>';
         let currentAura = '<?= $defaultAura ?>';
+        
+        // --- VARIABLES DE RIGGING DINÁMICO ---
+        let armBonesLeft = [];
+        let armBonesRight = [];
+        let currentArmRotation = parseInt(document.getElementById('armRotationSlider').value);
 
         // --- 1. CONFIGURACIÓN BÁSICA ---
         const container = document.getElementById('canvas-container');
@@ -300,14 +280,14 @@ function renderAvatar($avatarData) {
         controls.target.set(0, 0, 0); 
 
         // --- 3. ILUMINACIÓN ---
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
         scene.add(ambientLight);
         const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
         dirLight.position.set(2, 5, 5);
         dirLight.castShadow = true;
         scene.add(dirLight);
 
-        // --- 4. ENTORNOS ARTÍSTICOS (BACKGROUNDS) ---
+        // --- 4. ENTORNOS ARTÍSTICOS ---
         const backgroundGroup = new THREE.Group();
         scene.add(backgroundGroup);
 
@@ -362,10 +342,9 @@ function renderAvatar($avatarData) {
             }
         }
 
-        // --- 5. LECTURA ESTRICTA DE ARCHIVOS Y CORRECCIÓN DE POSE ---
+        // --- 5. LECTURA DE ARCHIVOS Y CORRECCIÓN DE POSE ---
         const loader = new THREE.GLTFLoader();
         const avatarGroup = new THREE.Group();
-        avatarGroup.position.y = -1; 
         scene.add(avatarGroup);
         let loadedParts = []; 
 
@@ -373,131 +352,91 @@ function renderAvatar($avatarData) {
             loadingOverlay.style.display = 'flex';
             loadedParts.forEach(part => avatarGroup.remove(part));
             loadedParts = [];
-
-            let filesToLoad = [];
             
-            // Array con los nuevos modelos que están en su propia carpeta o son .glb
-            const nuevosModelos = [
-                'blue_workwear_messenger', 'cooper', 'young_guy_keeps_his_hands_in_pockets',
-                'navy_minimalist_gentleman', 'casual_cropped_hoodie_portrait', 'executive_in_a_navy_suit',
-                'noir_ensemble', 'confident_executive_in_a_navy_suit', 'rigged_t-pose_human_male_w_50_face_blendshapes',
-                'berserk_guts_black_swordsman.glb', 'girl_speedsculpt', 'little_witch_academia',
-                'matilda', 'carol_tennis_player_girl_animated_3d_character.glb', 'hooded_figure_3d_model_free',
-                'monochrome_casual_portrait', 'casual_confidence', 'dark_astronaut',
-                'midnight_outlaw_shadow_character_3d_model_free', 'midnight_casual.glb', 'casual_in_gray.glb'
-            ];
-            
-            // --- LÓGICA DE NUEVOS MODELOS (Detecta carpeta o .glb automáticamente) ---
-            if (nuevosModelos.includes(currentOutfit)) {
-                if (currentOutfit.endsWith('.glb')) {
-                    filesToLoad = [currentOutfit]; // Es un archivo suelto
-                } else {
-                    filesToLoad = [`${currentOutfit}/scene.gltf`]; // Es una carpeta
-                }
-            }
-            // --- LÓGICA DE CONJUNTOS CLÁSICOS COMPLETOS ---
-            else if (currentOutfit === 'Peasant') {
-                filesToLoad = [
-                    `${currentGender}_Peasant_Arms.gltf`,
-                    `${currentGender}_Peasant_Body.gltf`,
-                    `${currentGender}_Peasant_Feet.gltf`,
-                    `${currentGender}_Peasant_Legs.gltf`
-                ];
-            } else if (currentOutfit === 'Ranger') {
-                if (currentGender === 'Male') {
-                    filesToLoad = [
-                        `${currentGender}_Ranger_Acc_Pauldron.gltf`,
-                        `${currentGender}_Ranger_Arms.gltf`,
-                        `${currentGender}_Ranger_Body.gltf`,
-                        `${currentGender}_Ranger_Feet_Boots.gltf`,
-                        `${currentGender}_Ranger_Head_Hood.gltf`,
-                        `${currentGender}_Ranger_Legs.gltf`
-                    ]; 
-                } else {
-                    filesToLoad = [
-                        `${currentGender}_Ranger_Acc_Pauldrons.gltf`,
-                        `${currentGender}_Ranger_Arms.gltf`,
-                        `${currentGender}_Ranger_Body.gltf`,
-                        `${currentGender}_Ranger_Feet.gltf`,
-                        `${currentGender}_Ranger_Head_Hood.gltf`,
-                        `${currentGender}_Ranger_Legs.gltf`
-                    ]; 
-                }
-            } else if (currentOutfit === 'Superhero') {
-                filesToLoad = [`Superhero_${currentGender}_FullBody.gltf`];
-            } 
-            // --- LÓGICA DE PIEZAS AISLADAS (DEPURACIÓN CLÁSICA) ---
-            else if (currentOutfit === 'Peasant_Body') filesToLoad = [`${currentGender}_Peasant_Body.gltf`];
-            else if (currentOutfit === 'Peasant_Arms') filesToLoad = [`${currentGender}_Peasant_Arms.gltf`];
-            else if (currentOutfit === 'Peasant_Legs') filesToLoad = [`${currentGender}_Peasant_Legs.gltf`];
-            else if (currentOutfit === 'Peasant_Feet') filesToLoad = [`${currentGender}_Peasant_Feet.gltf`];
-            else if (currentOutfit === 'Ranger_Body') filesToLoad = [`${currentGender}_Ranger_Body.gltf`];
-            else if (currentOutfit === 'Ranger_Arms') filesToLoad = [`${currentGender}_Ranger_Arms.gltf`];
-            else if (currentOutfit === 'Ranger_Legs') filesToLoad = [`${currentGender}_Ranger_Legs.gltf`];
-            else if (currentOutfit === 'Ranger_Head_Hood') filesToLoad = [`${currentGender}_Ranger_Head_Hood.gltf`];
-            else if (currentOutfit === 'Ranger_Feet') {
-                filesToLoad = currentGender === 'Male' ? [`Male_Ranger_Feet_Boots.gltf`] : [`Female_Ranger_Feet.gltf`];
-            }
-            else if (currentOutfit === 'Ranger_Acc') {
-                filesToLoad = currentGender === 'Male' ? [`Male_Ranger_Acc_Pauldron.gltf`] : [`Female_Ranger_Acc_Pauldrons.gltf`];
+            // Limpiamos los huesos en memoria antes de cargar el nuevo modelo
+            armBonesLeft = [];
+            armBonesRight = [];
+
+            let path = `assets/3d/avatar/${currentOutfit}`;
+            if (!currentOutfit.endsWith('.glb')) {
+                path += '/scene.gltf';
             }
 
-            let loadPromises = filesToLoad.map(filename => {
-                return new Promise((resolve) => {
-                    let path = `assets/3d/avatar/${filename}`; 
+            loader.load(path, (gltf) => {
+                let model = gltf.scene;
 
-                    loader.load(path, (gltf) => {
-                        let model = gltf.scene;
+                // --- NORMALIZADOR AUTOMÁTICO DE ESCALA ---
+                const box = new THREE.Box3().setFromObject(model);
+                const size = box.getSize(new THREE.Vector3());
+                
+                if (size.y > 15) {
+                    model.scale.set(0.01, 0.01, 0.01);
+                } else if (size.y < 0.5) {
+                    model.scale.set(5, 5, 5); 
+                }
+                
+                const newBox = new THREE.Box3().setFromObject(model);
+                const center = newBox.getCenter(new THREE.Vector3());
+                model.position.y = -center.y; 
+                model.position.x = -center.x;
+                model.position.z = -center.z;
+                
+                model.traverse((node) => {
+                    if (node.isMesh) {
+                        node.castShadow = true;
+                        node.receiveShadow = true;
+                        if(node.material) node.material.depthWrite = true; 
+                    }
+                    
+                    // --- RECOLECCIÓN DE HUESOS PARA ROTACIÓN ---
+                    if (node.isBone) {
+                        const bName = node.name.toLowerCase();
+                        let rad = currentArmRotation * (Math.PI / 180);
                         
-                        model.traverse((node) => {
-                            if (node.isMesh) {
-                                node.castShadow = true;
-                                node.receiveShadow = true;
-                            }
-                            
-                            // Corrección de pose a A-Pose para todos los modelos
-                            if (node.isBone) {
-                                const boneName = node.name.toLowerCase();
-                                
-                                if (boneName.includes('leftarm') || boneName.includes('upperarm_l') || (boneName.includes('shoulder') && boneName.includes('l'))) {
-                                    node.rotation.z += 1.0; 
-                                }
-                                if (boneName.includes('rightarm') || boneName.includes('upperarm_r') || (boneName.includes('shoulder') && boneName.includes('r'))) {
-                                    node.rotation.z -= 1.0; 
-                                }
-                            }
-                        });
-                        resolve(model);
-                    }, undefined, (error) => {
-                        console.error(`No se encontró: ${filename}`);
-                        resolve(null); 
-                    });
-                });
-            });
-
-            Promise.all(loadPromises).then(models => {
-                models.forEach(model => {
-                    if(model) {
-                        avatarGroup.add(model);
-                        loadedParts.push(model);
+                        if (bName.includes('leftarm') || bName.includes('upperarm_l') || bName.includes('shoulder_l') || bName.includes('arm.l')) {
+                            armBonesLeft.push(node);
+                            node.rotation.z = rad; 
+                        }
+                        if (bName.includes('rightarm') || bName.includes('upperarm_r') || bName.includes('shoulder_r') || bName.includes('arm.r')) {
+                            armBonesRight.push(node);
+                            node.rotation.z = -rad; 
+                        }
                     }
                 });
+
+                avatarGroup.add(model);
+                loadedParts.push(model);
                 
                 generateArtisticBackground(currentAura);
+                loadingOverlay.style.display = 'none';
+
+            }, undefined, (error) => {
+                console.error(`No se encontró: ${path}`);
                 loadingOverlay.style.display = 'none';
             });
         }
 
         assembleAvatar();
 
-        // --- 6. FUNCIONES DE INTERFAZ Y CÁMARA ---
+        // --- FUNCIONES DE INTERFAZ Y ROTACIÓN ---
+        function updateArmRotation(degrees) {
+            document.getElementById('arm-rot-val').innerText = degrees;
+            currentArmRotation = parseInt(degrees);
+            
+            let rad = currentArmRotation * (Math.PI / 180);
+            
+            // Actualiza en tiempo real los huesos mapeados
+            armBonesLeft.forEach(bone => bone.rotation.z = rad);
+            armBonesRight.forEach(bone => bone.rotation.z = -rad);
+        }
+
         function setCameraMode(mode) {
             document.getElementById('btnCam3D').classList.remove('active');
             document.getElementById('btnCam2D').classList.remove('active');
             
             if (mode === '2d') {
                 document.getElementById('btnCam2D').classList.add('active');
-                camera.position.set(0, 1, 4);
+                camera.position.set(0, 0, 3.5);
                 controls.target.set(0, 0, 0);
                 controls.enableRotate = false;
             } else {
@@ -508,26 +447,20 @@ function renderAvatar($avatarData) {
         }
 
         function selectOption(category, value, btnElement) {
-            // Remueve la clase active de TODOS los botones de ropa si se selecciona ropa
             if (category === 'clothes') {
                 document.querySelectorAll('.option-btn[onclick^="selectOption(\'clothes\'"]').forEach(btn => btn.classList.remove('active'));
             } else {
-                const grid = btnElement.parentElement;
-                grid.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('active'));
+                btnElement.parentElement.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('active'));
             }
-            
             btnElement.classList.add('active');
-            
             if (category === 'gender') currentGender = value;
             if (category === 'clothes') currentOutfit = value;
             assembleAvatar();
         }
 
         function changeAuraColor(type, btnElement) {
-            const grid = btnElement.parentElement;
-            grid.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('active'));
+            btnElement.parentElement.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('active'));
             btnElement.classList.add('active');
-            
             currentAura = type;
             generateArtisticBackground(currentAura);
         }
@@ -541,7 +474,7 @@ function renderAvatar($avatarData) {
             const payload = {
                 action: 'save_avatar',
                 gender: currentGender,
-                clothes: currentOutfit, // Guarda la pieza individual o el conjunto seleccionado
+                clothes: currentOutfit, 
                 aura: currentAura
             };
 
@@ -567,10 +500,9 @@ function renderAvatar($avatarData) {
             requestAnimationFrame(animate);
             controls.update();
             
-            // Animación de respiración del avatar
-            avatarGroup.position.y = -1 + Math.sin(Date.now() * 0.002) * 0.02;
+            // Animación de respiración del avatar (Opcional, puede eliminarse si interfiere con rotaciones complejas)
+            avatarGroup.position.y = -0.5 + Math.sin(Date.now() * 0.002) * 0.01;
 
-            // Animar los fondos artísticos
             backgroundGroup.children.forEach(child => {
                 if(child.userData && child.userData.animationType) {
                     const type = child.userData.animationType;
