@@ -1,6 +1,6 @@
 <?php
 session_start();
-require 'db.php'; // Asegúrate de que aquí instancias tu conexión a la BD como $pdo
+require 'db.php'; 
 
 // Redirección de seguridad (Descomentar en producción)
 /*
@@ -9,7 +9,7 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 */
-$user_id = $_SESSION['user_id'] ?? 1; // 1 para pruebas
+$user_id = $_SESSION['user_id'] ?? 1;
 
 $user = [
     'username' => 'Daniel',
@@ -33,14 +33,13 @@ foreach ($userData as $row) {
 
 // --- 3. CONSTRUIR EL ÁRBOL DINÁMICO ---
 $nodes = [];
+$spacing_multiplier = 1.8; // 🔥 MULTIPLICADOR ESPACIAL: Aumenta este número si quieres los nodos más separados
 
-// Procesar todos los nodos
 foreach ($catalog as $item) {
     $key = $item['node_key'];
     $level = isset($user_skills[$key]) ? floor($user_skills[$key]['current_level']) : 0;
     $unlocked = isset($user_skills[$key]) ? $user_skills[$key]['unlocked'] : false;
 
-    // Calcular Estado
     $status = 'locked';
     if ($key === 'origen' || $level >= $item['max_level']) {
         $status = 'maxed';
@@ -51,8 +50,8 @@ foreach ($catalog as $item) {
     $nodes[$key] = [
         'id' => $key,
         'label' => $item['label'],
-        'x' => $item['x'],
-        'y' => $item['y'],
+        'x' => $item['x'] * $spacing_multiplier, // Expansión dinámica en X
+        'y' => $item['y'] * $spacing_multiplier, // Expansión dinámica en Y
         'level' => $level,
         'max' => $item['max_level'],
         'status' => $status,
@@ -61,8 +60,7 @@ foreach ($catalog as $item) {
     ];
 }
 
-// --- 4. CALCULAR VISIBILIDAD (Para el botón del Ojo) ---
-// Un nodo es "deep-locked" si él está bloqueado y su PADRE también está bloqueado.
+// --- 4. CALCULAR VISIBILIDAD ---
 foreach ($nodes as $key => &$node) {
     if ($key === 'origen' || $node['status'] !== 'locked') {
         $node['visibility_class'] = 'default-visible';
@@ -70,21 +68,19 @@ foreach ($nodes as $key => &$node) {
         $parentKey = $node['parent'];
         $parentStatus = isset($nodes[$parentKey]) ? $nodes[$parentKey]['status'] : 'locked';
         
-        // Si el padre está desbloqueado o maximizado, este nodo es el "Siguiente Nivel 1"
         if ($parentStatus !== 'locked') {
             $node['visibility_class'] = 'default-visible';
         } else {
-            // Está profundo en el árbol
             $node['visibility_class'] = 'deep-locked';
         }
     }
 }
-unset($node); // Romper referencia
+unset($node);
 
 function renderAvatar($avatarData) {
-    if (empty($avatarData)) return "<div class='avatar-circle' style='background: #E2E8F0; color: #4A5568;'>👤</div>";
+    if (empty($avatarData)) return "<div class='avatar-circle' style='background: var(--bg-panel); color: var(--text-main);'>👤</div>";
     if (strpos($avatarData, '.') !== false) return "<div class='avatar-circle' style='background-image: url(\"{$avatarData}\"); background-size: cover;'></div>";
-    return "<div class='avatar-circle' style='background: rgba(128, 90, 213, 0.1); color: #805AD5;'>{$avatarData}</div>";
+    return "<div class='avatar-circle' style='background: var(--accent-light); color: var(--accent);'>{$avatarData}</div>";
 }
 ?>
 <!DOCTYPE html>
@@ -95,6 +91,8 @@ function renderAvatar($avatarData) {
     <title>Árbol de Habilidades | APH OS</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
     <style>
+        /* === MOTOR DE TEMAS (CSS VARIABLES) === */
+        /* 1. Tema por Defecto (Light OS) */
         :root { 
             --bg-base: #FAFAFC; 
             --bg-panel: #FFFFFF; 
@@ -104,15 +102,94 @@ function renderAvatar($avatarData) {
             --accent-light: rgba(128, 90, 213, 0.1); 
             --border-color: #E2E8F0; 
             --gold: #ecc94b;
+            --locked-color: #E2E8F0;
+            --node-radius: 12px;
+            --grid-color: var(--border-color);
+            --line-filter: none;
+            --shadow-panel: 0 10px 25px rgba(0,0,0,0.02);
+            --backdrop: none;
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        /* 2. Tema Cyberpunk */
+        [data-theme="cyberpunk"] {
+            --bg-base: #0a0a0e; 
+            --bg-panel: #13131a; 
+            --text-main: #00ffcc; 
+            --text-muted: #4a5568; 
+            --accent: #ff007f; 
+            --accent-light: rgba(255, 0, 127, 0.15); 
+            --border-color: #2a2a35; 
+            --gold: #f5df4d;
+            --locked-color: #2a2a35;
+            --node-radius: 0px; /* Bordes afilados */
+            --grid-color: #1a1a24;
+            --line-filter: drop-shadow(0 0 4px var(--accent));
+            --shadow-panel: 0 0 20px rgba(0, 255, 204, 0.05);
+            --backdrop: none;
+        }
+
+        /* 3. Tema Orgánico */
+        [data-theme="organic"] {
+            --bg-base: #f4f1ea; 
+            --bg-panel: #ffffff; 
+            --text-main: #2c3e50; 
+            --text-muted: #7f8c8d; 
+            --accent: #27ae60; 
+            --accent-light: rgba(39, 174, 96, 0.1); 
+            --border-color: #dcdde1; 
+            --gold: #f39c12;
+            --locked-color: #dcdde1;
+            --node-radius: 50%; /* Nodos circulares */
+            --grid-color: #e8e6df;
+            --line-filter: none;
+            --shadow-panel: 0 15px 30px rgba(44, 62, 80, 0.05);
+            --backdrop: none;
+        }
+
+        /* 4. Tema Void (Minimalista Oscuro) */
+        [data-theme="void"] {
+            --bg-base: #000000; 
+            --bg-panel: #0a0a0a; 
+            --text-main: #ffffff; 
+            --text-muted: #666666; 
+            --accent: #ffffff; 
+            --accent-light: rgba(255, 255, 255, 0.1); 
+            --border-color: #333333; 
+            --gold: #bf953f;
+            --locked-color: #222222;
+            --node-radius: 30px; /* Nodos en forma de píldora */
+            --grid-color: #111111;
+            --line-filter: none;
+            --shadow-panel: none;
+            --backdrop: none;
+        }
+
+        /* 5. Tema Holográfico (Glassmorphism) */
+        [data-theme="holographic"] {
+            --bg-base: #0f172a; 
+            --bg-panel: rgba(30, 41, 59, 0.6); 
+            --text-main: #e2e8f0; 
+            --text-muted: #94a3b8; 
+            --accent: #38bdf8; 
+            --accent-light: rgba(56, 189, 248, 0.2); 
+            --border-color: rgba(255, 255, 255, 0.1); 
+            --gold: #fcd34d;
+            --locked-color: rgba(255, 255, 255, 0.05);
+            --node-radius: 16px;
+            --grid-color: rgba(56, 189, 248, 0.05);
+            --line-filter: drop-shadow(0 0 3px var(--accent));
+            --shadow-panel: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            --backdrop: blur(10px);
+        }
+
+        /* === ESTILOS GENERALES === */
+        * { margin: 0; padding: 0; box-sizing: border-box; transition: background-color 0.3s, border-color 0.3s; }
         body { font-family: 'Inter', sans-serif; background-color: var(--bg-base); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
         
-        /* Sidebar y Layout ... (Igual que tu versión) */
-        nav.sidebar { width: 260px; background: var(--bg-panel); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 30px 20px; z-index: 20; flex-shrink: 0; }
+        nav.sidebar { width: 260px; background: var(--bg-panel); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 30px 20px; z-index: 20; flex-shrink: 0; backdrop-filter: var(--backdrop); }
         .brand { text-align: center; margin-bottom: 40px; } .brand h2 { font-weight: 800; letter-spacing: 2px; font-size: 1.5rem; color: var(--accent); }
         .nav-links { flex: 1; display: flex; flex-direction: column; gap: 5px; }
-        .nav-link { display: flex; align-items: center; padding: 12px 16px; color: var(--text-muted); text-decoration: none; font-weight: 600; border-radius: 8px; transition: 0.3s; }
+        .nav-link { display: flex; align-items: center; padding: 12px 16px; color: var(--text-muted); text-decoration: none; font-weight: 600; border-radius: 8px; }
         .nav-link:hover, .nav-link.active { background: var(--accent-light); color: var(--accent); }
         .user-mini { display: flex; align-items: center; gap: 12px; padding-top: 20px; border-top: 1px solid var(--border-color); margin-top: auto; }
         .avatar-circle { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
@@ -124,45 +201,49 @@ function renderAvatar($avatarData) {
         .header-dash { margin-bottom: 30px; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
         .header-dash h1 { font-size: 2rem; font-weight: 800; margin-bottom: 5px; }
         .header-dash p { color: var(--text-muted); }
-        .btn-return { background: var(--bg-panel); border: 2px solid var(--border-color); color: var(--text-main); padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 8px; text-decoration: none; font-size: 0.9rem; }
+        .btn-return { background: var(--bg-panel); border: 2px solid var(--border-color); color: var(--text-main); padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none; font-size: 0.9rem; backdrop-filter: var(--backdrop); }
         .btn-return:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
 
-        .tree-viewport { flex: 1; position: relative; background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.02); cursor: grab; }
+        .tree-viewport { flex: 1; position: relative; background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow-panel); cursor: grab; backdrop-filter: var(--backdrop); }
         .tree-viewport:active { cursor: grabbing; }
-        .tree-viewport::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: radial-gradient(var(--border-color) 1px, transparent 1px); background-size: 30px 30px; opacity: 0.5; z-index: 0; pointer-events: none; }
+        .tree-viewport::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: radial-gradient(var(--grid-color) 1px, transparent 1px); background-size: 40px 40px; opacity: 0.6; z-index: 0; pointer-events: none; }
         
         .tree-canvas { position: absolute; top: 50%; left: 50%; transform-origin: 0 0; z-index: 1; transition: opacity 0.3s; }
         
         .zoom-controls { position: absolute; bottom: 20px; right: 20px; display: flex; gap: 10px; z-index: 20; }
-        .zoom-btn { background: white; border: 1px solid var(--border-color); width: 40px; height: 40px; border-radius: 8px; font-size: 1.2rem; font-weight: bold; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: 0.2s; }
-        .zoom-btn:hover { color: var(--accent); border-color: var(--accent); }
+        .zoom-btn { background: var(--bg-panel); border: 1px solid var(--border-color); width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; font-weight: bold; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-panel); backdrop-filter: var(--backdrop); transition: 0.2s; }
+        .zoom-btn:hover { color: var(--accent); border-color: var(--accent); transform: translateY(-2px); }
         
-        /* ESTILOS DEL MODO OCULTO (EYE TOGGLE) */
-        .tree-canvas.hide-deep .deep-locked {
-            display: none !important;
-            opacity: 0;
-            transition: 0.3s;
-        }
+        /* Ocultar nodos lejanos */
+        .tree-canvas.hide-deep .deep-locked { display: none !important; opacity: 0; transition: 0.3s; }
 
-        svg { position: absolute; top: 0; left: 0; width: 0; height: 0; overflow: visible; pointer-events: none; z-index: 1; }
+        /* SVG y Líneas Suavizadas */
+        svg { position: absolute; top: 0; left: 0; width: 0; height: 0; overflow: visible; pointer-events: none; z-index: 1; filter: var(--line-filter); }
+        .tree-link { transition: stroke 0.3s; }
         
-        .node { position: absolute; width: 110px; height: 90px; background: var(--bg-panel); border: 2px solid var(--border-color); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; z-index: 5; text-decoration: none; color: var(--text-main); transform: translate(-50%, -50%); }
-        .node.core { width: 140px; height: 140px; background: var(--accent); border-radius: 50%; color: white; border: 6px solid white; box-shadow: 0 0 40px rgba(128, 90, 213, 0.4); cursor: default; }
-        .node.core span { font-size: 0.7rem; font-family: 'Inter', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9; }
-        .node.core strong { font-size: 1.5rem; font-family: 'Orbitron', sans-serif; }
+        /* NODOS */
+        .node { position: absolute; width: 120px; height: 100px; background: var(--bg-panel); border: 2px solid var(--border-color); border-radius: var(--node-radius); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; z-index: 5; text-decoration: none; color: var(--text-main); transform: translate(-50%, -50%); transition: 0.3s; backdrop-filter: var(--backdrop); }
         
-        .node.locked { filter: grayscale(100%); opacity: 0.6; pointer-events: none; }
-        .node.unlocked { border-color: var(--gold); box-shadow: 0 5px 15px rgba(236, 201, 75, 0.2); }
-        .node.maxed { border-color: var(--accent); background: var(--accent-light); box-shadow: 0 5px 15px rgba(128, 90, 213, 0.2); }
-        .node:not(.core):not(.locked):hover { transform: translate(-50%, -50%) scale(1.1); z-index: 20; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        /* Ajuste específico para el tema orgánico (nodos redondos necesitan ser cuadrados perfectos) */
+        [data-theme="organic"] .node:not(.core) { width: 110px; height: 110px; }
+
+        .node.core { width: 150px; height: 150px; background: var(--accent); border-radius: 50%; color: white; border: 6px solid var(--bg-panel); box-shadow: 0 0 30px var(--accent-light); cursor: default; }
+        .node.core span { font-size: 0.75rem; font-family: 'Inter', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9; }
+        .node.core strong { font-size: 1.7rem; font-family: 'Orbitron', sans-serif; }
         
-        .node-level { font-family: 'Orbitron', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--text-muted); }
-        .node.unlocked .node-level { color: #D69E2E; }
+        .node.locked { filter: grayscale(100%) opacity(0.5); pointer-events: none; border-color: var(--locked-color); }
+        .node.unlocked { border-color: var(--gold); box-shadow: 0 5px 15px rgba(236, 201, 75, 0.1); }
+        .node.maxed { border-color: var(--accent); background: var(--accent-light); box-shadow: 0 5px 15px var(--accent-light); }
+        .node:not(.core):not(.locked):hover { transform: translate(-50%, -50%) scale(1.15); z-index: 20; box-shadow: 0 15px 35px rgba(0,0,0,0.2); }
+        
+        .node-level { font-family: 'Orbitron', sans-serif; font-size: 1.2rem; font-weight: 700; color: var(--text-muted); }
+        .node.unlocked .node-level { color: var(--gold); }
         .node.maxed .node-level { color: var(--accent); }
-        .node-label { font-size: 0.75rem; text-transform: uppercase; margin-top: 5px; text-align: center; font-weight: 700; letter-spacing: 0.5px; }
+        .node-label { font-size: 0.75rem; text-transform: uppercase; margin-top: 5px; text-align: center; font-weight: 700; letter-spacing: 0.5px; padding: 0 5px; }
     </style>
 </head>
-<body>
+<!-- Iniciamos con el tema guardado o el default -->
+<body data-theme="default">
 
     <nav class="sidebar">
         <div class="brand"><h2>A P H</h2></div>
@@ -196,6 +277,8 @@ function renderAvatar($avatarData) {
 
         <div class="tree-viewport" id="viewport">
             <div class="zoom-controls">
+                <!-- NUEVO BOTÓN DE TEMAS -->
+                <button class="zoom-btn" onclick="cycleTheme()" title="Cambiar Diseño del Mapa">🗂️</button>
                 <button class="zoom-btn" id="btn-eye" onclick="toggleVisibility()" title="Mostrar todo el árbol">🔒</button>
                 <button class="zoom-btn" onclick="zoomIn()">+</button>
                 <button class="zoom-btn" onclick="zoomOut()">-</button>
@@ -205,16 +288,18 @@ function renderAvatar($avatarData) {
             <div class="tree-canvas hide-deep" id="canvas">
                 <svg>
                     <?php 
-                    // Dibujar las conexiones dinámicamente
+                    // Dibujar conexiones con <path> para líneas modernas y suaves
                     foreach($nodes as $id => $node) {
                         if ($node['parent'] && isset($nodes[$node['parent']])) {
                             $parent = $nodes[$node['parent']];
-                            $color = ($node['status'] == 'locked') ? '#E2E8F0' : (($node['status'] == 'maxed') ? '#805AD5' : '#ecc94b');
+                            
+                            // Determinación de colores según el tema usando variables CSS dinámicas integradas en el stroke
+                            $statusColor = ($node['status'] == 'locked') ? 'var(--locked-color)' : (($node['status'] == 'maxed') ? 'var(--accent)' : 'var(--gold)');
                             $dash = ($node['status'] == 'locked') ? '5,5' : '0';
                             $width = ($node['status'] == 'maxed') ? '3' : '2';
                             
-                            // Se aplica la clase de visibilidad también a la línea
-                            echo "<line class='{$node['visibility_class']}' x1='{$parent['x']}' y1='{$parent['y']}' x2='{$node['x']}' y2='{$node['y']}' stroke='{$color}' stroke-width='{$width}' stroke-dasharray='{$dash}'></line>";
+                            // Trazado de línea con puntas redondeadas (stroke-linecap)
+                            echo "<path class='tree-link {$node['visibility_class']}' d='M {$parent['x']} {$parent['y']} L {$node['x']} {$node['y']}' stroke='{$statusColor}' stroke-width='{$width}' stroke-dasharray='{$dash}' fill='none' stroke-linecap='round'></path>";
                         }
                     }
                     ?>
@@ -238,7 +323,25 @@ function renderAvatar($avatarData) {
     </main>
 
     <script>
-        // Lógica de Pan y Zoom
+        // --- LÓGICA DE TEMAS (Capas) ---
+        const themes = ['default', 'cyberpunk', 'organic', 'void', 'holographic'];
+        let currentThemeIndex = 0;
+
+        // Cargar tema guardado si existe
+        const savedTheme = localStorage.getItem('aph_skill_theme');
+        if (savedTheme && themes.includes(savedTheme)) {
+            document.body.setAttribute('data-theme', savedTheme);
+            currentThemeIndex = themes.indexOf(savedTheme);
+        }
+
+        function cycleTheme() {
+            currentThemeIndex = (currentThemeIndex + 1) % themes.length;
+            const newTheme = themes[currentThemeIndex];
+            document.body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('aph_skill_theme', newTheme);
+        }
+
+        // --- Lógica de Pan y Zoom ---
         const viewport = document.getElementById('viewport');
         const canvas = document.getElementById('canvas');
         
@@ -251,6 +354,13 @@ function renderAvatar($avatarData) {
         function setTransform() {
             canvas.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`;
         }
+
+        // Centrar ligeramente el mapa al iniciar basándose en el escalado inicial
+        function centerInit() {
+            scale = 0.8; // Empieza un poco alejado para ver mejor el entorno
+            setTransform();
+        }
+        window.onload = centerInit;
 
         viewport.onmousedown = function (e) {
             e.preventDefault();
@@ -274,27 +384,27 @@ function renderAvatar($avatarData) {
             let delta = (e.wheelDelta ? e.wheelDelta : -e.deltaY);
             
             (delta > 0) ? (scale *= 1.1) : (scale /= 1.1);
-            scale = Math.max(0.3, Math.min(scale, 2.5)); 
+            scale = Math.max(0.2, Math.min(scale, 3.0)); 
             
             pointX = e.clientX - xs * scale;
             pointY = e.clientY - ys * scale;
             setTransform();
         }
 
-        function zoomIn() { scale = Math.min(scale * 1.2, 2.5); setTransform(); }
-        function zoomOut() { scale = Math.max(scale / 1.2, 0.3); setTransform(); }
-        function resetView() { scale = 1; pointX = 0; pointY = 0; setTransform(); }
+        function zoomIn() { scale = Math.min(scale * 1.2, 3.0); setTransform(); }
+        function zoomOut() { scale = Math.max(scale / 1.2, 0.2); setTransform(); }
+        function resetView() { scale = 0.8; pointX = 0; pointY = 0; setTransform(); }
 
-        // --- LÓGICA DEL BOTÓN DEL OJO ---
+        // --- Lógica del Ojo ---
         function toggleVisibility() {
             const btn = document.getElementById('btn-eye');
             canvas.classList.toggle('hide-deep');
             
             if(canvas.classList.contains('hide-deep')) {
-                btn.innerHTML = '🔒'; // Modo Oculto (Solo muestra nivel actual + 1)
+                btn.innerHTML = '🔒';
                 btn.title = 'Mostrar todo el árbol';
             } else {
-                btn.innerHTML = '👁️'; // Modo Visible (Muestra todo)
+                btn.innerHTML = '👁️';
                 btn.title = 'Ocultar ramas lejanas';
             }
         }
