@@ -5,7 +5,6 @@ require '../db.php';
 $current_skill = $_GET['skill'] ?? 'estudio';
 $user_id = $_SESSION['user_id'] ?? 1;
 
-// Calcular el progreso total en base al peso de los nodos
 $stmt = $pdo->prepare("
     SELECT sn.name, sn.max_level, sn.contribution_weight, 
            COALESCE(usn.current_level, 0) as current_level
@@ -19,7 +18,6 @@ $nodos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $total_percent = 0;
 foreach ($nodos as $nodo) {
     if ($nodo['max_level'] > 0) {
-        // Ejemplo: Si soy 5/10 en React, y React vale 40% (0.4), sumo 20% al total.
         $aportado = ($nodo['current_level'] / $nodo['max_level']) * ($nodo['contribution_weight'] * 100);
         $total_percent += $aportado;
     }
@@ -27,10 +25,10 @@ foreach ($nodos as $nodo) {
 $total_percent = round($total_percent, 1);
 ?>
 <style>
-    .presentation-card { background: var(--bg-panel); padding: 40px 20px; border-radius: 20px; text-align: center; }
+    .presentation-card { padding: 20px; text-align: center; }
     .pres-title { font-family: 'Orbitron', sans-serif; font-size: 2.5rem; color: var(--theme-color); margin-bottom: 5px; text-transform: uppercase; }
-    .pres-subtitle { color: var(--text-muted); margin-bottom: 40px; font-size: 1.1rem; }
-    .stat-circle { width: 150px; height: 150px; border-radius: 50%; border: 8px solid var(--theme-color); display: flex; align-items: center; justify-content: center; margin: 0 auto 30px; font-size: 3rem; font-family: 'Orbitron', sans-serif; color: var(--text-main); font-weight: bold; background: var(--theme-light); }
+    .pres-subtitle { color: var(--text-muted); margin-bottom: 30px; font-size: 1.1rem; }
+    .stat-circle { width: 140px; height: 140px; border-radius: 50%; border: 6px solid var(--theme-color); display: flex; align-items: center; justify-content: center; margin: 0 auto 30px; font-size: 2.5rem; font-family: 'Orbitron', sans-serif; color: var(--text-main); font-weight: bold; background: var(--theme-light); }
     .progress-list { display: flex; flex-direction: column; gap: 20px; max-width: 500px; margin: 0 auto; text-align: left;}
     .pres-bar-bg { width: 100%; background: var(--border-color); height: 12px; border-radius: 6px; margin-top: 8px; overflow: hidden; }
     .pres-bar-fill { background: var(--theme-color); height: 100%; border-radius: 6px; }
@@ -47,7 +45,7 @@ $total_percent = round($total_percent, 1);
 
     <div class="progress-list">
         <?php if(empty($nodos)): ?>
-            <p style="text-align:center; color: var(--text-muted);">Sin datos suficientes para proyectar.</p>
+            <p style="text-align:center; color: var(--text-muted);">Sin datos para proyectar.</p>
         <?php else: ?>
             <?php foreach($nodos as $nodo): 
                 $porcentaje_individual = ($nodo['current_level'] / $nodo['max_level']) * 100;

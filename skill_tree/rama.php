@@ -282,26 +282,30 @@ $user = ['username' => 'Daniel', 'profession' => 'Ingeniería de Sistemas', 'pro
         const modalTitle = document.getElementById('modalTitle');
 
         function openModal(url, title) {
-            // 1. Mostrar la ventana con animacion y titulo
-            modalTitle.innerText = title;
-            modalBody.innerHTML = '<div class="loader"></div><p style="text-align:center; color: var(--text-muted);">Cargando módulo...</p>';
-            modal.classList.add('active');
+    modalTitle.innerText = title;
+    modalBody.innerHTML = '<div class="loader"></div><p style="text-align:center; color: var(--text-muted);">Cargando módulo...</p>';
+    modal.classList.add('active');
 
-            // 2. Hacer la peticion al archivo PHP (ej: aumentar.php)
-            fetch(url)
-                .then(response => {
-                    if(!response.ok) throw new Error("Error al cargar el módulo");
-                    return response.text();
-                })
-                .then(html => {
-                    // 3. Pegar el HTML devuelto dentro de la ventana
-                    modalBody.innerHTML = html;
-                })
-                .catch(err => {
-                    modalBody.innerHTML = `<p style="color: #E53E3E; text-align:center;">Error: No se pudo cargar el archivo (${url}). <br>Asegúrate de haber creado el archivo en la carpeta skill_tree.</p>`;
-                });
-        }
-
+    fetch(url)
+        .then(response => {
+            if(!response.ok) throw new Error("Error al cargar el módulo");
+            return response.text();
+        })
+        .then(html => {
+            modalBody.innerHTML = html;
+            // MAGIA: Obligar al navegador a ejecutar los scripts que vienen en el modal
+            const scripts = modalBody.querySelectorAll('script');
+            scripts.forEach(script => {
+                const newScript = document.createElement('script');
+                newScript.textContent = script.textContent;
+                document.body.appendChild(newScript);
+                document.body.removeChild(newScript);
+            });
+        })
+        .catch(err => {
+            modalBody.innerHTML = `<p style="color: #E53E3E; text-align:center;">Error al cargar. Asegúrate de que el archivo existe.</p>`;
+        });
+}
         function closeModal(force = false) {
             // Si el click fue en el fondo oscuro (overlay) o en la X
             if (force || event.target === modal) {
