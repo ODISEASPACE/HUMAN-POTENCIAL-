@@ -1,15 +1,15 @@
 <?php
 session_start();
-require 'db.php';
+require 'db.php'; // Asegúrate de que aquí instancias tu conexión a la BD como $pdo
 
-// Redirección de seguridad
+// Redirección de seguridad (Descomentar en producción)
 /*
 if (!isset($_SESSION['user_id'])) {
     header("Location: index.php");
     exit;
 }
-$user_id = $_SESSION['user_id'];
 */
+$user_id = $_SESSION['user_id'] ?? 1; // 1 para pruebas
 
 $user = [
     'username' => 'Daniel',
@@ -17,35 +17,69 @@ $user = [
     'profile_picture' => ''
 ];
 
-// --- ESTRUCTURA DEL ÁRBOL DE HABILIDADES ---
-// Añadida la clave 'route' para asegurar que todos los sub-nodos apunten a su área principal correspondiente.
-$nodes = [
-    'origen' => ['label' => 'Origen APH', 'x' => 0, 'y' => 0, 'level' => 1, 'max' => 1, 'status' => 'maxed', 'parent' => null, 'route' => '#'],
-    
-    // RAMA: ESTUDIO (Ruta: estudio.php)
-    'estudio' => ['label' => 'Estudio', 'x' => 0, 'y' => -160, 'level' => 10, 'max' => 10, 'status' => 'maxed', 'parent' => 'origen', 'route' => 'estudio'],
-    'logica' => ['label' => 'Lógica', 'x' => -120, 'y' => -300, 'level' => 5, 'max' => 10, 'status' => 'unlocked', 'parent' => 'estudio', 'route' => 'estudio'],
-    'desarrollo' => ['label' => 'Desarrollo', 'x' => 120, 'y' => -300, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'estudio', 'route' => 'estudio'],
-    'arquitectura' => ['label' => 'Arquitectura', 'x' => 120, 'y' => -440, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'desarrollo', 'route' => 'estudio'],
+// --- 1. OBTENER EL CATÁLOGO DE HABILIDADES ---
+$stmt = $pdo->query("SELECT * FROM skills_catalog");
+$catalog = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // RAMA: LABORAL (Ruta: laboral.php)
-    'laboral' => ['label' => 'Laboral', 'x' => 180, 'y' => 60, 'level' => 4, 'max' => 10, 'status' => 'unlocked', 'parent' => 'origen', 'route' => 'laboral'],
-    'liderazgo' => ['label' => 'Liderazgo', 'x' => 320, 'y' => 0, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'laboral', 'route' => 'laboral'],
-    'gestion' => ['label' => 'Gestión', 'x' => 320, 'y' => 120, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'laboral', 'route' => 'laboral'],
+// --- 2. OBTENER PROGRESO DEL USUARIO ---
+$stmt = $pdo->prepare("SELECT node_key, current_level, unlocked FROM user_skills WHERE user_id = ?");
+$stmt->execute([$user_id]);
+$userData = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // RAMA: FINANZAS (Ruta: finanzas.php)
-    'finanzas' => ['label' => 'Finanzas', 'x' => 100, 'y' => 200, 'level' => 2, 'max' => 10, 'status' => 'unlocked', 'parent' => 'origen', 'route' => 'finanzas'],
-    'inversion' => ['label' => 'Inversión', 'x' => 100, 'y' => 340, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'finanzas', 'route' => 'finanzas'],
+$user_skills = [];
+foreach ($userData as $row) {
+    $user_skills[$row['node_key']] = $row;
+}
 
-    // RAMA: SALUD (Ruta: salud.php)
-    'salud' => ['label' => 'Salud', 'x' => -100, 'y' => 200, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'origen', 'route' => 'salud'],
-    'nutricion' => ['label' => 'Nutrición', 'x' => -200, 'y' => 300, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'salud', 'route' => 'salud'],
-    'entrenamiento' => ['label' => 'Físico', 'x' => 0, 'y' => 340, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'salud', 'route' => 'salud'],
+// --- 3. CONSTRUIR EL ÁRBOL DINÁMICO ---
+$nodes = [];
 
-    // RAMA: ESPÍRITU (Ruta: espiritu.php)
-    'espiritu' => ['label' => 'Espíritu', 'x' => -180, 'y' => 60, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'origen', 'route' => 'espiritu'],
-    'meditacion' => ['label' => 'Meditación', 'x' => -320, 'y' => 60, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'espiritu', 'route' => 'espiritu'],
-];
+// Procesar todos los nodos
+foreach ($catalog as $item) {
+    $key = $item['node_key'];
+    $level = isset($user_skills[$key]) ? floor($user_skills[$key]['current_level']) : 0;
+    $unlocked = isset($user_skills[$key]) ? $user_skills[$key]['unlocked'] : false;
+
+    // Calcular Estado
+    $status = 'locked';
+    if ($key === 'origen' || $level >= $item['max_level']) {
+        $status = 'maxed';
+    } elseif ($level > 0 || $unlocked) {
+        $status = 'unlocked';
+    }
+
+    $nodes[$key] = [
+        'id' => $key,
+        'label' => $item['label'],
+        'x' => $item['x'],
+        'y' => $item['y'],
+        'level' => $level,
+        'max' => $item['max_level'],
+        'status' => $status,
+        'parent' => $item['parent_key'],
+        'route' => $item['route']
+    ];
+}
+
+// --- 4. CALCULAR VISIBILIDAD (Para el botón del Ojo) ---
+// Un nodo es "deep-locked" si él está bloqueado y su PADRE también está bloqueado.
+foreach ($nodes as $key => &$node) {
+    if ($key === 'origen' || $node['status'] !== 'locked') {
+        $node['visibility_class'] = 'default-visible';
+    } else {
+        $parentKey = $node['parent'];
+        $parentStatus = isset($nodes[$parentKey]) ? $nodes[$parentKey]['status'] : 'locked';
+        
+        // Si el padre está desbloqueado o maximizado, este nodo es el "Siguiente Nivel 1"
+        if ($parentStatus !== 'locked') {
+            $node['visibility_class'] = 'default-visible';
+        } else {
+            // Está profundo en el árbol
+            $node['visibility_class'] = 'deep-locked';
+        }
+    }
+}
+unset($node); // Romper referencia
 
 function renderAvatar($avatarData) {
     if (empty($avatarData)) return "<div class='avatar-circle' style='background: #E2E8F0; color: #4A5568;'>👤</div>";
@@ -74,7 +108,7 @@ function renderAvatar($avatarData) {
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background-color: var(--bg-base); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
         
-        /* Sidebar */
+        /* Sidebar y Layout ... (Igual que tu versión) */
         nav.sidebar { width: 260px; background: var(--bg-panel); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 30px 20px; z-index: 20; flex-shrink: 0; }
         .brand { text-align: center; margin-bottom: 40px; } .brand h2 { font-weight: 800; letter-spacing: 2px; font-size: 1.5rem; color: var(--accent); }
         .nav-links { flex: 1; display: flex; flex-direction: column; gap: 5px; }
@@ -86,7 +120,6 @@ function renderAvatar($avatarData) {
         .user-info-mini p { font-size: 0.75rem; color: var(--text-muted); }
         .btn-logout { margin-top: 15px; text-align: center; font-size: 0.85rem; color: #E53E3E; text-decoration: none; font-weight: 600; padding: 8px; border-radius: 6px; }
 
-        /* Contenedor Principal */
         main { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 40px; }
         .header-dash { margin-bottom: 30px; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
         .header-dash h1 { font-size: 2rem; font-weight: 800; margin-bottom: 5px; }
@@ -94,19 +127,23 @@ function renderAvatar($avatarData) {
         .btn-return { background: var(--bg-panel); border: 2px solid var(--border-color); color: var(--text-main); padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 8px; text-decoration: none; font-size: 0.9rem; }
         .btn-return:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
 
-        /* Espacio del Árbol (Canvas y Controles) */
         .tree-viewport { flex: 1; position: relative; background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.02); cursor: grab; }
         .tree-viewport:active { cursor: grabbing; }
         .tree-viewport::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: radial-gradient(var(--border-color) 1px, transparent 1px); background-size: 30px 30px; opacity: 0.5; z-index: 0; pointer-events: none; }
         
-        .tree-canvas { position: absolute; top: 50%; left: 50%; transform-origin: 0 0; z-index: 1; }
+        .tree-canvas { position: absolute; top: 50%; left: 50%; transform-origin: 0 0; z-index: 1; transition: opacity 0.3s; }
         
-        /* Controles de Zoom */
         .zoom-controls { position: absolute; bottom: 20px; right: 20px; display: flex; gap: 10px; z-index: 20; }
         .zoom-btn { background: white; border: 1px solid var(--border-color); width: 40px; height: 40px; border-radius: 8px; font-size: 1.2rem; font-weight: bold; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: 0.2s; }
         .zoom-btn:hover { color: var(--accent); border-color: var(--accent); }
+        
+        /* ESTILOS DEL MODO OCULTO (EYE TOGGLE) */
+        .tree-canvas.hide-deep .deep-locked {
+            display: none !important;
+            opacity: 0;
+            transition: 0.3s;
+        }
 
-        /* Nodos y SVG */
         svg { position: absolute; top: 0; left: 0; width: 0; height: 0; overflow: visible; pointer-events: none; z-index: 1; }
         
         .node { position: absolute; width: 110px; height: 90px; background: var(--bg-panel); border: 2px solid var(--border-color); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; z-index: 5; text-decoration: none; color: var(--text-main); transform: translate(-50%, -50%); }
@@ -159,15 +196,16 @@ function renderAvatar($avatarData) {
 
         <div class="tree-viewport" id="viewport">
             <div class="zoom-controls">
+                <button class="zoom-btn" id="btn-eye" onclick="toggleVisibility()" title="Mostrar todo el árbol">🔒</button>
                 <button class="zoom-btn" onclick="zoomIn()">+</button>
                 <button class="zoom-btn" onclick="zoomOut()">-</button>
                 <button class="zoom-btn" onclick="resetView()">⌂</button>
             </div>
 
-            <div class="tree-canvas" id="canvas">
+            <div class="tree-canvas hide-deep" id="canvas">
                 <svg>
                     <?php 
-                    // Dibujar las conexiones dinámicamente en el servidor
+                    // Dibujar las conexiones dinámicamente
                     foreach($nodes as $id => $node) {
                         if ($node['parent'] && isset($nodes[$node['parent']])) {
                             $parent = $nodes[$node['parent']];
@@ -175,7 +213,8 @@ function renderAvatar($avatarData) {
                             $dash = ($node['status'] == 'locked') ? '5,5' : '0';
                             $width = ($node['status'] == 'maxed') ? '3' : '2';
                             
-                            echo "<line x1='{$parent['x']}' y1='{$parent['y']}' x2='{$node['x']}' y2='{$node['y']}' stroke='{$color}' stroke-width='{$width}' stroke-dasharray='{$dash}'></line>";
+                            // Se aplica la clase de visibilidad también a la línea
+                            echo "<line class='{$node['visibility_class']}' x1='{$parent['x']}' y1='{$parent['y']}' x2='{$node['x']}' y2='{$node['y']}' stroke='{$color}' stroke-width='{$width}' stroke-dasharray='{$dash}'></line>";
                         }
                     }
                     ?>
@@ -183,12 +222,12 @@ function renderAvatar($avatarData) {
 
                 <?php foreach($nodes as $id => $node): ?>
                     <?php if($id === 'origen'): ?>
-                        <div class="node core" style="left: <?= $node['x'] ?>px; top: <?= $node['y'] ?>px;">
+                        <div class="node core <?= $node['visibility_class'] ?>" style="left: <?= $node['x'] ?>px; top: <?= $node['y'] ?>px;">
                             <span>Origen</span>
                             <strong>APH</strong>
                         </div>
                     <?php else: ?>
-                        <a href="skill_tree/<?= $node['route'] ?>.php" class="node <?= $node['status'] ?>" style="left: <?= $node['x'] ?>px; top: <?= $node['y'] ?>px;">
+                        <a href="skill_tree/<?= $node['route'] ?>.php" class="node <?= $node['status'] ?> <?= $node['visibility_class'] ?>" style="left: <?= $node['x'] ?>px; top: <?= $node['y'] ?>px;">
                             <div class="node-level"><?= $node['level'] ?>/<?= $node['max'] ?></div>
                             <div class="node-label"><?= $node['label'] ?></div>
                         </a>
@@ -213,21 +252,13 @@ function renderAvatar($avatarData) {
             canvas.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`;
         }
 
-        // Eventos de Panning (Arrastrar)
         viewport.onmousedown = function (e) {
             e.preventDefault();
             start = { x: e.clientX - pointX, y: e.clientY - pointY };
             panning = true;
         }
-
-        viewport.onmouseup = function (e) {
-            panning = false;
-        }
-
-        viewport.onmouseleave = function (e) {
-            panning = false;
-        }
-
+        viewport.onmouseup = function (e) { panning = false; }
+        viewport.onmouseleave = function (e) { panning = false; }
         viewport.onmousemove = function (e) {
             e.preventDefault();
             if (!panning) return;
@@ -236,7 +267,6 @@ function renderAvatar($avatarData) {
             setTransform();
         }
 
-        // Eventos de Zoom (Rueda del ratón)
         viewport.onwheel = function (e) {
             e.preventDefault();
             let xs = (e.clientX - pointX) / scale;
@@ -244,18 +274,30 @@ function renderAvatar($avatarData) {
             let delta = (e.wheelDelta ? e.wheelDelta : -e.deltaY);
             
             (delta > 0) ? (scale *= 1.1) : (scale /= 1.1);
-            scale = Math.max(0.3, Math.min(scale, 2.5)); // Limitar el zoom
+            scale = Math.max(0.3, Math.min(scale, 2.5)); 
             
             pointX = e.clientX - xs * scale;
             pointY = e.clientY - ys * scale;
             setTransform();
         }
 
-        // Controles de botones
         function zoomIn() { scale = Math.min(scale * 1.2, 2.5); setTransform(); }
         function zoomOut() { scale = Math.max(scale / 1.2, 0.3); setTransform(); }
         function resetView() { scale = 1; pointX = 0; pointY = 0; setTransform(); }
 
+        // --- LÓGICA DEL BOTÓN DEL OJO ---
+        function toggleVisibility() {
+            const btn = document.getElementById('btn-eye');
+            canvas.classList.toggle('hide-deep');
+            
+            if(canvas.classList.contains('hide-deep')) {
+                btn.innerHTML = '🔒'; // Modo Oculto (Solo muestra nivel actual + 1)
+                btn.title = 'Mostrar todo el árbol';
+            } else {
+                btn.innerHTML = '👁️'; // Modo Visible (Muestra todo)
+                btn.title = 'Ocultar ramas lejanas';
+            }
+        }
     </script>
 </body>
 </html>
