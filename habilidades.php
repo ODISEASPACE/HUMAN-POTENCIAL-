@@ -91,7 +91,7 @@ function renderAvatar($avatarData) {
     <title>Árbol de Habilidades | APH OS</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Orbitron:wght@500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        /* === VARIABLES GLOBALES DE LA PLATAFORMA (No cambian) === */
+        /* === VARIABLES GLOBALES DE LA PLATAFORMA === */
         :root { 
             --bg-base: #FAFAFC; 
             --bg-panel: #FFFFFF; 
@@ -106,7 +106,6 @@ function renderAvatar($avatarData) {
         /* =========================================
            SISTEMA DE TEMAS AISLADOS DEL MAPA 
            ========================================= */
-
         /* 1. Tema por Defecto (Light OS) */
         .tree-viewport {
             --map-bg: #FFFFFF;
@@ -122,7 +121,7 @@ function renderAvatar($avatarData) {
             --map-backdrop: none;
         }
 
-        /* 2. Tema Blueprint (Técnico / Ingeniería) */
+        /* 2. Tema Blueprint */
         .tree-viewport[data-theme="blueprint"] {
             --map-bg: #0B192C;
             --map-grid: rgba(255, 255, 255, 0.1);
@@ -146,7 +145,7 @@ function renderAvatar($avatarData) {
         .tree-viewport[data-theme="blueprint"] .svg-layer path { stroke-linecap: square; }
         .tree-viewport[data-theme="blueprint"]::before { background-size: 50px 50px; }
 
-        /* 3. Tema Executive (Corporativo / Management) */
+        /* 3. Tema Executive */
         .tree-viewport[data-theme="executive"] {
             --map-bg: #F1F5F9;
             --map-grid: transparent;
@@ -159,10 +158,10 @@ function renderAvatar($avatarData) {
             --map-shadow: inset 0 0 50px rgba(0,0,0,0.03);
         }
         .tree-viewport[data-theme="executive"] .node:not(.core) {
-            width: 150px; height: 60px;
+            width: 150px; height: 60px; 
             flex-direction: row; justify-content: flex-start;
             padding: 0 12px; gap: 10px;
-            border-left-width: 6px;
+            border-left-width: 6px; 
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         }
         .tree-viewport[data-theme="executive"] .node.unlocked { border-left-color: var(--gold); }
@@ -170,7 +169,7 @@ function renderAvatar($avatarData) {
         .tree-viewport[data-theme="executive"] .node-level { font-size: 1rem; margin: 0; }
         .tree-viewport[data-theme="executive"] .node-label { font-size: 0.65rem; text-align: left; margin: 0; }
 
-        /* 4. Tema Void (Minimalista) */
+        /* 4. Tema Void */
         .tree-viewport[data-theme="void"] {
             --map-bg: #000000;
             --map-grid: #111111;
@@ -179,10 +178,10 @@ function renderAvatar($avatarData) {
             --node-text: #ffffff;
             --node-text-muted: #666666;
             --locked-line: #222222;
-            --node-radius: 30px;
+            --node-radius: 30px; 
         }
 
-        /* 5. Tema Nexus (Creativo / Sci-Fi Brutalista) */
+        /* 5. Tema Nexus */
         .tree-viewport[data-theme="nexus"] {
             --map-bg: #121212;
             --map-grid: rgba(255, 255, 255, 0.03);
@@ -195,15 +194,14 @@ function renderAvatar($avatarData) {
         }
         .tree-viewport[data-theme="nexus"] .node:not(.core) {
             border: 1px solid var(--node-border);
-            box-shadow: 5px 5px 0px rgba(0,0,0,0.8);
+            box-shadow: 5px 5px 0px rgba(0,0,0,0.8); 
             background: linear-gradient(135deg, #1E1E24 0%, #111115 100%);
         }
         .tree-viewport[data-theme="nexus"] .node.unlocked { box-shadow: 5px 5px 0px var(--gold); border-color: var(--gold); }
         .tree-viewport[data-theme="nexus"] .node.maxed { box-shadow: 5px 5px 0px var(--accent); border-color: var(--accent); }
         .tree-viewport[data-theme="nexus"] .node.core { border-radius: 50%; box-shadow: 0 0 0 6px rgba(128, 90, 213, 0.3), 8px 8px 0px rgba(128, 90, 213, 0.8); }
 
-
-        /* === ESTILOS GENERALES (Plataforma) === */
+        /* === ESTILOS GENERALES === */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background-color: var(--bg-base); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
         
@@ -225,7 +223,7 @@ function renderAvatar($avatarData) {
         .btn-return { background: var(--bg-panel); border: 2px solid var(--border-color); color: var(--text-main); padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none; font-size: 0.9rem; transition: 0.3s; }
         .btn-return:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
 
-        /* === ESTILOS DEL MAPA DE HABILIDADES === */
+        /* === ESTILOS DEL MAPA === */
         .tree-viewport { 
             flex: 1; 
             position: relative; 
@@ -251,45 +249,17 @@ function renderAvatar($avatarData) {
         .zoom-btn { background: var(--bg-panel); border: 1px solid var(--border-color); width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; font-weight: bold; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: 0.2s; }
         .zoom-btn:hover { color: var(--accent); border-color: var(--accent); transform: translateY(-2px); }
         
-        /* === MENÚ DESPLEGABLE DE TEMAS === */
         .theme-menu-container { position: relative; display: flex; }
-        .theme-dropdown {
-            position: absolute;
-            bottom: 55px;
-            right: 0;
-            background: var(--bg-panel);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 8px 0;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            display: none;
-            flex-direction: column;
-            min-width: 170px;
-            z-index: 100;
-        }
+        .theme-dropdown { position: absolute; bottom: 55px; right: 0; background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; padding: 8px 0; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: none; flex-direction: column; min-width: 170px; z-index: 100; }
         .theme-dropdown.show { display: flex; }
-        .theme-option {
-            padding: 12px 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--text-main);
-            cursor: pointer;
-            transition: 0.2s;
-            display: flex; align-items: center; justify-content: space-between;
-        }
+        .theme-option { padding: 12px 20px; font-size: 0.85rem; font-weight: 600; color: var(--text-main); cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: space-between; }
         .theme-option:hover, .theme-option.active { background: var(--accent-light); color: var(--accent); }
 
-        /* Ocultar nodos lejanos */
         .tree-canvas.hide-deep .deep-locked { display: none !important; opacity: 0; transition: 0.3s; }
 
-        /* === SOLUCIÓN DEFINITIVA A LAS LÍNEAS SVG === */
-        .svg-layer { 
-            position: absolute; top: -2500px; left: -2500px; width: 5000px; height: 5000px; 
-            pointer-events: none; z-index: 1; filter: var(--line-filter); 
-        }
+        .svg-layer { position: absolute; top: -2500px; left: -2500px; width: 5000px; height: 5000px; pointer-events: none; z-index: 1; filter: var(--line-filter); }
         .tree-link { transition: stroke 0.4s; }
         
-        /* === ESTILOS ESTRUCTURALES BASE DE LOS NODOS === */
         .node { 
             position: absolute; width: 120px; height: 100px; 
             background: var(--node-bg); 
@@ -304,7 +274,7 @@ function renderAvatar($avatarData) {
         .node.core span { font-size: 0.75rem; font-family: 'Inter', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9; }
         .node.core strong { font-size: 1.7rem; font-family: 'Orbitron', sans-serif; }
         
-        .node.locked { filter: grayscale(100%) opacity(0.5); border-color: var(--locked-line); cursor: pointer;}
+        .node.locked { filter: grayscale(100%) opacity(0.5); pointer-events: none; border-color: var(--locked-line); }
         .node.unlocked { border-color: var(--gold); box-shadow: 0 5px 15px rgba(236, 201, 75, 0.15); }
         .node.maxed { border-color: var(--accent); background: var(--accent-light); box-shadow: 0 5px 15px var(--accent-light); }
         .node:not(.core):not(.locked):hover { transform: translate(-50%, -50%) scale(1.1); z-index: 20; }
