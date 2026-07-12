@@ -181,7 +181,46 @@ function renderAvatar($avatarData) {
                 </div>
 
                 <div class="custom-card">
-                    <h3>Proyección <span>Conjuntos Completos</span></h3>
+                    <h3>Modelos Masculinos <span>Nuevos</span></h3>
+                    <div class="options-grid cols-2">
+                        <button class="option-btn <?= $defaultClothes === 'blue_workwear_messenger' ? 'active' : '' ?>" onclick="selectOption('clothes', 'blue_workwear_messenger', this)">Mensajero Workwear</button>
+                        <button class="option-btn <?= $defaultClothes === 'cooper' ? 'active' : '' ?>" onclick="selectOption('clothes', 'cooper', this)">Cooper</button>
+                        <button class="option-btn <?= $defaultClothes === 'young_guy_keeps_his_hands_in_pockets' ? 'active' : '' ?>" onclick="selectOption('clothes', 'young_guy_keeps_his_hands_in_pockets', this)">Chico Casual</button>
+                        <button class="option-btn <?= $defaultClothes === 'navy_minimalist_gentleman' ? 'active' : '' ?>" onclick="selectOption('clothes', 'navy_minimalist_gentleman', this)">Minimalista Navy</button>
+                        <button class="option-btn <?= $defaultClothes === 'casual_cropped_hoodie_portrait' ? 'active' : '' ?>" onclick="selectOption('clothes', 'casual_cropped_hoodie_portrait', this)">Sudadera Casual</button>
+                        <button class="option-btn <?= $defaultClothes === 'executive_in_a_navy_suit' ? 'active' : '' ?>" onclick="selectOption('clothes', 'executive_in_a_navy_suit', this)">Ejecutivo Navy</button>
+                        <button class="option-btn <?= $defaultClothes === 'noir_ensemble' ? 'active' : '' ?>" onclick="selectOption('clothes', 'noir_ensemble', this)">Conjunto Noir</button>
+                        <button class="option-btn <?= $defaultClothes === 'confident_executive_in_a_navy_suit' ? 'active' : '' ?>" onclick="selectOption('clothes', 'confident_executive_in_a_navy_suit', this)">Ejecutivo Confiado</button>
+                        <button class="option-btn <?= $defaultClothes === 'rigged_t-pose_human_male_w_50_face_blendshapes' ? 'active' : '' ?>" onclick="selectOption('clothes', 'rigged_t-pose_human_male_w_50_face_blendshapes', this)">Base T-Pose</button>
+                        <button class="option-btn <?= $defaultClothes === 'berserk_guts_black_swordsman.glb' ? 'active' : '' ?>" onclick="selectOption('clothes', 'berserk_guts_black_swordsman.glb', this)">Guts (Berserk)</button>
+                    </div>
+                </div>
+
+                <div class="custom-card">
+                    <h3>Modelos Femeninos <span>Nuevos</span></h3>
+                    <div class="options-grid cols-2">
+                        <button class="option-btn <?= $defaultClothes === 'girl_speedsculpt' ? 'active' : '' ?>" onclick="selectOption('clothes', 'girl_speedsculpt', this)">Chica Speedsculpt</button>
+                        <button class="option-btn <?= $defaultClothes === 'little_witch_academia' ? 'active' : '' ?>" onclick="selectOption('clothes', 'little_witch_academia', this)">Little Witch</button>
+                        <button class="option-btn <?= $defaultClothes === 'matilda' ? 'active' : '' ?>" onclick="selectOption('clothes', 'matilda', this)">Matilda</button>
+                        <button class="option-btn <?= $defaultClothes === 'carol_tennis_player_girl_animated_3d_character.glb' ? 'active' : '' ?>" onclick="selectOption('clothes', 'carol_tennis_player_girl_animated_3d_character.glb', this)">Carol (Tenis)</button>
+                    </div>
+                </div>
+
+                <div class="custom-card">
+                    <h3>Modelos Neutrales <span>Nuevos</span></h3>
+                    <div class="options-grid cols-2">
+                        <button class="option-btn <?= $defaultClothes === 'monochrome_casual_portrait' ? 'active' : '' ?>" onclick="selectOption('clothes', 'monochrome_casual_portrait', this)">Retrato Monocromo</button>
+                        <button class="option-btn <?= $defaultClothes === 'casual_confidence' ? 'active' : '' ?>" onclick="selectOption('clothes', 'casual_confidence', this)">Confianza Casual</button>
+                        <button class="option-btn <?= $defaultClothes === 'midnight_casual.glb' ? 'active' : '' ?>" onclick="selectOption('clothes', 'midnight_casual.glb', this)">Casual Medianoche</button>
+                        <button class="option-btn <?= $defaultClothes === 'casual_in_gray.glb' ? 'active' : '' ?>" onclick="selectOption('clothes', 'casual_in_gray.glb', this)">Casual en Gris</button>
+                        <button class="option-btn <?= $defaultClothes === 'hooded_figure_3d_model_free' ? 'active' : '' ?>" onclick="selectOption('clothes', 'hooded_figure_3d_model_free', this)">Túnica Capucha</button>
+                        <button class="option-btn <?= $defaultClothes === 'midnight_outlaw_shadow_character_3d_model_free' ? 'active' : '' ?>" onclick="selectOption('clothes', 'midnight_outlaw_shadow_character_3d_model_free', this)">Sombra Forajido</button>
+                        <button class="option-btn <?= $defaultClothes === 'dark_astronaut' ? 'active' : '' ?>" onclick="selectOption('clothes', 'dark_astronaut', this)">Astronauta Oscuro</button>
+                    </div>
+                </div>
+
+                <div class="custom-card">
+                    <h3>Proyección <span>Conjuntos Clásicos</span></h3>
                     <div class="options-grid cols-3">
                         <button class="option-btn <?= $defaultClothes === 'Peasant' ? 'active' : '' ?>" onclick="selectOption('clothes', 'Peasant', this)">Base Sintética</button>
                         <button class="option-btn <?= $defaultClothes === 'Ranger' ? 'active' : '' ?>" onclick="selectOption('clothes', 'Ranger', this)">Explorador</button>
@@ -191,13 +230,8 @@ function renderAvatar($avatarData) {
 
                 <div class="custom-card">
                     <h3>Prueba de Archivos <span>Piezas Aisladas</span></h3>
-                    <p style="font-size: 0.75rem; color: var(--text-muted);">Haz clic para renderizar un archivo GLTF individual. Depende del Cuerpo seleccionado arriba.</p>
+                    <p style="font-size: 0.75rem; color: var(--text-muted);">Haz clic para renderizar un archivo GLTF individual clásico. Depende del Cuerpo seleccionado arriba.</p>
                     
-                    <div class="section-label">Extras</div>
-                    <div class="options-grid">
-                        <button class="option-btn" onclick="selectOption('clothes', 'scene', this)">Ver scene.gltf</button>
-                    </div>
-
                     <div class="section-label">Archivos Peasant</div>
                     <div class="options-grid cols-2">
                         <button class="option-btn" onclick="selectOption('clothes', 'Peasant_Body', this)">Solo Cuerpo</button>
@@ -342,8 +376,27 @@ function renderAvatar($avatarData) {
 
             let filesToLoad = [];
             
-            // --- LÓGICA DE CONJUNTOS COMPLETOS ---
-            if (currentOutfit === 'Peasant') {
+            // Array con los nuevos modelos que están en su propia carpeta o son .glb
+            const nuevosModelos = [
+                'blue_workwear_messenger', 'cooper', 'young_guy_keeps_his_hands_in_pockets',
+                'navy_minimalist_gentleman', 'casual_cropped_hoodie_portrait', 'executive_in_a_navy_suit',
+                'noir_ensemble', 'confident_executive_in_a_navy_suit', 'rigged_t-pose_human_male_w_50_face_blendshapes',
+                'berserk_guts_black_swordsman.glb', 'girl_speedsculpt', 'little_witch_academia',
+                'matilda', 'carol_tennis_player_girl_animated_3d_character.glb', 'hooded_figure_3d_model_free',
+                'monochrome_casual_portrait', 'casual_confidence', 'dark_astronaut',
+                'midnight_outlaw_shadow_character_3d_model_free', 'midnight_casual.glb', 'casual_in_gray.glb'
+            ];
+            
+            // --- LÓGICA DE NUEVOS MODELOS (Detecta carpeta o .glb automáticamente) ---
+            if (nuevosModelos.includes(currentOutfit)) {
+                if (currentOutfit.endsWith('.glb')) {
+                    filesToLoad = [currentOutfit]; // Es un archivo suelto
+                } else {
+                    filesToLoad = [`${currentOutfit}/scene.gltf`]; // Es una carpeta
+                }
+            }
+            // --- LÓGICA DE CONJUNTOS CLÁSICOS COMPLETOS ---
+            else if (currentOutfit === 'Peasant') {
                 filesToLoad = [
                     `${currentGender}_Peasant_Arms.gltf`,
                     `${currentGender}_Peasant_Body.gltf`,
@@ -372,10 +425,8 @@ function renderAvatar($avatarData) {
                 }
             } else if (currentOutfit === 'Superhero') {
                 filesToLoad = [`Superhero_${currentGender}_FullBody.gltf`];
-            } else if (currentOutfit === 'scene') {
-                filesToLoad = [`scene.gltf`];
             } 
-            // --- LÓGICA DE PIEZAS AISLADAS (DEPURACIÓN) ---
+            // --- LÓGICA DE PIEZAS AISLADAS (DEPURACIÓN CLÁSICA) ---
             else if (currentOutfit === 'Peasant_Body') filesToLoad = [`${currentGender}_Peasant_Body.gltf`];
             else if (currentOutfit === 'Peasant_Arms') filesToLoad = [`${currentGender}_Peasant_Arms.gltf`];
             else if (currentOutfit === 'Peasant_Legs') filesToLoad = [`${currentGender}_Peasant_Legs.gltf`];
@@ -459,7 +510,7 @@ function renderAvatar($avatarData) {
         function selectOption(category, value, btnElement) {
             // Remueve la clase active de TODOS los botones de ropa si se selecciona ropa
             if (category === 'clothes') {
-                document.querySelectorAll('.custom-card:nth-child(2) .option-btn, .custom-card:nth-child(3) .option-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.option-btn[onclick^="selectOption(\'clothes\'"]').forEach(btn => btn.classList.remove('active'));
             } else {
                 const grid = btnElement.parentElement;
                 grid.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('active'));

@@ -1,0 +1,11 @@
+Model Information:
+* title:	Navy Minimalist Gentleman
+* source:	https://sketchfab.com/3d-models/navy-minimalist-gentleman-59f2ca373ca24cf3a1e3149df6aa7d4e
+* author:	restore50 (https://sketchfab.com/restore50)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Navy Minimalist Gentleman" (https://sketchfab.com/3d-models/navy-minimalist-gentleman-59f2ca373ca24cf3a1e3149df6aa7d4e) by restore50 (https://sketchfab.com/restore50) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

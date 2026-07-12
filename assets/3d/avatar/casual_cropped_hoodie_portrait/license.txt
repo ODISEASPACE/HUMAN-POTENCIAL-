@@ -1,0 +1,11 @@
+Model Information:
+* title:	Casual Cropped Hoodie Portrait
+* source:	https://sketchfab.com/3d-models/casual-cropped-hoodie-portrait-774642ea5d0343e98587c27d592c9378
+* author:	restore50 (https://sketchfab.com/restore50)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Casual Cropped Hoodie Portrait" (https://sketchfab.com/3d-models/casual-cropped-hoodie-portrait-774642ea5d0343e98587c27d592c9378) by restore50 (https://sketchfab.com/restore50) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

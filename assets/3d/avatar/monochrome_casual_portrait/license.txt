@@ -1,0 +1,11 @@
+Model Information:
+* title:	Monochrome Casual Portrait
+* source:	https://sketchfab.com/3d-models/monochrome-casual-portrait-b11c8ec71b294069bbc35e91dbca55e7
+* author:	restore50 (https://sketchfab.com/restore50)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Monochrome Casual Portrait" (https://sketchfab.com/3d-models/monochrome-casual-portrait-b11c8ec71b294069bbc35e91dbca55e7) by restore50 (https://sketchfab.com/restore50) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
