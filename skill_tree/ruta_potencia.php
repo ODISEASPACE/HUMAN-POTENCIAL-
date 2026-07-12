@@ -5,12 +5,12 @@ require '../db.php';
 $current_skill = $_GET['skill'] ?? 'estudio';
 $user_id = $_SESSION['user_id'] ?? 1;
 
-// Datos de Gráfica
+// Datos de Gráfica actualizados al nuevo catálogo
 $stmt = $pdo->prepare("
-    SELECT sn.name, COALESCE(usn.current_level, 0) as level
-    FROM specialization_nodes sn
-    LEFT JOIN user_specialization_nodes usn ON sn.id = usn.node_id AND usn.user_id = ?
-    WHERE sn.parent_skill_key = ?
+    SELECT sc.label as name, COALESCE(us.current_level, 0) as level
+    FROM skills_catalog sc
+    LEFT JOIN user_skills us ON sc.node_key = us.node_key AND us.user_id = ?
+    WHERE sc.parent_key = ?
 ");
 $stmt->execute([$user_id, $current_skill]);
 $nodos = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -21,7 +21,7 @@ foreach ($nodos as $n) {
     $data[] = $n['level'];
 }
 
-// Metas
+// Metas (Se asume que la tabla user_skill_goals está correcta)
 $stmt = $pdo->prepare("SELECT * FROM user_skill_goals WHERE user_id = ? AND skill_key = ? ORDER BY created_at DESC");
 $stmt->execute([$user_id, $current_skill]);
 $metas = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -69,7 +69,6 @@ $metas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </div>
 
 <script>
-    // Inicializar ChartJS
     <?php if(!empty($labels)): ?>
         var ctx = document.getElementById('radarChart').getContext('2d');
         new Chart(ctx, {
@@ -88,7 +87,6 @@ $metas = $stmt->fetchAll(PDO::FETCH_ASSOC);
         });
     <?php endif; ?>
 
-    // Petición AJAX para guardar la meta real
     function guardarMeta(e) {
         e.preventDefault();
         const btn = document.getElementById('btnSaveGoal');

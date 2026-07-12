@@ -5,13 +5,15 @@ require '../db.php';
 $current_skill = $_GET['skill'] ?? 'estudio';
 $user_id = $_SESSION['user_id'] ?? 1;
 
+// Consulta blindada apuntando a skills_catalog y user_skills
 $stmt = $pdo->prepare("
-    SELECT sn.id, sn.name, sn.max_level, sn.contribution_weight, 
-           COALESCE(usn.current_level, 0) as current_level
-    FROM specialization_nodes sn
-    LEFT JOIN user_specialization_nodes usn ON sn.id = usn.node_id AND usn.user_id = ?
-    WHERE sn.parent_skill_key = ?
-    ORDER BY sn.id ASC
+    SELECT sc.node_key as id, sc.label as name, sc.max_level,
+           (1.0 / GREATEST(COUNT(sc.node_key) OVER(), 1)) as contribution_weight, 
+           COALESCE(us.current_level, 0) as current_level
+    FROM skills_catalog sc
+    LEFT JOIN user_skills us ON sc.node_key = us.node_key AND us.user_id = ?
+    WHERE sc.parent_key = ?
+    ORDER BY sc.label ASC
 ");
 $stmt->execute([$user_id, $current_skill]);
 $nodos = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -32,14 +34,14 @@ $nodos = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <?php else: ?>
         <?php foreach ($nodos as $nodo): 
             $isMaxed = $nodo['current_level'] >= $nodo['max_level'];
-            $peso = ($nodo['contribution_weight'] * 100) . '%';
+            $peso = round($nodo['contribution_weight'] * 100) . '%';
         ?>
             <div class="mod-node-item">
                 <div class="mod-node-info">
                     <h3><?= htmlspecialchars($nodo['name']) ?></h3>
                     <p>Nivel actual: <span style="color: var(--theme-color);"><?= $nodo['current_level'] ?>/<?= $nodo['max_level'] ?></span> | Peso: <?= $peso ?></p>
                 </div>
-                <button class="mod-btn-invest" onclick="invertirPuntos(<?= $nodo['id'] ?>, this)" <?= $isMaxed ? 'disabled' : '' ?>>
+                <button class="mod-btn-invest" onclick="invertirPuntos('<?= htmlspecialchars($nodo['id'], ENT_QUOTES) ?>', this)" <?= $isMaxed ? 'disabled' : '' ?>>
                     <?= $isMaxed ? 'Maxed' : '+ Invertir' ?>
                 </button>
             </div>
@@ -60,13 +62,17 @@ function invertirPuntos(nodeId, btnElement) {
     .then(res => res.json())
     .then(data => {
         if(data.success) {
-            window.location.reload(); // Recarga para actualizar barras maestras
+            window.location.reload(); 
         } else {
             alert('Error: ' + data.error);
             btnElement.innerHTML = '+ Invertir';
             btnElement.disabled = false;
         }
     })
-    .catch(err => alert("Error de red."));
+    .catch(err => {
+        alert("Error de red.");
+        btnElement.innerHTML = '+ Invertir';
+        btnElement.disabled = false;
+    });
 }
 </script>
