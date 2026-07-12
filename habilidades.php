@@ -122,7 +122,7 @@ function renderAvatar($avatarData) {
             --map-backdrop: none;
         }
 
-        /* 2. Tema Blueprint (Técnico / Ingeniería) - Cambio estructural a Cuadrados y Monospace */
+        /* 2. Tema Blueprint (Técnico / Ingeniería) */
         .tree-viewport[data-theme="blueprint"] {
             --map-bg: #0B192C;
             --map-grid: rgba(255, 255, 255, 0.1);
@@ -146,7 +146,7 @@ function renderAvatar($avatarData) {
         .tree-viewport[data-theme="blueprint"] .svg-layer path { stroke-linecap: square; }
         .tree-viewport[data-theme="blueprint"]::before { background-size: 50px 50px; }
 
-        /* 3. Tema Executive (Corporativo / Management) - Cambio estructural a Tarjetas Horizontales */
+        /* 3. Tema Executive (Corporativo / Management) */
         .tree-viewport[data-theme="executive"] {
             --map-bg: #F1F5F9;
             --map-grid: transparent;
@@ -159,10 +159,10 @@ function renderAvatar($avatarData) {
             --map-shadow: inset 0 0 50px rgba(0,0,0,0.03);
         }
         .tree-viewport[data-theme="executive"] .node:not(.core) {
-            width: 150px; height: 60px; /* Tarjetas anchas y bajas */
+            width: 150px; height: 60px;
             flex-direction: row; justify-content: flex-start;
             padding: 0 12px; gap: 10px;
-            border-left-width: 6px; /* Borde izquierdo distintivo */
+            border-left-width: 6px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         }
         .tree-viewport[data-theme="executive"] .node.unlocked { border-left-color: var(--gold); }
@@ -179,10 +179,10 @@ function renderAvatar($avatarData) {
             --node-text: #ffffff;
             --node-text-muted: #666666;
             --locked-line: #222222;
-            --node-radius: 30px; /* Forma de píldora */
+            --node-radius: 30px;
         }
 
-        /* 5. Tema Nexus (Creativo / Sci-Fi Brutalista) - Cambio estructural a Sombras Duras */
+        /* 5. Tema Nexus (Creativo / Sci-Fi Brutalista) */
         .tree-viewport[data-theme="nexus"] {
             --map-bg: #121212;
             --map-grid: rgba(255, 255, 255, 0.03);
@@ -195,7 +195,7 @@ function renderAvatar($avatarData) {
         }
         .tree-viewport[data-theme="nexus"] .node:not(.core) {
             border: 1px solid var(--node-border);
-            box-shadow: 5px 5px 0px rgba(0,0,0,0.8); /* Sombra dura estilo retro */
+            box-shadow: 5px 5px 0px rgba(0,0,0,0.8);
             background: linear-gradient(135deg, #1E1E24 0%, #111115 100%);
         }
         .tree-viewport[data-theme="nexus"] .node.unlocked { box-shadow: 5px 5px 0px var(--gold); border-color: var(--gold); }
@@ -350,14 +350,12 @@ function renderAvatar($avatarData) {
         <div class="tree-viewport" id="viewport" data-theme="default">
             
             <div class="zoom-controls">
-                <!-- CONTENEDOR DEL MENÚ DE CAPAS/TEMAS -->
                 <div class="theme-menu-container">
                     <button class="zoom-btn" onclick="toggleThemeMenu()" title="Capas de Diseño">
                         <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
                             <path d="M12 2L2 7l10 5 10-5-10-5zM2 12l10 5 10-5M2 17l10 5 10-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/>
                         </svg>
                     </button>
-                    <!-- Opciones de temas actualizadas -->
                     <div class="theme-dropdown" id="themeDropdown">
                         <div class="theme-option active" data-theme-val="default" onclick="setTheme('default')">Light OS</div>
                         <div class="theme-option" data-theme-val="blueprint" onclick="setTheme('blueprint')">Blueprint</div>
@@ -397,7 +395,7 @@ function renderAvatar($avatarData) {
                             <strong>APH</strong>
                         </div>
                     <?php else: ?>
-                        <a href="skill_tree/<?= $node['route'] ?>.php" class="node <?= $node['status'] ?> <?= $node['visibility_class'] ?>" style="left: <?= $node['x'] ?>px; top: <?= $node['y'] ?>px;">
+                        <a href="skill_tree/rama.php?skill=<?= $id ?>" class="node <?= $node['status'] ?> <?= $node['visibility_class'] ?>" style="left: <?= $node['x'] ?>px; top: <?= $node['y'] ?>px;">
                             <div class="node-level"><?= $node['level'] ?>/<?= $node['max'] ?></div>
                             <div class="node-label"><?= $node['label'] ?></div>
                         </a>
@@ -408,7 +406,6 @@ function renderAvatar($avatarData) {
     </main>
 
     <script>
-        // --- LÓGICA DE TEMAS (Menú de Capas) ---
         function toggleThemeMenu() {
             document.getElementById('themeDropdown').classList.toggle('show');
         }
@@ -438,7 +435,6 @@ function renderAvatar($avatarData) {
             }
         });
 
-        // --- Lógica de Pan y Zoom ---
         const viewport = document.getElementById('viewport');
         const canvas = document.getElementById('canvas');
         
@@ -492,7 +488,6 @@ function renderAvatar($avatarData) {
         function zoomOut() { scale = Math.max(scale / 1.2, 0.2); setTransform(); }
         function resetView() { scale = 0.85; pointX = 0; pointY = 0; setTransform(); }
 
-        // --- Lógica del Ojo ---
         function toggleVisibility() {
             const btn = document.getElementById('btn-eye');
             canvas.classList.toggle('hide-deep');
