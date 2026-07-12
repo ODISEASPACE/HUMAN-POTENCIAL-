@@ -2,7 +2,7 @@
 session_start();
 require 'db.php';
 
-// Redirección de seguridad (descomentar en producción)
+// Redirección de seguridad
 /*
 if (!isset($_SESSION['user_id'])) {
     header("Location: index.php");
@@ -11,19 +11,40 @@ if (!isset($_SESSION['user_id'])) {
 $user_id = $_SESSION['user_id'];
 */
 
-// --- SIMULACIÓN DE DATOS PARA LA INTERFAZ ---
 $user = [
     'username' => 'Daniel',
     'profession' => 'Ingeniería de Sistemas',
-    'profile_picture' => '' // Asume avatar genérico si está vacío
+    'profile_picture' => ''
 ];
 
-$skills = [
-    'Estudio' => 10,
-    'Laboral' => 4,
-    'Finanzas' => 2,
-    'Salud' => 0,
-    'Espíritu' => 0
+// --- ESTRUCTURA DEL ÁRBOL DE HABILIDADES ---
+// Cada nodo define su posición (x, y) respecto al centro (0,0), su nivel y quién es su padre.
+$nodes = [
+    'origen' => ['label' => 'Origen APH', 'x' => 0, 'y' => 0, 'level' => 1, 'max' => 1, 'status' => 'maxed', 'parent' => null],
+    
+    // RAMA: ESTUDIO (Hacia Arriba)
+    'estudio' => ['label' => 'Estudio', 'x' => 0, 'y' => -160, 'level' => 10, 'max' => 10, 'status' => 'maxed', 'parent' => 'origen'],
+    'logica' => ['label' => 'Lógica', 'x' => -120, 'y' => -300, 'level' => 5, 'max' => 10, 'status' => 'unlocked', 'parent' => 'estudio'],
+    'desarrollo' => ['label' => 'Desarrollo', 'x' => 120, 'y' => -300, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'estudio'],
+    'arquitectura' => ['label' => 'Arquitectura', 'x' => 120, 'y' => -440, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'desarrollo'],
+
+    // RAMA: LABORAL (Hacia la Derecha)
+    'laboral' => ['label' => 'Laboral', 'x' => 180, 'y' => 60, 'level' => 4, 'max' => 10, 'status' => 'unlocked', 'parent' => 'origen'],
+    'liderazgo' => ['label' => 'Liderazgo', 'x' => 320, 'y' => 0, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'laboral'],
+    'gestion' => ['label' => 'Gestión', 'x' => 320, 'y' => 120, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'laboral'],
+
+    // RAMA: FINANZAS (Hacia Abajo/Derecha)
+    'finanzas' => ['label' => 'Finanzas', 'x' => 100, 'y' => 200, 'level' => 2, 'max' => 10, 'status' => 'unlocked', 'parent' => 'origen'],
+    'inversion' => ['label' => 'Inversión', 'x' => 100, 'y' => 340, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'finanzas'],
+
+    // RAMA: SALUD (Hacia Abajo/Izquierda)
+    'salud' => ['label' => 'Salud', 'x' => -100, 'y' => 200, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'origen'],
+    'nutricion' => ['label' => 'Nutrición', 'x' => -200, 'y' => 300, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'salud'],
+    'entrenamiento' => ['label' => 'Físico', 'x' => 0, 'y' => 340, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'salud'],
+
+    // RAMA: ESPÍRITU (Hacia la Izquierda)
+    'espiritu' => ['label' => 'Espíritu', 'x' => -180, 'y' => 60, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'origen'],
+    'meditacion' => ['label' => 'Meditación', 'x' => -320, 'y' => 60, 'level' => 0, 'max' => 10, 'status' => 'locked', 'parent' => 'espiritu'],
 ];
 
 function renderAvatar($avatarData) {
@@ -53,7 +74,7 @@ function renderAvatar($avatarData) {
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background-color: var(--bg-base); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
         
-        /* Sidebar (Mismo diseño de la plataforma) */
+        /* Sidebar */
         nav.sidebar { width: 260px; background: var(--bg-panel); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 30px 20px; z-index: 20; flex-shrink: 0; }
         .brand { text-align: center; margin-bottom: 40px; } .brand h2 { font-weight: 800; letter-spacing: 2px; font-size: 1.5rem; color: var(--accent); }
         .nav-links { flex: 1; display: flex; flex-direction: column; gap: 5px; }
@@ -67,43 +88,41 @@ function renderAvatar($avatarData) {
 
         /* Contenedor Principal */
         main { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 40px; }
-        
         .header-dash { margin-bottom: 30px; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
         .header-dash h1 { font-size: 2rem; font-weight: 800; margin-bottom: 5px; }
         .header-dash p { color: var(--text-muted); }
-        
-        /* Botón de Retorno */
         .btn-return { background: var(--bg-panel); border: 2px solid var(--border-color); color: var(--text-main); padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 8px; text-decoration: none; font-size: 0.9rem; }
         .btn-return:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
 
-        /* Espacio del Árbol (Canvas) */
-        .tree-workspace { flex: 1; position: relative; background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 16px; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(0,0,0,0.02); }
+        /* Espacio del Árbol (Canvas y Controles) */
+        .tree-viewport { flex: 1; position: relative; background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.02); cursor: grab; }
+        .tree-viewport:active { cursor: grabbing; }
+        .tree-viewport::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: radial-gradient(var(--border-color) 1px, transparent 1px); background-size: 30px 30px; opacity: 0.5; z-index: 0; pointer-events: none; }
         
-        /* SVG de conexiones */
-        svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+        .tree-canvas { position: absolute; top: 50%; left: 50%; transform-origin: 0 0; z-index: 1; }
         
-        /* Núcleo Central */
-        .core { width: 130px; height: 130px; background: var(--accent); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; box-shadow: 0 0 40px rgba(128, 90, 213, 0.4); border: 6px solid white; color: white; text-align: center; font-family: 'Orbitron', sans-serif; }
-        .core span { font-size: 0.7rem; font-family: 'Inter', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9; }
-        .core strong { font-size: 1.4rem; font-weight: 700; }
+        /* Controles de Zoom */
+        .zoom-controls { position: absolute; bottom: 20px; right: 20px; display: flex; gap: 10px; z-index: 20; }
+        .zoom-btn { background: white; border: 1px solid var(--border-color); width: 40px; height: 40px; border-radius: 8px; font-size: 1.2rem; font-weight: bold; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: 0.2s; }
+        .zoom-btn:hover { color: var(--accent); border-color: var(--accent); }
 
-        /* Nodos de Habilidad */
-        .node { position: absolute; width: 100px; height: 90px; background: var(--bg-panel); border: 2px solid var(--border-color); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 5; box-shadow: 0 4px 10px rgba(0,0,0,0.03); text-decoration: none; color: var(--text-main); }
+        /* Nodos y SVG */
+        svg { position: absolute; top: 0; left: 0; width: 0; height: 0; overflow: visible; pointer-events: none; z-index: 1; }
         
-        .node.locked { filter: grayscale(100%); opacity: 0.7; }
+        .node { position: absolute; width: 110px; height: 90px; background: var(--bg-panel); border: 2px solid var(--border-color); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; z-index: 5; text-decoration: none; color: var(--text-main); transform: translate(-50%, -50%); }
+        .node.core { width: 140px; height: 140px; background: var(--accent); border-radius: 50%; color: white; border: 6px solid white; box-shadow: 0 0 40px rgba(128, 90, 213, 0.4); }
+        .node.core span { font-size: 0.7rem; font-family: 'Inter', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9; }
+        .node.core strong { font-size: 1.5rem; font-family: 'Orbitron', sans-serif; }
+        
+        .node.locked { filter: grayscale(100%); opacity: 0.6; pointer-events: none; }
         .node.unlocked { border-color: var(--gold); box-shadow: 0 5px 15px rgba(236, 201, 75, 0.2); }
         .node.maxed { border-color: var(--accent); background: var(--accent-light); box-shadow: 0 5px 15px rgba(128, 90, 213, 0.2); }
-        
-        .node:hover { transform: scale(1.1) !important; z-index: 20; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .node:not(.core):not(.locked):hover { transform: translate(-50%, -50%) scale(1.1); z-index: 20; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
         
         .node-level { font-family: 'Orbitron', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--text-muted); }
         .node.unlocked .node-level { color: #D69E2E; }
         .node.maxed .node-level { color: var(--accent); }
-        
-        .node-label { font-size: 0.7rem; text-transform: uppercase; margin-top: 5px; text-align: center; font-weight: 700; letter-spacing: 0.5px; }
-        
-        /* Fondo con patrón sutil para simular el espacio de red */
-        .tree-workspace::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: radial-gradient(var(--border-color) 1px, transparent 1px); background-size: 30px 30px; opacity: 0.5; z-index: 0; pointer-events: none; }
+        .node-label { font-size: 0.75rem; text-transform: uppercase; margin-top: 5px; text-align: center; font-weight: 700; letter-spacing: 0.5px; }
     </style>
 </head>
 <body>
@@ -138,88 +157,105 @@ function renderAvatar($avatarData) {
             </a>
         </div>
 
-        <div class="tree-workspace" id="tree-container">
-            <svg id="skill-lines"></svg>
-
-            <div class="core" id="core-node">
-                <span>Origen</span>
-                <strong>APH</strong>
+        <div class="tree-viewport" id="viewport">
+            <div class="zoom-controls">
+                <button class="zoom-btn" onclick="zoomIn()">+</button>
+                <button class="zoom-btn" onclick="zoomOut()">-</button>
+                <button class="zoom-btn" onclick="resetView()">⌂</button>
             </div>
 
-            <?php 
-            $branches = ['Estudio', 'Laboral', 'Finanzas', 'Salud', 'Espíritu'];
-            $angleStep = 360 / count($branches);
-            $dist = 280; // Distancia desde el centro (ajustada para el nuevo contenedor)
-            
-            foreach($branches as $i => $name): 
-                $angle = deg2rad($i * $angleStep - 90); // -90 para empezar desde arriba
-                $x = cos($angle) * $dist;
-                $y = sin($angle) * $dist;
-                
-                $level = $skills[$name] ?? 0;
-                $status = ($level >= 10) ? 'maxed' : (($level > 0) ? 'unlocked' : 'locked');
-            ?>
-                <a href="skill_tree/<?= strtolower($name) ?>.php" class="node <?= $status ?> skill-node" data-x="<?= $x ?>" data-y="<?= $y ?>">
-                    <div class="node-level"><?= $level ?>/10</div>
-                    <div class="node-label"><?= $name ?></div>
-                </a>
-            <?php endforeach; ?>
+            <div class="tree-canvas" id="canvas">
+                <svg>
+                    <?php 
+                    // Dibujar las conexiones dinámicamente en el servidor
+                    foreach($nodes as $id => $node) {
+                        if ($node['parent'] && isset($nodes[$node['parent']])) {
+                            $parent = $nodes[$node['parent']];
+                            $color = ($node['status'] == 'locked') ? '#E2E8F0' : (($node['status'] == 'maxed') ? '#805AD5' : '#ecc94b');
+                            $dash = ($node['status'] == 'locked') ? '5,5' : '0';
+                            $width = ($node['status'] == 'maxed') ? '3' : '2';
+                            
+                            echo "<line x1='{$parent['x']}' y1='{$parent['y']}' x2='{$node['x']}' y2='{$node['y']}' stroke='{$color}' stroke-width='{$width}' stroke-dasharray='{$dash}'></line>";
+                        }
+                    }
+                    ?>
+                </svg>
+
+                <?php foreach($nodes as $id => $node): ?>
+                    <?php if($id === 'origen'): ?>
+                        <div class="node core" style="left: <?= $node['x'] ?>px; top: <?= $node['y'] ?>px;">
+                            <span>Origen</span>
+                            <strong>APH</strong>
+                        </div>
+                    <?php else: ?>
+                        <a href="skill_tree/<?= strtolower($id) ?>.php" class="node <?= $node['status'] ?>" style="left: <?= $node['x'] ?>px; top: <?= $node['y'] ?>px;">
+                            <div class="node-level"><?= $node['level'] ?>/<?= $node['max'] ?></div>
+                            <div class="node-label"><?= $node['label'] ?></div>
+                        </a>
+                    <?php endif; ?>
+                <?php endforeach; ?>
+            </div>
         </div>
     </main>
 
     <script>
-        function renderTree() {
-            const container = document.getElementById('tree-container');
-            const svg = document.getElementById('skill-lines');
-            const nodes = document.querySelectorAll('.skill-node');
-            
-            // Limpiar SVG
-            svg.innerHTML = '';
-            
-            // Posicionamiento dinámico desde el centro real del contenedor
-            const centerX = container.clientWidth / 2;
-            const centerY = container.clientHeight / 2;
+        // Lógica de Pan y Zoom
+        const viewport = document.getElementById('viewport');
+        const canvas = document.getElementById('canvas');
+        
+        let scale = 1;
+        let panning = false;
+        let pointX = 0;
+        let pointY = 0;
+        let start = { x: 0, y: 0 };
 
-            nodes.forEach(node => {
-                // Obtener coordenadas de PHP pasadas por data-attributes
-                const offsetX = parseFloat(node.getAttribute('data-x'));
-                const offsetY = parseFloat(node.getAttribute('data-y'));
-                
-                // Aplicar posicionamiento CSS relativo al centro del div
-                node.style.left = `calc(50% + ${offsetX}px - 50px)`; // 50px es la mitad del ancho del nodo
-                node.style.top = `calc(50% + ${offsetY}px - 45px)`;  // 45px es la mitad del alto del nodo
-                
-                // Configurar propiedades de la línea
-                let strokeColor = "#E2E8F0"; // Default Locked
-                let strokeWidth = "2";
-                let strokeDash = "6,6";
-                
-                if(node.classList.contains('maxed')) {
-                    strokeColor = "#805AD5";
-                    strokeWidth = "3";
-                    strokeDash = "0";
-                } else if(node.classList.contains('unlocked')) {
-                    strokeColor = "#ecc94b";
-                    strokeWidth = "2";
-                    strokeDash = "0";
-                }
-
-                // Dibujar Línea SVG
-                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-                line.setAttribute("x1", centerX);
-                line.setAttribute("y1", centerY);
-                line.setAttribute("x2", centerX + offsetX);
-                line.setAttribute("y2", centerY + offsetY);
-                line.setAttribute("stroke", strokeColor);
-                line.setAttribute("stroke-width", strokeWidth);
-                line.setAttribute("stroke-dasharray", strokeDash);
-                svg.appendChild(line);
-            });
+        function setTransform() {
+            canvas.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`;
         }
 
-        // Renderizar al cargar y recalcular al redimensionar la ventana
-        window.addEventListener('load', renderTree);
-        window.addEventListener('resize', renderTree);
+        // Eventos de Panning (Arrastrar)
+        viewport.onmousedown = function (e) {
+            e.preventDefault();
+            start = { x: e.clientX - pointX, y: e.clientY - pointY };
+            panning = true;
+        }
+
+        viewport.onmouseup = function (e) {
+            panning = false;
+        }
+
+        viewport.onmouseleave = function (e) {
+            panning = false;
+        }
+
+        viewport.onmousemove = function (e) {
+            e.preventDefault();
+            if (!panning) return;
+            pointX = (e.clientX - start.x);
+            pointY = (e.clientY - start.y);
+            setTransform();
+        }
+
+        // Eventos de Zoom (Rueda del ratón)
+        viewport.onwheel = function (e) {
+            e.preventDefault();
+            let xs = (e.clientX - pointX) / scale;
+            let ys = (e.clientY - pointY) / scale;
+            let delta = (e.wheelDelta ? e.wheelDelta : -e.deltaY);
+            
+            (delta > 0) ? (scale *= 1.1) : (scale /= 1.1);
+            scale = Math.max(0.3, Math.min(scale, 2.5)); // Limitar el zoom
+            
+            pointX = e.clientX - xs * scale;
+            pointY = e.clientY - ys * scale;
+            setTransform();
+        }
+
+        // Controles de botones
+        function zoomIn() { scale = Math.min(scale * 1.2, 2.5); setTransform(); }
+        function zoomOut() { scale = Math.max(scale / 1.2, 0.3); setTransform(); }
+        function resetView() { scale = 1; pointX = 0; pointY = 0; setTransform(); }
+
     </script>
 </body>
 </html>
