@@ -304,7 +304,7 @@ function renderAvatar($avatarData) {
         .node.core span { font-size: 0.75rem; font-family: 'Inter', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9; }
         .node.core strong { font-size: 1.7rem; font-family: 'Orbitron', sans-serif; }
         
-        .node.locked { filter: grayscale(100%) opacity(0.5); pointer-events: none; border-color: var(--locked-line); }
+        .node.locked { filter: grayscale(100%) opacity(0.5); border-color: var(--locked-line); cursor: pointer;}
         .node.unlocked { border-color: var(--gold); box-shadow: 0 5px 15px rgba(236, 201, 75, 0.15); }
         .node.maxed { border-color: var(--accent); background: var(--accent-light); box-shadow: 0 5px 15px var(--accent-light); }
         .node:not(.core):not(.locked):hover { transform: translate(-50%, -50%) scale(1.1); z-index: 20; }
