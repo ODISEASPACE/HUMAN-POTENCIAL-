@@ -44,7 +44,7 @@ $stmt->execute([$user_id, $current_skill]);
 $metas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 
 <style>
     .rp-container { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
