@@ -99,11 +99,16 @@ function invertirPuntos(nodeId, btnElement) {
     .then(res => res.json())
     .then(data => {
         if(data.success) {
+            // Notifica a la ventana maestra que hubo cambios en el progreso
+            if (typeof actualizarMasterBar === "function") {
+                actualizarMasterBar();
+            }
+            
             const spanNivel = document.getElementById('lvl-' + nodeId);
             spanNivel.innerHTML = '<b>' + data.new_level + '</b>';
             
             spanNivel.classList.remove('anim-level-up');
-            void spanNivel.offsetWidth; // Reflow
+            void spanNivel.offsetWidth; // Reflow forzar animación
             spanNivel.classList.add('anim-level-up');
 
             if(data.is_maxed) {
@@ -118,7 +123,11 @@ function invertirPuntos(nodeId, btnElement) {
             btnElement.disabled = false;
         }
     })
-    .catch(err => { alert("Error de red."); btnElement.innerHTML = '+ Invertir'; btnElement.disabled = false; });
+    .catch(err => { 
+        alert("Error de red."); 
+        btnElement.innerHTML = '+ Invertir'; 
+        btnElement.disabled = false; 
+    });
 }
 
 function crearNodo(btnElement) {
@@ -152,6 +161,9 @@ function eliminarNodo(nodeId) {
             const card = document.getElementById('node-card-' + nodeId);
             card.style.opacity = '0';
             setTimeout(() => card.remove(), 300);
+            if (typeof actualizarMasterBar === "function") {
+                actualizarMasterBar();
+            }
         }
     });
 }
