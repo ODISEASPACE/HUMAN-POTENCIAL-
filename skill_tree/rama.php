@@ -280,37 +280,50 @@ $user = ['username' => 'Daniel', 'profession' => 'Ingeniería de Sistemas', 'pro
         const modal = document.getElementById('mainModal');
         const modalBody = document.getElementById('modalBody');
         const modalTitle = document.getElementById('modalTitle');
+        
+        let progresoModificado = false; // Rastrea si se invirtieron puntos
+
+        // Esta función es activada desde aumentar.php
+        function actualizarMasterBar() {
+            progresoModificado = true;
+        }
 
         function openModal(url, title) {
-    modalTitle.innerText = title;
-    modalBody.innerHTML = '<div class="loader"></div><p style="text-align:center; color: var(--text-muted);">Cargando módulo...</p>';
-    modal.classList.add('active');
+            modalTitle.innerText = title;
+            modalBody.innerHTML = '<div class="loader"></div><p style="text-align:center; color: var(--text-muted);">Cargando módulo...</p>';
+            modal.classList.add('active');
+            progresoModificado = false; // Reiniciamos el estado al abrir
 
-    fetch(url)
-        .then(response => {
-            if(!response.ok) throw new Error("Error al cargar el módulo");
-            return response.text();
-        })
-        .then(html => {
-            modalBody.innerHTML = html;
-            // MAGIA: Obligar al navegador a ejecutar los scripts que vienen en el modal
-            const scripts = modalBody.querySelectorAll('script');
-            scripts.forEach(script => {
-                const newScript = document.createElement('script');
-                newScript.textContent = script.textContent;
-                document.body.appendChild(newScript);
-                document.body.removeChild(newScript);
-            });
-        })
-        .catch(err => {
-            modalBody.innerHTML = `<p style="color: #E53E3E; text-align:center;">Error al cargar. Asegúrate de que el archivo existe.</p>`;
-        });
-}
+            fetch(url)
+                .then(response => {
+                    if(!response.ok) throw new Error("Error al cargar el módulo");
+                    return response.text();
+                })
+                .then(html => {
+                    modalBody.innerHTML = html;
+                    const scripts = modalBody.querySelectorAll('script');
+                    scripts.forEach(script => {
+                        const newScript = document.createElement('script');
+                        newScript.textContent = script.textContent;
+                        document.body.appendChild(newScript);
+                        document.body.removeChild(newScript);
+                    });
+                })
+                .catch(err => {
+                    modalBody.innerHTML = `<p style="color: #E53E3E; text-align:center;">Error al cargar. Asegúrate de que el archivo existe.</p>`;
+                });
+        }
+
         function closeModal(force = false) {
-            // Si el click fue en el fondo oscuro (overlay) o en la X
             if (force || event.target === modal) {
                 modal.classList.remove('active');
-                setTimeout(() => modalBody.innerHTML = '', 300); // Limpiar contenido al terminar la animación
+                setTimeout(() => {
+                    modalBody.innerHTML = '';
+                    // Si se invirtieron puntos, recargamos la página principal
+                    if (progresoModificado) {
+                        window.location.reload();
+                    }
+                }, 300);
             }
         }
     </script>
