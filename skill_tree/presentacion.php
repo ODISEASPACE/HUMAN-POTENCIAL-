@@ -6,12 +6,11 @@ $current_skill = $_GET['skill'] ?? 'estudio';
 $user_id = $_SESSION['user_id'] ?? 1;
 
 $stmt = $pdo->prepare("
-    SELECT sc.label as name, sc.max_level, 
-           (1.0 / GREATEST(COUNT(sc.node_key) OVER(), 1)) as contribution_weight, 
-           COALESCE(us.current_level, 0) as current_level
-    FROM skills_catalog sc
-    LEFT JOIN user_skills us ON sc.node_key = us.node_key AND us.user_id = ?
-    WHERE sc.parent_key = ?
+    SELECT sn.name, sn.max_level, sn.contribution_weight, 
+           COALESCE(usn.current_level, 0) as current_level
+    FROM specialization_nodes sn
+    LEFT JOIN user_specialization_nodes usn ON sn.id = usn.node_id AND usn.user_id = ?
+    WHERE sn.parent_skill_key = ?
 ");
 $stmt->execute([$user_id, $current_skill]);
 $nodos = $stmt->fetchAll(PDO::FETCH_ASSOC);
