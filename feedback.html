@@ -147,13 +147,12 @@
         // Lógica de botones de la pantalla de registro
         document.getElementById('btnRegisterNew').onclick = () => {
             const email = document.getElementById('emailInput').value;
-            if(email) {
-                console.log("Usuario registrado con email:", email);
-                // Simulamos que ya se registró para el futuro
-                localStorage.setItem('is_logged_in', 'true');
+            if (isRegistered) {
+                // Si ya está registrado, vamos directo a Misión Cumplida
                 showSuccessScreen();
             } else {
-                alert("Por favor ingresa un correo.");
+                // Si es un invitado, le mostramos la pantalla para pedir su correo
+                document.getElementById('registerContainer').classList.remove('hidden');
             }
         };
 

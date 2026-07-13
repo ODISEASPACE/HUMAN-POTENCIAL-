@@ -1,0 +1,81 @@
+|<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Odisea | Registro</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: { bgMain: '#F8FAFC', primaryText: '#0F172A', accentAction: '#2563EB' }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="bg-bgMain text-primaryText font-sans min-h-screen flex items-center justify-center p-4">
+
+    <main class="max-w-md w-full bg-white p-8 md:p-10 rounded-2xl shadow-xl text-center">
+        
+        <h1 class="text-3xl font-extrabold mb-2 tracking-tight text-primaryText">Únete a Odisea</h1>
+        <p class="text-slate-600 mb-8 text-sm">
+            Crea tu cuenta para guardar tu Arquetipo y desbloquear el TrackTime.
+        </p>
+
+        <form id="registerForm" class="flex flex-col gap-5 text-left">
+            <div>
+                <label class="block text-sm font-bold text-slate-700 mb-2">Nombre o Alias</label>
+                <input type="text" id="nameInput" required placeholder="Ej: Toscano" 
+                    class="w-full p-4 border-2 border-slate-200 rounded-xl focus:border-accentAction focus:ring-0 outline-none transition-colors text-slate-700">
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold text-slate-700 mb-2">Correo Electrónico</label>
+                <input type="email" id="emailInput" required placeholder="tu@correo.com" 
+                    class="w-full p-4 border-2 border-slate-200 rounded-xl focus:border-accentAction focus:ring-0 outline-none transition-colors text-slate-700">
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold text-slate-700 mb-2">Contraseña</label>
+                <input type="password" id="passwordInput" required placeholder="Mínimo 8 caracteres" 
+                    class="w-full p-4 border-2 border-slate-200 rounded-xl focus:border-accentAction focus:ring-0 outline-none transition-colors text-slate-700">
+            </div>
+
+            <button type="submit" id="btnRegister" class="w-full bg-accentAction text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 hover:scale-[1.02] transition-all text-lg mt-2">
+                Registrarme
+            </button>
+        </form>
+
+        <div class="mt-6 text-sm text-slate-500">
+            ¿Ya tienes cuenta? <a href="#" class="text-accentAction font-bold hover:underline">Inicia Sesión</a>
+        </div>
+        
+    </main>
+
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            e.preventDefault(); // Evita que la página se recargue
+            
+            const name = document.getElementById('nameInput').value;
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
+
+            console.log("Datos listos para enviar al Backend Python:", { name, email, password });
+            
+            // Simulación de que se registró exitosamente en la memoria del navegador
+            localStorage.setItem('is_logged_in', 'true');
+            
+            // alert("¡Registro simulado con éxito! Aquí es donde JavaScript se comunicará con FastAPI.");
+            
+            // Redirigir directamente a la pantalla de consentimiento legal para iniciar el test
+            window.location.href = 'legal.html'; 
+        });
+    </script>
+</body>
+</html>

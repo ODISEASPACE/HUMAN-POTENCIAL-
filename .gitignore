@@ -2,6 +2,9 @@
 llave_jorget
 llave_jorget.pub
 
+*.pem
+
+
 # Archivos ocultos del sistema operativo (Windows/Mac)
 Thumbs.db
 .DS_Store
