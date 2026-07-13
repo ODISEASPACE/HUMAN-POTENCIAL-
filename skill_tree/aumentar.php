@@ -5,9 +5,9 @@ require '../db.php';
 $current_skill = $_GET['skill'] ?? 'estudio';
 $user_id = $_SESSION['user_id'] ?? 1;
 
-// Modificamos la consulta para traer los nodos por defecto + los nodos personalizados del usuario actual
+// Consulta integrando la diferenciación de nodos del sistema vs personalizados
 $stmt = $pdo->prepare("
-    SELECT sn.id, sn.name, sn.max_level, sn.contribution_weight, sn.is_default, 
+    SELECT sn.id, sn.name, sn.max_level, sn.is_default, 
            COALESCE(usn.current_level, 0) as current_level
     FROM specialization_nodes sn
     LEFT JOIN user_specialization_nodes usn ON sn.id = usn.node_id AND usn.user_id = ?
@@ -20,12 +20,11 @@ $nodos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <style>
     .mod-node-list { display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px; }
     .mod-node-item { display: flex; justify-content: space-between; align-items: center; padding: 20px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-panel); transition: 0.3s; }
-    .mod-node-item:hover { border-color: var(--theme-color); }
     
     .mod-node-info h3 { margin: 0 0 5px 0; font-size: 1.1rem; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
-    .badge-custom { font-size: 0.6rem; background: var(--border-color); padding: 3px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); }
-    
+    .badge-custom { font-size: 0.6rem; background: var(--border-color); padding: 3px 6px; border-radius: 4px; text-transform: uppercase; color: var(--text-muted); }
     .mod-node-info p { margin: 0; color: var(--text-muted); font-size: 0.9rem; font-weight: 600; }
+    
     .level-text { color: var(--theme-color); display: inline-block; transition: 0.2s; }
     
     .mod-btn-invest { background: var(--theme-color); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem; transition: 0.2s; }
@@ -35,11 +34,9 @@ $nodos = $stmt->fetchAll(PDO::FETCH_ASSOC);
     .btn-delete { background: none; border: none; color: #E53E3E; cursor: pointer; font-size: 1.2rem; padding: 5px; opacity: 0.6; transition: 0.2s; }
     .btn-delete:hover { opacity: 1; transform: scale(1.1); }
 
-    /* Formulario para nuevos nodos */
-    .custom-node-form { background: var(--bg-base); padding: 20px; border-radius: 8px; border: 1px dashed var(--border-color); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .custom-node-form { background: var(--bg-base); padding: 20px; border-radius: 8px; border: 1px dashed var(--border-color); display: flex; gap: 10px; flex-wrap: wrap; }
     .custom-node-form input { flex: 1; min-width: 150px; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-panel); color: var(--text-main); }
-    .btn-add-node { background: var(--text-main); color: var(--bg-base); border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-    .btn-add-node:hover { opacity: 0.8; }
+    .btn-add-node { background: var(--text-main); color: var(--bg-base); border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; }
 
     /* Animación de subida de nivel */
     .anim-level-up { animation: levelUpPulse 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
@@ -74,7 +71,7 @@ $nodos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     </button>
                     
                     <?php if(!$nodo['is_default']): ?>
-                        <button class="btn-delete" onclick="eliminarNodo(<?= $nodo['id'] ?>)" title="Eliminar nodo">🗑️</button>
+                        <button class="btn-delete" onclick="eliminarNodo(<?= $nodo['id'] ?>)" title="Eliminar">🗑️</button>
                     <?php endif; ?>
                 </div>
             </div>
@@ -84,13 +81,12 @@ $nodos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <div class="custom-node-form">
     <input type="hidden" id="parentSkillKey" value="<?= htmlspecialchars($current_skill) ?>">
-    <input type="text" id="newNodeName" placeholder="Nueva sub-habilidad..." maxlength="50">
-    <input type="number" id="newNodeMax" placeholder="Nivel Máx (Ej: 10)" value="10" min="1" style="max-width: 120px;">
+    <input type="text" id="newNodeName" placeholder="Nueva habilidad..." maxlength="50">
+    <input type="number" id="newNodeMax" placeholder="Max (Ej: 10)" value="10" min="1" style="max-width: 100px;">
     <button class="btn-add-node" onclick="crearNodo(this)">+ Añadir</button>
 </div>
 
 <script>
-// 1. INVERTIR PUNTOS CON ANIMACIÓN
 function invertirPuntos(nodeId, btnElement) {
     btnElement.innerHTML = '...';
     btnElement.disabled = true;
@@ -103,26 +99,19 @@ function invertirPuntos(nodeId, btnElement) {
     .then(res => res.json())
     .then(data => {
         if(data.success) {
-            // Actualizar número
             const spanNivel = document.getElementById('lvl-' + nodeId);
             spanNivel.innerHTML = '<b>' + data.new_level + '</b>';
             
-            // Reiniciar y lanzar animación CSS
             spanNivel.classList.remove('anim-level-up');
-            void spanNivel.offsetWidth; // Truco para forzar reflow del DOM
+            void spanNivel.offsetWidth; // Reflow
             spanNivel.classList.add('anim-level-up');
 
-            // Actualizar botón si llegó al máximo
             if(data.is_maxed) {
                 btnElement.innerHTML = 'Maxed';
-                // Se queda deshabilitado
             } else {
                 btnElement.innerHTML = '+ Invertir';
                 btnElement.disabled = false;
             }
-            
-            // Refrescar el background del parent silenciosamente si se quiere
-            if(typeof actualizarMasterBar === "function") actualizarMasterBar();
         } else {
             alert('Error: ' + data.error);
             btnElement.innerHTML = '+ Invertir';
@@ -132,51 +121,37 @@ function invertirPuntos(nodeId, btnElement) {
     .catch(err => { alert("Error de red."); btnElement.innerHTML = '+ Invertir'; btnElement.disabled = false; });
 }
 
-// 2. CREAR NODO PERSONALIZADO
 function crearNodo(btnElement) {
-    const nameInput = document.getElementById('newNodeName');
-    const maxInput = document.getElementById('newNodeMax');
+    const nameInput = document.getElementById('newNodeName').value.trim();
+    const maxInput = document.getElementById('newNodeMax').value;
     const parentKey = document.getElementById('parentSkillKey').value;
 
-    if(nameInput.value.trim() === '') { alert('Ingresa un nombre para el nodo.'); return; }
+    if(!nameInput) return alert('Ingresa un nombre.');
 
     btnElement.innerText = '...';
     
     fetch('api_nodo_crud.php', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ action: 'create', parent_key: parentKey, name: nameInput.value, max_level: maxInput.value })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if(data.success) {
-            // Recargamos silenciosamente el contenido del modal
-            openModal(`aumentar.php?skill=${parentKey}`, document.getElementById('modalTitle').innerText);
-        } else {
-            alert('Error: ' + data.error);
-            btnElement.innerText = '+ Añadir';
-        }
+        body: JSON.stringify({ action: 'create', parent_key: parentKey, name: nameInput, max_level: maxInput })
+    }).then(res => res.json()).then(data => {
+        if(data.success) openModal(`aumentar.php?skill=${parentKey}`, document.getElementById('modalTitle').innerText);
+        else alert('Error: ' + data.error);
     });
 }
 
-// 3. ELIMINAR NODO PERSONALIZADO
 function eliminarNodo(nodeId) {
-    if(!confirm('¿Estás seguro de eliminar esta sub-habilidad personalizada? Se perderá su progreso.')) return;
+    if(!confirm('¿Eliminar nodo? Se perderá el progreso.')) return;
 
     fetch('api_nodo_crud.php', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ action: 'delete', node_id: nodeId })
-    })
-    .then(res => res.json())
-    .then(data => {
+    }).then(res => res.json()).then(data => {
         if(data.success) {
-            // Desaparecer con animación y luego borrar
             const card = document.getElementById('node-card-' + nodeId);
             card.style.opacity = '0';
             setTimeout(() => card.remove(), 300);
-        } else {
-            alert('Error al eliminar: ' + data.error);
         }
     });
 }
