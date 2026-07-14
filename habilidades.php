@@ -22,71 +22,80 @@ $stmt = $pdo->query("SELECT * FROM skills_catalog");
 $catalog_raw = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // =========================================================================
-// --- 2. NUEVO: ALGORITMO RADIAL ORGÁNICO ---
-// Calculamos las posiciones (X, Y) dinámicamente basados en su relación Padre-Hijo
-// para evitar que dependas de coordenadas sueltas en la base de datos que causan colisiones.
+// --- 2. ALGORITMO RADIAL PROPORCIONAL (SIN COLISIONES) ---
+// Matemática procedimental basada en "Tree Node Weighting"
 // =========================================================================
 $tree_hierarchy = [];
 $catalog = [];
 
-// Agrupar por ramas
+// Agrupar por ramas para estructurar la jerarquía Padre -> Hijos
 foreach ($catalog_raw as $item) {
-    $parent = empty($item['parent_key']) ? 'root' : $item['parent_key'];
+    $parent = empty($item['parent_key']) ? 'origen' : $item['parent_key'];
     $tree_hierarchy[$parent][] = $item;
     $catalog[$item['node_key']] = $item;
 }
 
 $dynamic_coords = [];
-$dynamic_coords['origen'] = ['x' => 0, 'y' => 0, 'angle' => 0];
+$dynamic_coords['origen'] = ['x' => 0, 'y' => 0];
 
-// Función recursiva que acomoda las ramas en abanico sin chocar
-function calculate_radial_positions($parent_key, $tree_hierarchy, &$dynamic_coords, $depth, $parent_angle, $max_spread) {
-    if (!isset($tree_hierarchy[$parent_key])) return;
-
-    $children = $tree_hierarchy[$parent_key];
-    $num_children = count($children);
-    
-    // Radios de distancia: 350px para las bases, 450px para los subniveles
-    $radius = ($depth === 1) ? 350 : 450;
-
-    if ($depth === 1) {
-        // Nivel 1 (Bases): Se distribuyen en los 360 grados (2 PI radianes)
-        $angle_step = (2 * M_PI) / $num_children;
-        $start_angle = -(M_PI / 2); // Inicia exactamente arriba (12 en punto)
-    } else {
-        // Nivel 2+ (Subniveles): Se abren en un abanico desde donde está su padre
-        if ($num_children == 1) {
-            $start_angle = $parent_angle;
-            $angle_step = 0;
-        } else {
-            $start_angle = $parent_angle - ($max_spread / 2);
-            $angle_step = $max_spread / ($num_children - 1);
-        }
+// PASO A: Calcular el "peso" (volumen) de cada nodo
+$weights = [];
+function compute_weight($node_key, &$tree_hierarchy, &$weights) {
+    // Si no tiene hijos (es una hoja final), pesa 1
+    if (!isset($tree_hierarchy[$node_key]) || empty($tree_hierarchy[$node_key])) {
+        $weights[$node_key] = 1; 
+        return 1;
     }
+    // Si tiene hijos, su peso es la suma matemática del peso de todos sus descendientes
+    $sum = 0;
+    foreach ($tree_hierarchy[$node_key] as $child) {
+        $sum += compute_weight($child['node_key'], $tree_hierarchy, $weights);
+    }
+    $weights[$node_key] = $sum;
+    return $sum;
+}
+// Procesar toda la matriz partiendo del origen
+compute_weight('origen', $tree_hierarchy, $weights);
 
-    foreach ($children as $index => $child) {
+// PASO B: Distribuir coordenadas en base a Porciones Angulares (Slices)
+function calculate_proportional_radial($node_key, &$tree_hierarchy, &$dynamic_coords, &$weights, $depth, $start_angle, $end_angle) {
+    if (!isset($tree_hierarchy[$node_key])) return;
+
+    $children = $tree_hierarchy[$node_key];
+    $total_weight = $weights[$node_key]; 
+    
+    $current_angle = $start_angle;
+    
+    foreach ($children as $child) {
         $child_key = $child['node_key'];
-        $current_angle = $start_angle + ($index * $angle_step);
+        $child_weight = $weights[$child_key];
         
-        $parent_x = $dynamic_coords[$parent_key]['x'];
-        $parent_y = $dynamic_coords[$parent_key]['y'];
-
-        // Trigonometría simple para hallar X y Y perfectos
+        // FÓRMULA CLAVE: ¿Cuántos radianes (grados) le tocan a este nodo según su peso?
+        $slice_angle = ($child_weight / $total_weight) * ($end_angle - $start_angle);
+        
+        // Posicionamos el nodo exactamente en el centro de su porción exclusiva
+        $node_angle = $current_angle + ($slice_angle / 2);
+        
+        // Aumentamos el radio drásticamente por cada nivel para que orbiten sin tocarse
+        // Nivel 1 = 380px, Nivel 2 = 730px, Nivel 3 = 1080px...
+        $radius = ($depth === 1) ? 380 : 380 + (($depth - 1) * 350);
+        
+        // Convertimos las coordenadas Polares (Radio/Ángulo) a Cartesianas (X/Y)
         $dynamic_coords[$child_key] = [
-            'x' => $parent_x + (cos($current_angle) * $radius),
-            'y' => $parent_y + (sin($current_angle) * $radius),
-            'angle' => $current_angle
+            'x' => cos($node_angle) * $radius,
+            'y' => sin($node_angle) * $radius
         ];
-
-        // Llamada recursiva para sub-sub-niveles (Reduciendo el abanico para no tocar otras ramas)
-        calculate_radial_positions($child_key, $tree_hierarchy, $dynamic_coords, $depth + 1, $current_angle, $max_spread * 0.6);
+        
+        // Recursividad: Los hijos de este subnivel solo podrán expandirse dentro de su '$slice_angle'
+        calculate_proportional_radial($child_key, $tree_hierarchy, $dynamic_coords, $weights, $depth + 1, $current_angle, $current_angle + $slice_angle);
+        
+        $current_angle += $slice_angle;
     }
 }
 
-// Iniciar cálculo desde el Origen (M_PI / 1.6 = ~110 grados de apertura para las subramas)
-calculate_radial_positions('origen', $tree_hierarchy, $dynamic_coords, 1, 0, M_PI / 1.6);
-
-
+// Detonar la reacción en cadena: El Origen reparte el círculo completo (de 0 a 2 * Pi radianes = 360°)
+calculate_proportional_radial('origen', $tree_hierarchy, $dynamic_coords, $weights, 1, 0, 2 * M_PI);
+// =========================================================================
 // --- 3. OBTENER PROGRESO DEL USUARIO ---
 $stmt = $pdo->prepare("SELECT node_key, current_level, unlocked FROM user_skills WHERE user_id = ?");
 $stmt->execute([$user_id]);
