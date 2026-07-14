@@ -19,9 +19,75 @@ $user = [
 
 // --- 1. OBTENER EL CATÁLOGO DE HABILIDADES ---
 $stmt = $pdo->query("SELECT * FROM skills_catalog");
-$catalog = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$catalog_raw = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// --- 2. OBTENER PROGRESO DEL USUARIO ---
+// =========================================================================
+// --- 2. NUEVO: ALGORITMO RADIAL ORGÁNICO ---
+// Calculamos las posiciones (X, Y) dinámicamente basados en su relación Padre-Hijo
+// para evitar que dependas de coordenadas sueltas en la base de datos que causan colisiones.
+// =========================================================================
+$tree_hierarchy = [];
+$catalog = [];
+
+// Agrupar por ramas
+foreach ($catalog_raw as $item) {
+    $parent = empty($item['parent_key']) ? 'root' : $item['parent_key'];
+    $tree_hierarchy[$parent][] = $item;
+    $catalog[$item['node_key']] = $item;
+}
+
+$dynamic_coords = [];
+$dynamic_coords['origen'] = ['x' => 0, 'y' => 0, 'angle' => 0];
+
+// Función recursiva que acomoda las ramas en abanico sin chocar
+function calculate_radial_positions($parent_key, $tree_hierarchy, &$dynamic_coords, $depth, $parent_angle, $max_spread) {
+    if (!isset($tree_hierarchy[$parent_key])) return;
+
+    $children = $tree_hierarchy[$parent_key];
+    $num_children = count($children);
+    
+    // Radios de distancia: 350px para las bases, 450px para los subniveles
+    $radius = ($depth === 1) ? 350 : 450;
+
+    if ($depth === 1) {
+        // Nivel 1 (Bases): Se distribuyen en los 360 grados (2 PI radianes)
+        $angle_step = (2 * M_PI) / $num_children;
+        $start_angle = -(M_PI / 2); // Inicia exactamente arriba (12 en punto)
+    } else {
+        // Nivel 2+ (Subniveles): Se abren en un abanico desde donde está su padre
+        if ($num_children == 1) {
+            $start_angle = $parent_angle;
+            $angle_step = 0;
+        } else {
+            $start_angle = $parent_angle - ($max_spread / 2);
+            $angle_step = $max_spread / ($num_children - 1);
+        }
+    }
+
+    foreach ($children as $index => $child) {
+        $child_key = $child['node_key'];
+        $current_angle = $start_angle + ($index * $angle_step);
+        
+        $parent_x = $dynamic_coords[$parent_key]['x'];
+        $parent_y = $dynamic_coords[$parent_key]['y'];
+
+        // Trigonometría simple para hallar X y Y perfectos
+        $dynamic_coords[$child_key] = [
+            'x' => $parent_x + (cos($current_angle) * $radius),
+            'y' => $parent_y + (sin($current_angle) * $radius),
+            'angle' => $current_angle
+        ];
+
+        // Llamada recursiva para sub-sub-niveles (Reduciendo el abanico para no tocar otras ramas)
+        calculate_radial_positions($child_key, $tree_hierarchy, $dynamic_coords, $depth + 1, $current_angle, $max_spread * 0.6);
+    }
+}
+
+// Iniciar cálculo desde el Origen (M_PI / 1.6 = ~110 grados de apertura para las subramas)
+calculate_radial_positions('origen', $tree_hierarchy, $dynamic_coords, 1, 0, M_PI / 1.6);
+
+
+// --- 3. OBTENER PROGRESO DEL USUARIO ---
 $stmt = $pdo->prepare("SELECT node_key, current_level, unlocked FROM user_skills WHERE user_id = ?");
 $stmt->execute([$user_id]);
 $userData = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -31,19 +97,19 @@ foreach ($userData as $row) {
     $user_skills[$row['node_key']] = $row;
 }
 
-// --- 3. CONSTRUIR EL ÁRBOL DINÁMICO ---
+// --- 4. CONSTRUIR EL ÁRBOL DINÁMICO ---
 $nodes = [];
-// NUEVO: Aumentamos el multiplicador para separar radicalmente las distancias entre nodos
-$spacing_multiplier = 2.8; 
 
-// PASO A: Crear la base de datos de nodos en memoria
-foreach ($catalog as $item) {
-    $key = $item['node_key'];
+foreach ($catalog as $key => $item) {
+    // Tomamos las coordenadas exactas calculadas por nuestro algoritmo y no las de la BD
+    $x_pos = $dynamic_coords[$key]['x'] ?? 0;
+    $y_pos = $dynamic_coords[$key]['y'] ?? 0;
+
     $nodes[$key] = [
         'id' => $key,
         'label' => $item['label'],
-        'x' => $item['x'] * $spacing_multiplier, 
-        'y' => $item['y'] * $spacing_multiplier, 
+        'x' => $x_pos, 
+        'y' => $y_pos, 
         'level' => isset($user_skills[$key]) ? floor($user_skills[$key]['current_level']) : 0,
         'max' => $item['max_level'],
         'db_unlocked' => isset($user_skills[$key]) ? $user_skills[$key]['unlocked'] : false,
@@ -52,16 +118,12 @@ foreach ($catalog as $item) {
     ];
 }
 
-// PASO B: Calcular estado (locked/unlocked/maxed) basado en la jerarquía
+// Calcular estado (locked/unlocked/maxed)
 foreach ($nodes as $key => &$node) {
     $level = $node['level'];
-    
-    // Obtenemos los datos del padre para saber si ya completamos el requisito
     $parentKey = $node['parent'];
     $parentLevel = isset($nodes[$parentKey]) ? $nodes[$parentKey]['level'] : 0;
     $parentMax = isset($nodes[$parentKey]) ? $nodes[$parentKey]['max'] : 1;
-    
-    // ¿El padre llegó a su límite máximo?
     $isParentMaxed = ($parentKey === 'origen' || $parentLevel >= $parentMax);
 
     if ($key === 'origen' || $level >= $node['max']) {
@@ -74,19 +136,14 @@ foreach ($nodes as $key => &$node) {
 }
 unset($node); 
 
-// --- 4. CALCULAR VISIBILIDAD DEL MAPA ---
+// Calcular visibilidad del mapa
 foreach ($nodes as $key => &$node) {
     if ($key === 'origen' || $node['status'] !== 'locked') {
         $node['visibility_class'] = 'default-visible';
     } else {
         $parentKey = $node['parent'];
         $parentStatus = isset($nodes[$parentKey]) ? $nodes[$parentKey]['status'] : 'locked';
-        
-        if ($parentStatus !== 'locked') {
-            $node['visibility_class'] = 'default-visible';
-        } else {
-            $node['visibility_class'] = 'deep-locked'; 
-        }
+        $node['visibility_class'] = ($parentStatus !== 'locked') ? 'default-visible' : 'deep-locked'; 
     }
 }
 unset($node);
@@ -105,7 +162,7 @@ function renderAvatar($avatarData) {
     <title>Árbol de Habilidades | APH OS</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Orbitron:wght@500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        /* === VARIABLES GLOBALES DE LA PLATAFORMA === */
+        /* Variables y CSS permanecen idénticos, solo removí los multiplicadores rígidos */
         :root { 
             --bg-base: #FAFAFC; 
             --bg-panel: #FFFFFF; 
@@ -117,7 +174,6 @@ function renderAvatar($avatarData) {
             --gold: #ecc94b;
         }
 
-        /* 1. Tema por Defecto (Light OS) */
         .tree-viewport {
             --map-bg: #FFFFFF;
             --map-grid: #E2E8F0;
@@ -132,22 +188,11 @@ function renderAvatar($avatarData) {
             --map-backdrop: none;
         }
 
-        /* 2. Tema Blueprint */
         .tree-viewport[data-theme="blueprint"] {
-            --map-bg: #0B192C;
-            --map-grid: rgba(255, 255, 255, 0.1);
-            --node-bg: #0B192C;
-            --node-border: #3A86FF;
-            --node-text: #F8F9FA;
-            --node-text-muted: #A0C4FF;
-            --locked-line: rgba(255, 255, 255, 0.15);
-            --node-radius: 0px; 
+            --map-bg: #0B192C; --map-grid: rgba(255, 255, 255, 0.1); --node-bg: #0B192C; --node-border: #3A86FF; --node-text: #F8F9FA; --node-text-muted: #A0C4FF; --locked-line: rgba(255, 255, 255, 0.15); --node-radius: 0px; 
         }
         .tree-viewport[data-theme="blueprint"] .node:not(.core) {
-            border: 2px dashed var(--node-border);
-            font-family: 'JetBrains Mono', monospace;
-            background-image: repeating-linear-gradient(45deg, rgba(58, 134, 255, 0.05) 25%, transparent 25%, transparent 75%, rgba(58, 134, 255, 0.05) 75%, rgba(58, 134, 255, 0.05)), repeating-linear-gradient(45deg, rgba(58, 134, 255, 0.05) 25%, transparent 25%, transparent 75%, rgba(58, 134, 255, 0.05) 75%, rgba(58, 134, 255, 0.05));
-            background-position: 0 0, 10px 10px; background-size: 20px 20px;
+            border: 2px dashed var(--node-border); font-family: 'JetBrains Mono', monospace; background-image: repeating-linear-gradient(45deg, rgba(58, 134, 255, 0.05) 25%, transparent 25%, transparent 75%, rgba(58, 134, 255, 0.05) 75%, rgba(58, 134, 255, 0.05)), repeating-linear-gradient(45deg, rgba(58, 134, 255, 0.05) 25%, transparent 25%, transparent 75%, rgba(58, 134, 255, 0.05) 75%, rgba(58, 134, 255, 0.05)); background-position: 0 0, 10px 10px; background-size: 20px 20px;
         }
         .tree-viewport[data-theme="blueprint"] .node-level { font-family: 'JetBrains Mono', monospace; font-size: 1rem; }
         .tree-viewport[data-theme="blueprint"] .node-label { font-family: 'JetBrains Mono', monospace; font-weight: 400; }
@@ -156,67 +201,31 @@ function renderAvatar($avatarData) {
         .tree-viewport[data-theme="blueprint"] .svg-layer path { stroke-linecap: square; }
         .tree-viewport[data-theme="blueprint"]::before { background-size: 50px 50px; }
 
-        /* 3. Tema Executive */
         .tree-viewport[data-theme="executive"] {
-            --map-bg: #F1F5F9;
-            --map-grid: transparent;
-            --node-bg: #FFFFFF;
-            --node-border: #CBD5E1;
-            --node-text: #334155;
-            --node-text-muted: #94A3B8;
-            --locked-line: #CBD5E1;
-            --node-radius: 6px;
-            --map-shadow: inset 0 0 50px rgba(0,0,0,0.03);
+            --map-bg: #F1F5F9; --map-grid: transparent; --node-bg: #FFFFFF; --node-border: #CBD5E1; --node-text: #334155; --node-text-muted: #94A3B8; --locked-line: #CBD5E1; --node-radius: 6px; --map-shadow: inset 0 0 50px rgba(0,0,0,0.03);
         }
-        
-        /* NUEVO: Ajuste de dimensiones y alineación para Tema Executive */
         .tree-viewport[data-theme="executive"] .node:not(.core) {
-            width: 170px; /* Un poco más ancho para evitar que el texto choque */
-            height: auto; 
-            min-height: 60px; /* Flexibilidad vertical */
-            flex-direction: row; justify-content: flex-start;
-            padding: 10px 15px; gap: 10px;
-            border-left-width: 6px; 
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            width: 170px; height: auto; min-height: 60px; flex-direction: row; justify-content: flex-start; padding: 10px 15px; gap: 10px; border-left-width: 6px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         }
         .tree-viewport[data-theme="executive"] .node.unlocked { border-left-color: var(--gold); }
         .tree-viewport[data-theme="executive"] .node.maxed { border-left-color: var(--accent); }
         .tree-viewport[data-theme="executive"] .node-level { font-size: 1rem; margin: 0; }
         .tree-viewport[data-theme="executive"] .node-label { font-size: 0.65rem; text-align: left; margin: 0; line-height: 1.3; word-wrap: break-word; }
 
-        /* 4. Tema Void */
         .tree-viewport[data-theme="void"] {
-            --map-bg: #000000;
-            --map-grid: #111111;
-            --node-bg: #0a0a0a;
-            --node-border: #333333;
-            --node-text: #ffffff;
-            --node-text-muted: #666666;
-            --locked-line: #222222;
-            --node-radius: 30px; 
+            --map-bg: #000000; --map-grid: #111111; --node-bg: #0a0a0a; --node-border: #333333; --node-text: #ffffff; --node-text-muted: #666666; --locked-line: #222222; --node-radius: 30px; 
         }
 
-        /* 5. Tema Nexus */
         .tree-viewport[data-theme="nexus"] {
-            --map-bg: #121212;
-            --map-grid: rgba(255, 255, 255, 0.03);
-            --node-bg: #1E1E24;
-            --node-border: #444444;
-            --node-text: #F5F5F5;
-            --node-text-muted: #888888;
-            --locked-line: #333333;
-            --node-radius: 0px;
+            --map-bg: #121212; --map-grid: rgba(255, 255, 255, 0.03); --node-bg: #1E1E24; --node-border: #444444; --node-text: #F5F5F5; --node-text-muted: #888888; --locked-line: #333333; --node-radius: 0px;
         }
         .tree-viewport[data-theme="nexus"] .node:not(.core) {
-            border: 1px solid var(--node-border);
-            box-shadow: 5px 5px 0px rgba(0,0,0,0.8); 
-            background: linear-gradient(135deg, #1E1E24 0%, #111115 100%);
+            border: 1px solid var(--node-border); box-shadow: 5px 5px 0px rgba(0,0,0,0.8); background: linear-gradient(135deg, #1E1E24 0%, #111115 100%);
         }
         .tree-viewport[data-theme="nexus"] .node.unlocked { box-shadow: 5px 5px 0px var(--gold); border-color: var(--gold); }
         .tree-viewport[data-theme="nexus"] .node.maxed { box-shadow: 5px 5px 0px var(--accent); border-color: var(--accent); }
         .tree-viewport[data-theme="nexus"] .node.core { border-radius: 50%; box-shadow: 0 0 0 6px rgba(128, 90, 213, 0.3), 8px 8px 0px rgba(128, 90, 213, 0.8); }
 
-        /* === ESTILOS GENERALES === */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background-color: var(--bg-base); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
         
@@ -238,28 +247,15 @@ function renderAvatar($avatarData) {
         .btn-return { background: var(--bg-panel); border: 2px solid var(--border-color); color: var(--text-main); padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none; font-size: 0.9rem; transition: 0.3s; }
         .btn-return:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
 
-        /* === ESTILOS DEL MAPA === */
         .tree-viewport { 
-            flex: 1; 
-            position: relative; 
-            background: var(--map-bg); 
-            border: 1px solid var(--border-color); 
-            border-radius: 16px; 
-            overflow: hidden; 
-            box-shadow: var(--map-shadow); 
-            cursor: grab; 
-            transition: background-color 0.4s, box-shadow 0.4s;
+            flex: 1; position: relative; background: var(--map-bg); border: 1px solid var(--border-color); border-radius: 16px; overflow: hidden; box-shadow: var(--map-shadow); cursor: grab; transition: background-color 0.4s, box-shadow 0.4s;
         }
         .tree-viewport:active { cursor: grabbing; }
         .tree-viewport::before { 
-            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            background-image: radial-gradient(var(--map-grid) 1px, transparent 1px); 
-            background-size: 40px 40px; opacity: 0.6; z-index: 0; pointer-events: none; 
-            transition: background-image 0.4s;
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: radial-gradient(var(--map-grid) 1px, transparent 1px); background-size: 40px 40px; opacity: 0.6; z-index: 0; pointer-events: none; transition: background-image 0.4s;
         }
         
         .tree-canvas { position: absolute; top: 50%; left: 50%; transform-origin: 0 0; z-index: 1; }
-        
         .zoom-controls { position: absolute; bottom: 20px; right: 20px; display: flex; gap: 10px; z-index: 20; }
         .zoom-btn { background: var(--bg-panel); border: 1px solid var(--border-color); width: 45px; height: 45px; border-radius: 10px; font-size: 1.2rem; font-weight: bold; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: 0.2s; }
         .zoom-btn:hover { color: var(--accent); border-color: var(--accent); transform: translateY(-2px); }
@@ -275,20 +271,8 @@ function renderAvatar($avatarData) {
         .svg-layer { position: absolute; top: -2500px; left: -2500px; width: 5000px; height: 5000px; pointer-events: none; z-index: 1; filter: var(--line-filter); }
         .tree-link { transition: stroke 0.4s; }
         
-        /* NUEVO: Ajuste de la caja base (.node) */
         .node { 
-            position: absolute; 
-            width: 140px; /* Más ancho para que quepa mejor el texto */
-            height: auto; 
-            min-height: 90px; /* Evita que queden muy aplastados pero permite que crezcan si hay mucho texto */
-            padding: 15px 10px; /* Margen interno para que el texto no toque el borde */
-            background: var(--node-bg); 
-            border: 2px solid var(--node-border); 
-            border-radius: var(--node-radius); 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            cursor: pointer; z-index: 5; text-decoration: none; color: var(--node-text); 
-            transform: translate(-50%, -50%); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.03); /* Sombra sutil para separarlos visualmente */
+            position: absolute; width: 140px; height: auto; min-height: 90px; padding: 15px 10px; background: var(--node-bg); border: 2px solid var(--node-border); border-radius: var(--node-radius); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; z-index: 5; text-decoration: none; color: var(--node-text); transform: translate(-50%, -50%); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 10px rgba(0,0,0,0.03); 
         }
         
         .node.core { width: 150px; height: 150px; background: var(--accent); border-radius: 50%; color: white; border: 6px solid var(--node-bg); box-shadow: 0 0 30px var(--accent-light); cursor: default; }
@@ -304,17 +288,7 @@ function renderAvatar($avatarData) {
         .node.unlocked .node-level { color: var(--gold); }
         .node.maxed .node-level { color: var(--accent); }
         
-        /* NUEVO: Ajustes en el texto para que fluya mejor */
-        .node-label { 
-            font-size: 0.75rem; 
-            text-transform: uppercase; 
-            margin-top: 8px; 
-            text-align: center; 
-            font-weight: 700; 
-            letter-spacing: 0.5px; 
-            line-height: 1.3; 
-            word-wrap: break-word; 
-        }
+        .node-label { font-size: 0.75rem; text-transform: uppercase; margin-top: 8px; text-align: center; font-weight: 700; letter-spacing: 0.5px; line-height: 1.3; word-wrap: break-word; }
     </style>
 </head>
 <body>
@@ -408,14 +382,11 @@ function renderAvatar($avatarData) {
     </main>
 
     <script>
-        function toggleThemeMenu() {
-            document.getElementById('themeDropdown').classList.toggle('show');
-        }
+        function toggleThemeMenu() { document.getElementById('themeDropdown').classList.toggle('show'); }
 
         function setTheme(theme) {
             document.getElementById('viewport').setAttribute('data-theme', theme);
             localStorage.setItem('aph_skill_theme', theme);
-            
             document.getElementById('themeDropdown').classList.remove('show');
             document.querySelectorAll('.theme-option').forEach(el => el.classList.remove('active'));
             document.querySelector(`.theme-option[data-theme-val="${theme}"]`).classList.add('active');
@@ -423,17 +394,13 @@ function renderAvatar($avatarData) {
 
         window.addEventListener('DOMContentLoaded', () => {
             const savedTheme = localStorage.getItem('aph_skill_theme');
-            if (savedTheme) {
-                setTheme(savedTheme);
-            }
+            if (savedTheme) { setTheme(savedTheme); }
         });
 
         document.addEventListener('click', function(e) {
             if (!e.target.closest('.theme-menu-container')) {
                 const dropdown = document.getElementById('themeDropdown');
-                if (dropdown && dropdown.classList.contains('show')) {
-                    dropdown.classList.remove('show');
-                }
+                if (dropdown && dropdown.classList.contains('show')) dropdown.classList.remove('show');
             }
         });
 
@@ -446,19 +413,16 @@ function renderAvatar($avatarData) {
         let pointY = 0;
         let start = { x: 0, y: 0 };
 
-        function setTransform() {
-            canvas.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`;
-        }
+        function setTransform() { canvas.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`; }
 
         window.onload = function() {
-            scale = 0.85; 
+            scale = 0.55; // Ajuste el zoom inicial para ver bien el nuevo mapa radial
             setTransform();
         };
 
         viewport.onmousedown = function (e) {
             e.preventDefault();
             if(e.target.closest('.zoom-controls')) return; 
-            
             start = { x: e.clientX - pointX, y: e.clientY - pointY };
             panning = true;
         }
@@ -479,7 +443,7 @@ function renderAvatar($avatarData) {
             let delta = (e.wheelDelta ? e.wheelDelta : -e.deltaY);
             
             (delta > 0) ? (scale *= 1.1) : (scale /= 1.1);
-            scale = Math.max(0.2, Math.min(scale, 3.0)); 
+            scale = Math.max(0.1, Math.min(scale, 3.0)); 
             
             pointX = e.clientX - xs * scale;
             pointY = e.clientY - ys * scale;
@@ -487,19 +451,16 @@ function renderAvatar($avatarData) {
         }
 
         function zoomIn() { scale = Math.min(scale * 1.2, 3.0); setTransform(); }
-        function zoomOut() { scale = Math.max(scale / 1.2, 0.2); setTransform(); }
-        function resetView() { scale = 0.85; pointX = 0; pointY = 0; setTransform(); }
+        function zoomOut() { scale = Math.max(scale / 1.2, 0.1); setTransform(); }
+        function resetView() { scale = 0.55; pointX = 0; pointY = 0; setTransform(); }
 
         function toggleVisibility() {
             const btn = document.getElementById('btn-eye');
             canvas.classList.toggle('hide-deep');
-            
             if(canvas.classList.contains('hide-deep')) {
-                btn.innerHTML = '🔒';
-                btn.title = 'Mostrar todo el árbol';
+                btn.innerHTML = '🔒'; btn.title = 'Mostrar todo el árbol';
             } else {
-                btn.innerHTML = '👁️';
-                btn.title = 'Ocultar ramas lejanas';
+                btn.innerHTML = '👁️'; btn.title = 'Ocultar ramas lejanas';
             }
         }
     </script>
