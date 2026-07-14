@@ -47,7 +47,6 @@ $dynamic_coords['origen'] = ['x' => 0, 'y' => 0];
 // PASO A: Calcular el peso con escudo Anti-Bucle (Array Visited)
 $weights = [];
 function compute_weight($node_key, &$tree_hierarchy, &$weights, &$visited = []) {
-    // Si ya visitamos este nodo, hay un bucle en la DB. Cortamos para evitar el Error 500.
     if (isset($visited[$node_key])) return $weights[$node_key] ?? 1;
     $visited[$node_key] = true;
 
@@ -69,7 +68,6 @@ compute_weight('origen', $tree_hierarchy, $weights, $visited_weights);
 
 // PASO B: Distribuir coordenadas en base a Porciones Angulares (Slices)
 function calculate_proportional_radial($node_key, &$tree_hierarchy, &$dynamic_coords, &$weights, $depth, $start_angle, $end_angle, &$visited = []) {
-    // Escudo Anti-Bucle 2
     if (isset($visited[$node_key])) return; 
     $visited[$node_key] = true;
 
@@ -77,7 +75,7 @@ function calculate_proportional_radial($node_key, &$tree_hierarchy, &$dynamic_co
 
     $children = $tree_hierarchy[$node_key];
     $total_weight = $weights[$node_key] ?? 1; 
-    if ($total_weight <= 0) $total_weight = 1; // Prevenir división por 0
+    if ($total_weight <= 0) $total_weight = 1; 
     
     $current_angle = $start_angle;
     
@@ -88,7 +86,6 @@ function calculate_proportional_radial($node_key, &$tree_hierarchy, &$dynamic_co
         $slice_angle = ($child_weight / $total_weight) * ($end_angle - $start_angle);
         $node_angle = $current_angle + ($slice_angle / 2);
         
-        // Espaciado radial dinámico (350px de distancia entre cada anillo/nivel)
         $radius = ($depth === 1) ? 350 : 350 + (($depth - 1) * 350);
         
         $dynamic_coords[$child_key] = [
@@ -153,7 +150,7 @@ foreach ($catalog as $key => $item) {
 
 // Calcular estado jerárquico
 foreach ($nodes as $key => &$node) {
-    if ($key === 'origen') continue; // Saltar el origen, ya está configurado
+    if ($key === 'origen') continue; 
     
     $level = $node['level'];
     $parentKey = $node['parent'];
@@ -208,23 +205,31 @@ function renderAvatar($avatarData) {
             --node-radius: 12px; --line-filter: none; --map-shadow: 0 10px 25px rgba(0,0,0,0.02);
         }
 
+        /* CORRECCIONES DE TRANSPARENCIA EN LOS TEMAS */
         .tree-viewport[data-theme="blueprint"] {
             --map-bg: #0B192C; --map-grid: rgba(255, 255, 255, 0.1); --node-bg: #0B192C; --node-border: #3A86FF; --node-text: #F8F9FA; --node-text-muted: #A0C4FF; --locked-line: rgba(255, 255, 255, 0.15); --node-radius: 0px; 
         }
         .tree-viewport[data-theme="blueprint"] .node:not(.core) {
-            border: 2px dashed var(--node-border); font-family: 'JetBrains Mono', monospace; background-image: repeating-linear-gradient(45deg, rgba(58, 134, 255, 0.05) 25%, transparent 25%, transparent 75%, rgba(58, 134, 255, 0.05) 75%, rgba(58, 134, 255, 0.05)), repeating-linear-gradient(45deg, rgba(58, 134, 255, 0.05) 25%, transparent 25%, transparent 75%, rgba(58, 134, 255, 0.05) 75%, rgba(58, 134, 255, 0.05)); background-position: 0 0, 10px 10px; background-size: 20px 20px;
+            border: 2px dashed var(--node-border); font-family: 'JetBrains Mono', monospace; background-image: repeating-linear-gradient(45deg, rgba(58, 134, 255, 0.05) 25%, transparent 25%, transparent 75%, rgba(58, 134, 255, 0.05) 75%, rgba(58, 134, 255, 0.05)), repeating-linear-gradient(45deg, rgba(58, 134, 255, 0.05) 25%, transparent 25%, transparent 75%, rgba(58, 134, 255, 0.05) 75%, rgba(58, 134, 255, 0.05)); background-position: 0 0, 10px 10px; background-size: 20px 20px; background-color: var(--node-bg);
         }
         .tree-viewport[data-theme="blueprint"] .node-level { font-family: 'JetBrains Mono', monospace; font-size: 1rem; }
         .tree-viewport[data-theme="blueprint"] .node-label { font-family: 'JetBrains Mono', monospace; font-weight: 400; }
-        .tree-viewport[data-theme="blueprint"] .node.unlocked { border-style: solid; background-color: rgba(58, 134, 255, 0.1); }
-        .tree-viewport[data-theme="blueprint"] .node.maxed { border-style: solid; background-color: rgba(58, 134, 255, 0.3); border-width: 3px; }
+        .tree-viewport[data-theme="blueprint"] .node.unlocked { 
+            border-style: solid; 
+            background: linear-gradient(rgba(58, 134, 255, 0.1), rgba(58, 134, 255, 0.1)), var(--node-bg); 
+        }
+        .tree-viewport[data-theme="blueprint"] .node.maxed { 
+            border-style: solid; 
+            background: linear-gradient(rgba(58, 134, 255, 0.3), rgba(58, 134, 255, 0.3)), var(--node-bg); 
+            border-width: 3px; 
+        }
         .tree-viewport[data-theme="blueprint"] .svg-layer path { stroke-linecap: square; }
 
         .tree-viewport[data-theme="executive"] {
             --map-bg: #F1F5F9; --map-grid: transparent; --node-bg: #FFFFFF; --node-border: #CBD5E1; --node-text: #334155; --node-text-muted: #94A3B8; --locked-line: #CBD5E1; --node-radius: 6px; --map-shadow: inset 0 0 50px rgba(0,0,0,0.03);
         }
         .tree-viewport[data-theme="executive"] .node:not(.core) {
-            width: 170px; height: auto; min-height: 60px; flex-direction: row; justify-content: flex-start; padding: 10px 15px; gap: 10px; border-left-width: 6px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            width: 170px; height: auto; min-height: 60px; flex-direction: row; justify-content: flex-start; padding: 10px 15px; gap: 10px; border-left-width: 6px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); background-color: var(--node-bg);
         }
         .tree-viewport[data-theme="executive"] .node.unlocked { border-left-color: var(--gold); }
         .tree-viewport[data-theme="executive"] .node.maxed { border-left-color: var(--accent); }
@@ -283,18 +288,43 @@ function renderAvatar($avatarData) {
 
         .tree-canvas.hide-deep .deep-locked { display: none !important; opacity: 0; transition: 0.3s; }
 
-        .svg-layer { position: absolute; top: -2500px; left: -2500px; width: 5000px; height: 5000px; pointer-events: none; z-index: 1; filter: var(--line-filter); }
+        /* Z-INDEX EXTREMO PARA FORZAR LAS LÍNEAS AL FONDO */
+        .svg-layer { position: absolute; top: -2500px; left: -2500px; width: 5000px; height: 5000px; pointer-events: none; z-index: 0; filter: var(--line-filter); }
         .tree-link { transition: stroke 0.4s; }
         
-        .node { position: absolute; width: 140px; height: auto; min-height: 90px; padding: 15px 10px; background: var(--node-bg); border: 2px solid var(--node-border); border-radius: var(--node-radius); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; z-index: 5; text-decoration: none; color: var(--node-text); transform: translate(-50%, -50%); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+        /* NODOS OPACOS POR ENCIMA DE LAS LÍNEAS */
+        .node { 
+            position: absolute; width: 140px; height: auto; min-height: 90px; padding: 15px 10px; 
+            /* Se establece el color base primero para asegurar opacidad total */
+            background-color: var(--node-bg); 
+            border: 2px solid var(--node-border); border-radius: var(--node-radius); 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            cursor: pointer; z-index: 10; text-decoration: none; color: var(--node-text); 
+            transform: translate(-50%, -50%); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 10px rgba(0,0,0,0.03); 
+        }
         
-        .node.core { width: 150px; height: 150px; background: var(--accent); border-radius: 50%; color: white; border: 6px solid var(--node-bg); box-shadow: 0 0 30px var(--accent-light); cursor: default; }
+        .node.core { width: 150px; height: 150px; background: var(--accent); border-radius: 50%; color: white; border: 6px solid var(--node-bg); box-shadow: 0 0 30px var(--accent-light); cursor: default; z-index: 15; }
         .node.core span { font-size: 0.75rem; font-family: 'Inter', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9; }
         .node.core strong { font-size: 1.7rem; font-family: 'Orbitron', sans-serif; }
         
-        .node.locked { filter: grayscale(100%) opacity(0.5); pointer-events: none; border-color: var(--locked-line); }
+        /* Quitamos la opacidad que causaba que la línea se viera a través y usamos color directo */
+        .node.locked { 
+            filter: grayscale(100%); 
+            color: var(--text-muted);
+            pointer-events: none; 
+            border-color: var(--locked-line); 
+            background-color: var(--node-bg);
+        }
+        
         .node.unlocked { border-color: var(--gold); box-shadow: 0 5px 15px rgba(236, 201, 75, 0.15); }
-        .node.maxed { border-color: var(--accent); background: var(--accent-light); box-shadow: 0 5px 15px var(--accent-light); }
+        
+        /* Truco de Linear Gradient sobre Fondo Sólido para colorear manteniendo 100% de Opacidad */
+        .node.maxed { 
+            border-color: var(--accent); 
+            background: linear-gradient(var(--accent-light), var(--accent-light)), var(--node-bg); 
+            box-shadow: 0 5px 15px var(--accent-light); 
+        }
+        
         .node:not(.core):not(.locked):hover { transform: translate(-50%, -50%) scale(1.1); z-index: 20; }
         
         .node-level { font-family: 'Orbitron', sans-serif; font-size: 1.2rem; font-weight: 700; color: var(--node-text-muted); }
