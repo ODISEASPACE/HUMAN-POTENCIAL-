@@ -33,12 +33,11 @@ try {
     
     $new_level = $current_level + 1;
 
-    // Persistir el incremento del subnodo
+    // Persistir el incremento del subnodo (CORREGIDO PARA MYSQL)
     $stmt = $pdo->prepare("
         INSERT INTO user_specialization_nodes (user_id, node_id, current_level) 
         VALUES (?, ?, 1) 
-        ON CONFLICT (user_id, node_id) 
-        DO UPDATE SET current_level = user_specialization_nodes.current_level + 1
+        ON DUPLICATE KEY UPDATE current_level = current_level + 1
     ");
     $stmt->execute([$user_id, $node_id]);
 
@@ -66,9 +65,14 @@ try {
     // Cálculo del nivel maestro continuo (Guardado flotante para barras de progreso fluidas)
     $new_parent_level = $ratio * $parent_max;
 
-    // Actualizar la tabla de habilidades núcleo con precisión decimal
-    $stmt = $pdo->prepare("UPDATE user_skills SET current_level = ? WHERE user_id = ? AND node_key = ?");
-    $stmt->execute([$new_parent_level, $user_id, $parent_key]);
+    // Actualizar la tabla de habilidades núcleo con precisión decimal (CORREGIDO CON UPSERT)
+    // Esto asegura que si el núcleo tiene 0 puntos y no existe la fila, se crea sin problemas.
+    $stmt = $pdo->prepare("
+        INSERT INTO user_skills (user_id, node_key, current_level, unlocked) 
+        VALUES (?, ?, ?, true) 
+        ON DUPLICATE KEY UPDATE current_level = ?
+    ");
+    $stmt->execute([$user_id, $parent_key, $new_parent_level, $new_parent_level]);
 
     $pdo->commit();
     

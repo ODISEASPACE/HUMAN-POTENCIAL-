@@ -50,31 +50,32 @@ while ($temp_key != null && isset($catalog[$temp_key])) {
     $temp_key = $node_info['parent_key'];
 }
 
-// Lógica de Acortamiento del Explorador ("... / Padre / Actual")
 $display_path = [];
 $total_paths = count($full_path);
 
 if ($total_paths > 3) {
-    // Si es muy larga, mostramos: [Origen] / ... / [Padre] / [Actual]
-    $display_path[] = $full_path[0]; // La raíz
+    $display_path[] = $full_path[0]; 
     $display_path[] = [
         'name' => '...', 
-        'url' => $full_path[$total_paths - 3]['url'] // El '...' lleva al abuelo
+        'url' => $full_path[$total_paths - 3]['url'] 
     ];
-    $display_path[] = $full_path[$total_paths - 2]; // El padre
-    $display_path[] = $full_path[$total_paths - 1]; // El nodo actual
+    $display_path[] = $full_path[$total_paths - 2]; 
+    $display_path[] = $full_path[$total_paths - 1]; 
 } else {
     $display_path = $full_path;
 }
 
-// 5. OBTENER PROGRESO DEL USUARIO
+// 5. OBTENER PROGRESO DEL USUARIO (CON CORRECCIÓN DE DECIMALES PARA LA BARRA)
 $stmt = $pdo->prepare("SELECT current_level FROM user_skills WHERE user_id = ? AND node_key = ?");
 $stmt->execute([$user_id, $current_skill_key]);
 $userProgress = $stmt->fetch(PDO::FETCH_ASSOC);
 
-$core_level = $userProgress ? floor($userProgress['current_level']) : 0;
+// Extraer el decimal real para que la barra se mueva fluido, y truncar solo para el texto gigante
+$exact_level = $userProgress ? (float)$userProgress['current_level'] : 0;
+$core_level = floor($exact_level); 
 $core_max = $current_node['max_level'];
-$progress_percent = ($core_max > 0) ? ($core_level / $core_max) * 100 : 0;
+// Calculamos el porcentaje usando el nivel EXACTO (con decimales)
+$progress_percent = ($core_max > 0) ? ($exact_level / $core_max) * 100 : 0;
 
 // 6. OBTENER LOS SUBNIVELES
 $stmt = $pdo->prepare("SELECT node_key, label FROM skills_catalog WHERE parent_key = ? ORDER BY label ASC");
@@ -109,9 +110,7 @@ $user = ['username' => 'Daniel', 'profession' => 'Ingeniería de Sistemas', 'pro
 
         main { flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 40px; position: relative; }
         
-        /* BREADCRUMBS OPTIMIZADOS */
         .header-dash { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; }
-        /* Fuente reducida de 2rem a 1.4rem para aguantar rutas largas */
         .title-area h1 { font-size: 1.4rem; font-weight: 800; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; font-family: 'Orbitron', sans-serif; text-transform: uppercase; white-space: nowrap;}
         .breadcrumb-icon { font-size: 1.8rem; margin-right: 5px; }
         .breadcrumb-link { color: var(--text-muted); text-decoration: none; transition: 0.2s; }
@@ -122,7 +121,6 @@ $user = ['username' => 'Daniel', 'profession' => 'Ingeniería de Sistemas', 'pro
         .btn-return { background: var(--bg-panel); border: 2px solid var(--border-color); color: var(--text-main); padding: 8px 15px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: 0.3s; text-decoration: none; font-size: 0.85rem; white-space: nowrap; }
         .btn-return:hover { border-color: var(--theme-color); color: var(--theme-color); background: var(--theme-light); }
 
-        /* WINDOWS / TABS (Subniveles) */
         .sublevels-wrapper { margin-bottom: 30px; }
         .sublevels-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .sublevels-header h3 { font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
@@ -131,7 +129,6 @@ $user = ['username' => 'Daniel', 'profession' => 'Ingeniería de Sistemas', 'pro
         .sublevel-tab { padding: 12px 20px; background: var(--bg-panel); border: 2px solid var(--border-color); border-radius: 12px; font-weight: 700; font-size: 0.9rem; color: var(--text-main); text-decoration: none; transition: 0.2s; white-space: nowrap; }
         .sublevel-tab:hover { border-color: var(--theme-color); transform: translateY(-2px); box-shadow: 0 5px 15px var(--theme-light); }
         
-        /* PANEL CENTRAL Y BOTONES */
         .progress-master-panel { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 16px; padding: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); text-align: center; margin-bottom: 30px; }
         .progress-title { font-size: 1.1rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px; }
         .level-display { font-size: 4rem; font-family: 'Orbitron', sans-serif; font-weight: 800; color: var(--text-main); margin-bottom: 20px; }
@@ -146,9 +143,6 @@ $user = ['username' => 'Daniel', 'profession' => 'Ingeniería de Sistemas', 'pro
         .action-btn .title { font-weight: 700; font-size: 1.05rem; }
         .action-btn .desc { font-size: 0.75rem; color: var(--text-muted); text-align: center; }
 
-        /* ==========================================
-           SISTEMA DE VENTANAS MODALES (NUEVO)
-           ========================================== */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(10, 10, 15, 0.6); backdrop-filter: blur(4px);
@@ -172,20 +166,11 @@ $user = ['username' => 'Daniel', 'profession' => 'Ingeniería de Sistemas', 'pro
             background: var(--bg-base);
         }
         .modal-header h3 { font-size: 1.2rem; font-weight: 700; color: var(--text-main); margin: 0; }
-        .modal-close {
-            background: none; border: none; font-size: 1.5rem; color: var(--text-muted);
-            cursor: pointer; transition: 0.2s;
-        }
+        .modal-close { background: none; border: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer; transition: 0.2s; }
         .modal-close:hover { color: #E53E3E; }
-        
         .modal-body { padding: 30px; overflow-y: auto; flex: 1; }
         
-        /* Spinner de carga */
-        .loader {
-            border: 4px solid var(--border-color); border-top: 4px solid var(--theme-color);
-            border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;
-            margin: 40px auto;
-        }
+        .loader { border: 4px solid var(--border-color); border-top: 4px solid var(--theme-color); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 40px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
@@ -277,23 +262,22 @@ $user = ['username' => 'Daniel', 'profession' => 'Ingeniería de Sistemas', 'pro
     </main>
 
     <script>
-        // MOTOR DE VENTANAS MODALES
         const modal = document.getElementById('mainModal');
         const modalBody = document.getElementById('modalBody');
         const modalTitle = document.getElementById('modalTitle');
         
-        let progresoModificado = false; // Rastrea si se invirtieron puntos
+        // Exponemos la variable a nivel de Window para asegurarnos que se conecte
+        window.progresoModificado = false; 
 
-        // Esta función es activada desde aumentar.php
-        function actualizarMasterBar() {
-            progresoModificado = true;
-        }
+        window.actualizarMasterBar = function() {
+            window.progresoModificado = true;
+        };
 
         function openModal(url, title) {
             modalTitle.innerText = title;
             modalBody.innerHTML = '<div class="loader"></div><p style="text-align:center; color: var(--text-muted);">Cargando módulo...</p>';
             modal.classList.add('active');
-            progresoModificado = false; // Reiniciamos el estado al abrir
+            window.progresoModificado = false; 
 
             fetch(url)
                 .then(response => {
@@ -307,11 +291,11 @@ $user = ['username' => 'Daniel', 'profession' => 'Ingeniería de Sistemas', 'pro
                         const newScript = document.createElement('script');
                         newScript.textContent = script.textContent;
                         document.body.appendChild(newScript);
-                        document.body.removeChild(newScript);
+                        setTimeout(() => document.body.removeChild(newScript), 50); // Tiempo extra seguro para ejecución
                     });
                 })
                 .catch(err => {
-                    modalBody.innerHTML = `<p style="color: #E53E3E; text-align:center;">Error al cargar. Asegúrate de que el archivo existe.</p>`;
+                    modalBody.innerHTML = `<p style="color: #E53E3E; text-align:center;">Error al cargar el recurso.</p>`;
                 });
         }
 
@@ -320,8 +304,7 @@ $user = ['username' => 'Daniel', 'profession' => 'Ingeniería de Sistemas', 'pro
                 modal.classList.remove('active');
                 setTimeout(() => {
                     modalBody.innerHTML = '';
-                    // Si se invirtieron puntos, recargamos la página principal
-                    if (progresoModificado) {
+                    if (window.progresoModificado) {
                         window.location.reload();
                     }
                 }, 300);
