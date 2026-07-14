@@ -22,80 +22,90 @@ $stmt = $pdo->query("SELECT * FROM skills_catalog");
 $catalog_raw = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // =========================================================================
-// --- 2. ALGORITMO RADIAL PROPORCIONAL (SIN COLISIONES) ---
-// Matemática procedimental basada en "Tree Node Weighting"
+// --- 2. ALGORITMO RADIAL PROPORCIONAL (ANTI-COLISIONES & ANTI-ERROR 500) ---
 // =========================================================================
 $tree_hierarchy = [];
 $catalog = [];
 
-// Agrupar por ramas para estructurar la jerarquía Padre -> Hijos
+// Agrupar por ramas asegurando que no haya nodos apuntándose a sí mismos
 foreach ($catalog_raw as $item) {
-    $parent = empty($item['parent_key']) ? 'origen' : $item['parent_key'];
-    $tree_hierarchy[$parent][] = $item;
-    $catalog[$item['node_key']] = $item;
+    $node_key = trim($item['node_key'] ?? '');
+    if ($node_key === '') continue; // Ignorar filas corruptas vacías
+    
+    $parent = empty($item['parent_key']) ? 'origen' : trim($item['parent_key']);
+    
+    // Evitar bucle de nivel 1 (que un nodo sea su propio padre)
+    if ($parent !== $node_key) {
+        $tree_hierarchy[$parent][] = $item;
+    }
+    $catalog[$node_key] = $item;
 }
 
 $dynamic_coords = [];
 $dynamic_coords['origen'] = ['x' => 0, 'y' => 0];
 
-// PASO A: Calcular el "peso" (volumen) de cada nodo
+// PASO A: Calcular el peso con escudo Anti-Bucle (Array Visited)
 $weights = [];
-function compute_weight($node_key, &$tree_hierarchy, &$weights) {
-    // Si no tiene hijos (es una hoja final), pesa 1
+function compute_weight($node_key, &$tree_hierarchy, &$weights, &$visited = []) {
+    // Si ya visitamos este nodo, hay un bucle en la DB. Cortamos para evitar el Error 500.
+    if (isset($visited[$node_key])) return $weights[$node_key] ?? 1;
+    $visited[$node_key] = true;
+
     if (!isset($tree_hierarchy[$node_key]) || empty($tree_hierarchy[$node_key])) {
         $weights[$node_key] = 1; 
         return 1;
     }
-    // Si tiene hijos, su peso es la suma matemática del peso de todos sus descendientes
+    
     $sum = 0;
     foreach ($tree_hierarchy[$node_key] as $child) {
-        $sum += compute_weight($child['node_key'], $tree_hierarchy, $weights);
+        $sum += compute_weight($child['node_key'], $tree_hierarchy, $weights, $visited);
     }
     $weights[$node_key] = $sum;
     return $sum;
 }
-// Procesar toda la matriz partiendo del origen
-compute_weight('origen', $tree_hierarchy, $weights);
+
+$visited_weights = [];
+compute_weight('origen', $tree_hierarchy, $weights, $visited_weights);
 
 // PASO B: Distribuir coordenadas en base a Porciones Angulares (Slices)
-function calculate_proportional_radial($node_key, &$tree_hierarchy, &$dynamic_coords, &$weights, $depth, $start_angle, $end_angle) {
+function calculate_proportional_radial($node_key, &$tree_hierarchy, &$dynamic_coords, &$weights, $depth, $start_angle, $end_angle, &$visited = []) {
+    // Escudo Anti-Bucle 2
+    if (isset($visited[$node_key])) return; 
+    $visited[$node_key] = true;
+
     if (!isset($tree_hierarchy[$node_key])) return;
 
     $children = $tree_hierarchy[$node_key];
-    $total_weight = $weights[$node_key]; 
+    $total_weight = $weights[$node_key] ?? 1; 
+    if ($total_weight <= 0) $total_weight = 1; // Prevenir división por 0
     
     $current_angle = $start_angle;
     
     foreach ($children as $child) {
         $child_key = $child['node_key'];
-        $child_weight = $weights[$child_key];
+        $child_weight = $weights[$child_key] ?? 1;
         
-        // FÓRMULA CLAVE: ¿Cuántos radianes (grados) le tocan a este nodo según su peso?
         $slice_angle = ($child_weight / $total_weight) * ($end_angle - $start_angle);
-        
-        // Posicionamos el nodo exactamente en el centro de su porción exclusiva
         $node_angle = $current_angle + ($slice_angle / 2);
         
-        // Aumentamos el radio drásticamente por cada nivel para que orbiten sin tocarse
-        // Nivel 1 = 380px, Nivel 2 = 730px, Nivel 3 = 1080px...
-        $radius = ($depth === 1) ? 380 : 380 + (($depth - 1) * 350);
+        // Espaciado radial dinámico (350px de distancia entre cada anillo/nivel)
+        $radius = ($depth === 1) ? 350 : 350 + (($depth - 1) * 350);
         
-        // Convertimos las coordenadas Polares (Radio/Ángulo) a Cartesianas (X/Y)
         $dynamic_coords[$child_key] = [
             'x' => cos($node_angle) * $radius,
             'y' => sin($node_angle) * $radius
         ];
         
-        // Recursividad: Los hijos de este subnivel solo podrán expandirse dentro de su '$slice_angle'
-        calculate_proportional_radial($child_key, $tree_hierarchy, $dynamic_coords, $weights, $depth + 1, $current_angle, $current_angle + $slice_angle);
+        calculate_proportional_radial($child_key, $tree_hierarchy, $dynamic_coords, $weights, $depth + 1, $current_angle, $current_angle + $slice_angle, $visited);
         
         $current_angle += $slice_angle;
     }
 }
 
-// Detonar la reacción en cadena: El Origen reparte el círculo completo (de 0 a 2 * Pi radianes = 360°)
-calculate_proportional_radial('origen', $tree_hierarchy, $dynamic_coords, $weights, 1, 0, 2 * M_PI);
+$visited_radial = [];
+calculate_proportional_radial('origen', $tree_hierarchy, $dynamic_coords, $weights, 1, 0, 2 * M_PI, $visited_radial);
 // =========================================================================
+
 // --- 3. OBTENER PROGRESO DEL USUARIO ---
 $stmt = $pdo->prepare("SELECT node_key, current_level, unlocked FROM user_skills WHERE user_id = ?");
 $stmt->execute([$user_id]);
@@ -109,8 +119,22 @@ foreach ($userData as $row) {
 // --- 4. CONSTRUIR EL ÁRBOL DINÁMICO ---
 $nodes = [];
 
+// Forzar la creación segura del nodo central
+$nodes['origen'] = [
+    'id' => 'origen',
+    'label' => 'Origen',
+    'x' => 0, 
+    'y' => 0, 
+    'level' => 10,
+    'max' => 10,
+    'db_unlocked' => true,
+    'parent' => null,
+    'route' => '',
+    'status' => 'maxed',
+    'visibility_class' => 'default-visible'
+];
+
 foreach ($catalog as $key => $item) {
-    // Tomamos las coordenadas exactas calculadas por nuestro algoritmo y no las de la BD
     $x_pos = $dynamic_coords[$key]['x'] ?? 0;
     $y_pos = $dynamic_coords[$key]['y'] ?? 0;
 
@@ -122,20 +146,22 @@ foreach ($catalog as $key => $item) {
         'level' => isset($user_skills[$key]) ? floor($user_skills[$key]['current_level']) : 0,
         'max' => $item['max_level'],
         'db_unlocked' => isset($user_skills[$key]) ? $user_skills[$key]['unlocked'] : false,
-        'parent' => $item['parent_key'],
+        'parent' => empty($item['parent_key']) ? 'origen' : $item['parent_key'],
         'route' => $item['route']
     ];
 }
 
-// Calcular estado (locked/unlocked/maxed)
+// Calcular estado jerárquico
 foreach ($nodes as $key => &$node) {
+    if ($key === 'origen') continue; // Saltar el origen, ya está configurado
+    
     $level = $node['level'];
     $parentKey = $node['parent'];
     $parentLevel = isset($nodes[$parentKey]) ? $nodes[$parentKey]['level'] : 0;
     $parentMax = isset($nodes[$parentKey]) ? $nodes[$parentKey]['max'] : 1;
     $isParentMaxed = ($parentKey === 'origen' || $parentLevel >= $parentMax);
 
-    if ($key === 'origen' || $level >= $node['max']) {
+    if ($level >= $node['max']) {
         $node['status'] = 'maxed'; 
     } elseif ($level > 0 || $node['db_unlocked'] || $isParentMaxed) {
         $node['status'] = 'unlocked'; 
@@ -145,7 +171,7 @@ foreach ($nodes as $key => &$node) {
 }
 unset($node); 
 
-// Calcular visibilidad del mapa
+// Calcular visibilidad
 foreach ($nodes as $key => &$node) {
     if ($key === 'origen' || $node['status'] !== 'locked') {
         $node['visibility_class'] = 'default-visible';
@@ -171,30 +197,15 @@ function renderAvatar($avatarData) {
     <title>Árbol de Habilidades | APH OS</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Orbitron:wght@500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        /* Variables y CSS permanecen idénticos, solo removí los multiplicadores rígidos */
         :root { 
-            --bg-base: #FAFAFC; 
-            --bg-panel: #FFFFFF; 
-            --text-main: #1A202C; 
-            --text-muted: #718096; 
-            --accent: #805AD5; 
-            --accent-light: rgba(128, 90, 213, 0.1); 
-            --border-color: #E2E8F0; 
-            --gold: #ecc94b;
+            --bg-base: #FAFAFC; --bg-panel: #FFFFFF; --text-main: #1A202C; --text-muted: #718096; 
+            --accent: #805AD5; --accent-light: rgba(128, 90, 213, 0.1); --border-color: #E2E8F0; --gold: #ecc94b;
         }
 
         .tree-viewport {
-            --map-bg: #FFFFFF;
-            --map-grid: #E2E8F0;
-            --node-bg: #FFFFFF;
-            --node-border: #E2E8F0;
-            --node-text: #1A202C;
-            --node-text-muted: #718096;
-            --locked-line: #E2E8F0;
-            --node-radius: 12px;
-            --line-filter: none;
-            --map-shadow: 0 10px 25px rgba(0,0,0,0.02);
-            --map-backdrop: none;
+            --map-bg: #FFFFFF; --map-grid: #E2E8F0; --node-bg: #FFFFFF; --node-border: #E2E8F0; 
+            --node-text: #1A202C; --node-text-muted: #718096; --locked-line: #E2E8F0; 
+            --node-radius: 12px; --line-filter: none; --map-shadow: 0 10px 25px rgba(0,0,0,0.02);
         }
 
         .tree-viewport[data-theme="blueprint"] {
@@ -208,7 +219,6 @@ function renderAvatar($avatarData) {
         .tree-viewport[data-theme="blueprint"] .node.unlocked { border-style: solid; background-color: rgba(58, 134, 255, 0.1); }
         .tree-viewport[data-theme="blueprint"] .node.maxed { border-style: solid; background-color: rgba(58, 134, 255, 0.3); border-width: 3px; }
         .tree-viewport[data-theme="blueprint"] .svg-layer path { stroke-linecap: square; }
-        .tree-viewport[data-theme="blueprint"]::before { background-size: 50px 50px; }
 
         .tree-viewport[data-theme="executive"] {
             --map-bg: #F1F5F9; --map-grid: transparent; --node-bg: #FFFFFF; --node-border: #CBD5E1; --node-text: #334155; --node-text-muted: #94A3B8; --locked-line: #CBD5E1; --node-radius: 6px; --map-shadow: inset 0 0 50px rgba(0,0,0,0.03);
@@ -256,13 +266,9 @@ function renderAvatar($avatarData) {
         .btn-return { background: var(--bg-panel); border: 2px solid var(--border-color); color: var(--text-main); padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none; font-size: 0.9rem; transition: 0.3s; }
         .btn-return:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
 
-        .tree-viewport { 
-            flex: 1; position: relative; background: var(--map-bg); border: 1px solid var(--border-color); border-radius: 16px; overflow: hidden; box-shadow: var(--map-shadow); cursor: grab; transition: background-color 0.4s, box-shadow 0.4s;
-        }
+        .tree-viewport { flex: 1; position: relative; background: var(--map-bg); border: 1px solid var(--border-color); border-radius: 16px; overflow: hidden; box-shadow: var(--map-shadow); cursor: grab; transition: background-color 0.4s, box-shadow 0.4s; }
         .tree-viewport:active { cursor: grabbing; }
-        .tree-viewport::before { 
-            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: radial-gradient(var(--map-grid) 1px, transparent 1px); background-size: 40px 40px; opacity: 0.6; z-index: 0; pointer-events: none; transition: background-image 0.4s;
-        }
+        .tree-viewport::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: radial-gradient(var(--map-grid) 1px, transparent 1px); background-size: 40px 40px; opacity: 0.6; z-index: 0; pointer-events: none; transition: background-image 0.4s; }
         
         .tree-canvas { position: absolute; top: 50%; left: 50%; transform-origin: 0 0; z-index: 1; }
         .zoom-controls { position: absolute; bottom: 20px; right: 20px; display: flex; gap: 10px; z-index: 20; }
@@ -280,9 +286,7 @@ function renderAvatar($avatarData) {
         .svg-layer { position: absolute; top: -2500px; left: -2500px; width: 5000px; height: 5000px; pointer-events: none; z-index: 1; filter: var(--line-filter); }
         .tree-link { transition: stroke 0.4s; }
         
-        .node { 
-            position: absolute; width: 140px; height: auto; min-height: 90px; padding: 15px 10px; background: var(--node-bg); border: 2px solid var(--node-border); border-radius: var(--node-radius); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; z-index: 5; text-decoration: none; color: var(--node-text); transform: translate(-50%, -50%); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 10px rgba(0,0,0,0.03); 
-        }
+        .node { position: absolute; width: 140px; height: auto; min-height: 90px; padding: 15px 10px; background: var(--node-bg); border: 2px solid var(--node-border); border-radius: var(--node-radius); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; z-index: 5; text-decoration: none; color: var(--node-text); transform: translate(-50%, -50%); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
         
         .node.core { width: 150px; height: 150px; background: var(--accent); border-radius: 50%; color: white; border: 6px solid var(--node-bg); box-shadow: 0 0 30px var(--accent-light); cursor: default; }
         .node.core span { font-size: 0.75rem; font-family: 'Inter', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9; }
@@ -425,7 +429,7 @@ function renderAvatar($avatarData) {
         function setTransform() { canvas.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`; }
 
         window.onload = function() {
-            scale = 0.55; // Ajuste el zoom inicial para ver bien el nuevo mapa radial
+            scale = 0.55; 
             setTransform();
         };
 
