@@ -33,7 +33,8 @@ foreach ($userData as $row) {
 
 // --- 3. CONSTRUIR EL ÁRBOL DINÁMICO ---
 $nodes = [];
-$spacing_multiplier = 1.8; 
+// NUEVO: Aumentamos el multiplicador para separar radicalmente las distancias entre nodos
+$spacing_multiplier = 2.8; 
 
 // PASO A: Crear la base de datos de nodos en memoria
 foreach ($catalog as $item) {
@@ -64,14 +65,14 @@ foreach ($nodes as $key => &$node) {
     $isParentMaxed = ($parentKey === 'origen' || $parentLevel >= $parentMax);
 
     if ($key === 'origen' || $level >= $node['max']) {
-        $node['status'] = 'maxed'; // Color morado
+        $node['status'] = 'maxed'; 
     } elseif ($level > 0 || $node['db_unlocked'] || $isParentMaxed) {
-        $node['status'] = 'unlocked'; // ¡LA MAGIA AQUÍ! Si el padre es maxed, los hijos se abren (Color dorado)
+        $node['status'] = 'unlocked'; 
     } else {
-        $node['status'] = 'locked'; // Siguen inactivos (Color gris)
+        $node['status'] = 'locked'; 
     }
 }
-unset($node); // Romper la referencia
+unset($node); 
 
 // --- 4. CALCULAR VISIBILIDAD DEL MAPA ---
 foreach ($nodes as $key => &$node) {
@@ -81,17 +82,15 @@ foreach ($nodes as $key => &$node) {
         $parentKey = $node['parent'];
         $parentStatus = isset($nodes[$parentKey]) ? $nodes[$parentKey]['status'] : 'locked';
         
-        // Si el padre está desbloqueado (ej: Espíritu tiene 6/10), mostramos a los hijos 
-        // en color gris para que el usuario sepa qué sigue, pero no los dejamos clickear.
         if ($parentStatus !== 'locked') {
             $node['visibility_class'] = 'default-visible';
         } else {
-            // Si el padre está gris, ocultamos totalmente las ramas lejanas
             $node['visibility_class'] = 'deep-locked'; 
         }
     }
 }
 unset($node);
+
 function renderAvatar($avatarData) {
     if (empty($avatarData)) return "<div class='avatar-circle' style='background: var(--bg-panel); color: var(--text-main);'>👤</div>";
     if (strpos($avatarData, '.') !== false) return "<div class='avatar-circle' style='background-image: url(\"{$avatarData}\"); background-size: cover;'></div>";
@@ -118,9 +117,6 @@ function renderAvatar($avatarData) {
             --gold: #ecc94b;
         }
 
-        /* =========================================
-           SISTEMA DE TEMAS AISLADOS DEL MAPA 
-           ========================================= */
         /* 1. Tema por Defecto (Light OS) */
         .tree-viewport {
             --map-bg: #FFFFFF;
@@ -172,17 +168,21 @@ function renderAvatar($avatarData) {
             --node-radius: 6px;
             --map-shadow: inset 0 0 50px rgba(0,0,0,0.03);
         }
+        
+        /* NUEVO: Ajuste de dimensiones y alineación para Tema Executive */
         .tree-viewport[data-theme="executive"] .node:not(.core) {
-            width: 150px; height: 60px; 
+            width: 170px; /* Un poco más ancho para evitar que el texto choque */
+            height: auto; 
+            min-height: 60px; /* Flexibilidad vertical */
             flex-direction: row; justify-content: flex-start;
-            padding: 0 12px; gap: 10px;
+            padding: 10px 15px; gap: 10px;
             border-left-width: 6px; 
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         }
         .tree-viewport[data-theme="executive"] .node.unlocked { border-left-color: var(--gold); }
         .tree-viewport[data-theme="executive"] .node.maxed { border-left-color: var(--accent); }
         .tree-viewport[data-theme="executive"] .node-level { font-size: 1rem; margin: 0; }
-        .tree-viewport[data-theme="executive"] .node-label { font-size: 0.65rem; text-align: left; margin: 0; }
+        .tree-viewport[data-theme="executive"] .node-label { font-size: 0.65rem; text-align: left; margin: 0; line-height: 1.3; word-wrap: break-word; }
 
         /* 4. Tema Void */
         .tree-viewport[data-theme="void"] {
@@ -275,14 +275,20 @@ function renderAvatar($avatarData) {
         .svg-layer { position: absolute; top: -2500px; left: -2500px; width: 5000px; height: 5000px; pointer-events: none; z-index: 1; filter: var(--line-filter); }
         .tree-link { transition: stroke 0.4s; }
         
+        /* NUEVO: Ajuste de la caja base (.node) */
         .node { 
-            position: absolute; width: 120px; height: 100px; 
+            position: absolute; 
+            width: 140px; /* Más ancho para que quepa mejor el texto */
+            height: auto; 
+            min-height: 90px; /* Evita que queden muy aplastados pero permite que crezcan si hay mucho texto */
+            padding: 15px 10px; /* Margen interno para que el texto no toque el borde */
             background: var(--node-bg); 
             border: 2px solid var(--node-border); 
             border-radius: var(--node-radius); 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
             cursor: pointer; z-index: 5; text-decoration: none; color: var(--node-text); 
             transform: translate(-50%, -50%); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03); /* Sombra sutil para separarlos visualmente */
         }
         
         .node.core { width: 150px; height: 150px; background: var(--accent); border-radius: 50%; color: white; border: 6px solid var(--node-bg); box-shadow: 0 0 30px var(--accent-light); cursor: default; }
@@ -297,7 +303,18 @@ function renderAvatar($avatarData) {
         .node-level { font-family: 'Orbitron', sans-serif; font-size: 1.2rem; font-weight: 700; color: var(--node-text-muted); }
         .node.unlocked .node-level { color: var(--gold); }
         .node.maxed .node-level { color: var(--accent); }
-        .node-label { font-size: 0.75rem; text-transform: uppercase; margin-top: 5px; text-align: center; font-weight: 700; letter-spacing: 0.5px; padding: 0 5px; }
+        
+        /* NUEVO: Ajustes en el texto para que fluya mejor */
+        .node-label { 
+            font-size: 0.75rem; 
+            text-transform: uppercase; 
+            margin-top: 8px; 
+            text-align: center; 
+            font-weight: 700; 
+            letter-spacing: 0.5px; 
+            line-height: 1.3; 
+            word-wrap: break-word; 
+        }
     </style>
 </head>
 <body>
