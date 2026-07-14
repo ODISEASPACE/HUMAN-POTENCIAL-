@@ -35,32 +35,45 @@ foreach ($userData as $row) {
 $nodes = [];
 $spacing_multiplier = 1.8; 
 
+// PASO A: Crear la base de datos de nodos en memoria
 foreach ($catalog as $item) {
     $key = $item['node_key'];
-    $level = isset($user_skills[$key]) ? floor($user_skills[$key]['current_level']) : 0;
-    $unlocked = isset($user_skills[$key]) ? $user_skills[$key]['unlocked'] : false;
-
-    $status = 'locked';
-    if ($key === 'origen' || $level >= $item['max_level']) {
-        $status = 'maxed';
-    } elseif ($level > 0 || $unlocked) {
-        $status = 'unlocked';
-    }
-
     $nodes[$key] = [
         'id' => $key,
         'label' => $item['label'],
         'x' => $item['x'] * $spacing_multiplier, 
         'y' => $item['y'] * $spacing_multiplier, 
-        'level' => $level,
+        'level' => isset($user_skills[$key]) ? floor($user_skills[$key]['current_level']) : 0,
         'max' => $item['max_level'],
-        'status' => $status,
+        'db_unlocked' => isset($user_skills[$key]) ? $user_skills[$key]['unlocked'] : false,
         'parent' => $item['parent_key'],
         'route' => $item['route']
     ];
 }
 
-// --- 4. CALCULAR VISIBILIDAD ---
+// PASO B: Calcular estado (locked/unlocked/maxed) basado en la jerarquía
+foreach ($nodes as $key => &$node) {
+    $level = $node['level'];
+    
+    // Obtenemos los datos del padre para saber si ya completamos el requisito
+    $parentKey = $node['parent'];
+    $parentLevel = isset($nodes[$parentKey]) ? $nodes[$parentKey]['level'] : 0;
+    $parentMax = isset($nodes[$parentKey]) ? $nodes[$parentKey]['max'] : 1;
+    
+    // ¿El padre llegó a su límite máximo?
+    $isParentMaxed = ($parentKey === 'origen' || $parentLevel >= $parentMax);
+
+    if ($key === 'origen' || $level >= $node['max']) {
+        $node['status'] = 'maxed'; // Color morado
+    } elseif ($level > 0 || $node['db_unlocked'] || $isParentMaxed) {
+        $node['status'] = 'unlocked'; // ¡LA MAGIA AQUÍ! Si el padre es maxed, los hijos se abren (Color dorado)
+    } else {
+        $node['status'] = 'locked'; // Siguen inactivos (Color gris)
+    }
+}
+unset($node); // Romper la referencia
+
+// --- 4. CALCULAR VISIBILIDAD DEL MAPA ---
 foreach ($nodes as $key => &$node) {
     if ($key === 'origen' || $node['status'] !== 'locked') {
         $node['visibility_class'] = 'default-visible';
@@ -68,15 +81,17 @@ foreach ($nodes as $key => &$node) {
         $parentKey = $node['parent'];
         $parentStatus = isset($nodes[$parentKey]) ? $nodes[$parentKey]['status'] : 'locked';
         
+        // Si el padre está desbloqueado (ej: Espíritu tiene 6/10), mostramos a los hijos 
+        // en color gris para que el usuario sepa qué sigue, pero no los dejamos clickear.
         if ($parentStatus !== 'locked') {
             $node['visibility_class'] = 'default-visible';
         } else {
-            $node['visibility_class'] = 'deep-locked';
+            // Si el padre está gris, ocultamos totalmente las ramas lejanas
+            $node['visibility_class'] = 'deep-locked'; 
         }
     }
 }
 unset($node);
-
 function renderAvatar($avatarData) {
     if (empty($avatarData)) return "<div class='avatar-circle' style='background: var(--bg-panel); color: var(--text-main);'>👤</div>";
     if (strpos($avatarData, '.') !== false) return "<div class='avatar-circle' style='background-image: url(\"{$avatarData}\"); background-size: cover;'></div>";
