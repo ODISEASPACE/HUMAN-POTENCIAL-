@@ -8,12 +8,11 @@ if (!function_exists('renderAvatar')) {
     }
 }
 
-// Si $user no está definido por el archivo padre, lo buscamos dinámicamente incluyendo el arquetipo
-if (!isset($user) && isset($pdo, $_SESSION['user_id'])) {
-    // Añadimos 'archetype' a la consulta. COALESCE asegura que si es nulo, actúe como 1 (Vagabundo)
-    $stmtUser = $pdo->prepare("SELECT username, profile_picture, profession, COALESCE(archetype, 1) as archetype FROM users WHERE id = ?");
-    $stmtUser->execute([$_SESSION['user_id']]);
-    $user = $stmtUser->fetch(PDO::FETCH_ASSOC);
+// FORZAMOS LA CONSULTA INDEPENDIENTE PARA EL SIDEBAR
+if (isset($pdo, $_SESSION['user_id'])) {
+    $stmtSidebar = $pdo->prepare("SELECT username, profile_picture, profession, COALESCE(archetype, 1) as archetype FROM users WHERE id = ?");
+    $stmtSidebar->execute([$_SESSION['user_id']]);
+    $sidebar_user = $stmtSidebar->fetch(PDO::FETCH_ASSOC);
 }
 
 // LÓGICA DE RUTAS Y PÁGINA ACTUAL
@@ -21,17 +20,17 @@ $current_page = basename($_SERVER['PHP_SELF']);
 $is_skills = ($current_page == 'habilidades.php' || $current_page == 'rama.php');
 $base_path = ($current_page == 'rama.php') ? '../' : '';
 
-// LÓGICA DE DESBLOQUEO POR ARQUETIPOS
+// LÓGICA DE DESBLOQUEO POR ARQUETIPOS (Usamos $sidebar_user)
 // 1 = Vagabundo | 2 = Soñador | 3 = Soldado | 4 = Ejecutor
-$archetype = (int)($user['archetype'] ?? 1);
+$archetype = (int)($sidebar_user['archetype'] ?? 1);
 
-// Definimos qué puede ver según su nivel (el nivel superior hereda todo lo del inferior)
+// Definimos qué puede ver según su nivel
 $show_dashboard  = true; // Nivel 1+
 $show_registro   = true; // Nivel 1+
 $show_estado     = ($archetype >= 2); // Nivel 2+
 $show_proyectos  = ($archetype >= 3); // Nivel 3+
 $show_arbol_dec  = ($archetype >= 4); // Nivel 4
-$show_habilidades= ($archetype >= 4); // Nivel 4 (Lo agrupo con Ejecutor por su complejidad)
+$show_habilidades= ($archetype >= 4); // Nivel 4
 ?>
 <style>
     nav.sidebar { width: 260px; background: var(--bg-panel, #FFFFFF); border-right: 1px solid var(--border-color, #E2E8F0); display: flex; flex-direction: column; padding: 30px 20px; z-index: 100; flex-shrink: 0; }
@@ -42,7 +41,6 @@ $show_habilidades= ($archetype >= 4); // Nivel 4 (Lo agrupo con Ejecutor por su 
     .nav-link { display: flex; align-items: center; padding: 12px 16px; color: var(--text-muted, #718096); text-decoration: none; font-weight: 600; border-radius: 8px; transition: 0.3s; }
     .nav-link:hover, .nav-link.active { background: var(--accent-light, rgba(128, 90, 213, 0.1)); color: var(--accent, #805AD5); }
     
-    /* Nueva área de usuario convertida en botón clickable */
     .user-mini-btn { 
         display: flex; align-items: center; gap: 12px; padding: 15px; 
         border-top: 1px solid var(--border-color, #E2E8F0); 
@@ -58,7 +56,6 @@ $show_habilidades= ($archetype >= 4); // Nivel 4 (Lo agrupo con Ejecutor por su 
     .btn-logout { margin-top: 10px; text-align: center; font-size: 0.85rem; color: #E53E3E; text-decoration: none; font-weight: 600; padding: 8px; border-radius: 6px; transition: background 0.3s; }
     .btn-logout:hover { background: #FFF5F5; }
     
-    /* Candadito para módulos bloqueados (opcional si luego quieres mostrarlos en gris en vez de ocultarlos) */
     .nav-link.locked { opacity: 0.5; cursor: not-allowed; }
 </style>
 
@@ -92,17 +89,16 @@ $show_habilidades= ($archetype >= 4); // Nivel 4 (Lo agrupo con Ejecutor por su 
     </div>
     
     <a href="<?= $base_path ?>profile_settings.php" class="user-mini-btn">
-        <?= renderAvatar($user['profile_picture'] ?? '') ?>
+        <?= renderAvatar($sidebar_user['profile_picture'] ?? '') ?>
         <div class="user-info-mini">
-            <h4><?= htmlspecialchars($user['username'] ?? 'Usuario') ?></h4>
+            <h4><?= htmlspecialchars($sidebar_user['username'] ?? 'Usuario') ?></h4>
             <p>
                 <?php 
-                // Mostrar texto descriptivo en lugar de solo la profesión si se desea
                 if($archetype == 1) echo "Arquetipo: Vagabundo";
                 elseif($archetype == 2) echo "Arquetipo: Soñador";
                 elseif($archetype == 3) echo "Arquetipo: Soldado";
                 elseif($archetype == 4) echo "Arquetipo: Ejecutor";
-                else echo htmlspecialchars($user['profession'] ?? '');
+                else echo htmlspecialchars($sidebar_user['profession'] ?? '');
                 ?>
             </p>
         </div>
