@@ -9,12 +9,7 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 
-// 1. DATOS DEL USUARIO
-$stmtUser = $pdo->prepare("SELECT username, profile_picture, profession FROM users WHERE id = ?");
-$stmtUser->execute([$user_id]);
-$user = $stmtUser->fetch();
-
-// 2. DATOS: ESTADO HUMANO (Último registro)
+// 1. DATOS: ESTADO HUMANO (Último registro)
 $stmtState = $pdo->prepare("SELECT * FROM human_state WHERE user_id = ? ORDER BY assessment_date DESC LIMIT 1");
 $stmtState->execute([$user_id]);
 $h_state = $stmtState->fetch();
@@ -26,7 +21,7 @@ $radar_data = [
     $h_state['pathos_score'] ?? 50
 ];
 
-// 3. DATOS: REGISTRO DIARIO (Últimos 7 días para gráficas)
+// 2. DATOS: REGISTRO DIARIO (Últimos 7 días para gráficas)
 $stmtLogs = $pdo->prepare("
     SELECT to_char(log_date, 'DD/MM') as f_date, routines_completed, mood_score, health_score 
     FROM daily_logs 
@@ -37,7 +32,7 @@ $stmtLogs = $pdo->prepare("
 $stmtLogs->execute([$user_id]);
 $logs = $stmtLogs->fetchAll();
 
-// 4. DATOS: PROYECTOS (Conteo por categorías - CORREGIDO PARA FETCH_KEY_PAIR)
+// 3. DATOS: PROYECTOS
 $stmtProj = $pdo->prepare("SELECT category, COUNT(*) as total FROM projects_items WHERE user_id = ? GROUP BY category");
 $stmtProj->execute([$user_id]);
 $projectsData = $stmtProj->fetchAll(PDO::FETCH_KEY_PAIR); 
@@ -47,12 +42,6 @@ $log_labels = json_encode(array_column($logs, 'f_date'));
 $log_mood = json_encode(array_column($logs, 'mood_score'));
 $log_health = json_encode(array_column($logs, 'health_score'));
 $log_routines = json_encode(array_column($logs, 'routines_completed'));
-
-function renderAvatar($avatarData) {
-    if (empty($avatarData)) return "<div class='avatar-circle' style='background: #E2E8F0; color: #4A5568;'>👤</div>";
-    if (strpos($avatarData, '.') !== false) return "<div class='avatar-circle' style='background-image: url(\"{$avatarData}\"); background-size: cover;'></div>";
-    return "<div class='avatar-circle' style='background: rgba(128, 90, 213, 0.1); color: #805AD5;'>{$avatarData}</div>";
-}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -66,18 +55,6 @@ function renderAvatar($avatarData) {
         :root { --bg-base: #FAFAFC; --bg-panel: #FFFFFF; --text-main: #1A202C; --text-muted: #718096; --accent: #805AD5; --accent-light: rgba(128, 90, 213, 0.1); --border-color: #E2E8F0; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background-color: var(--bg-base); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
-        
-        /* Sidebar */
-        nav.sidebar { width: 260px; background: var(--bg-panel); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 30px 20px; z-index: 10; flex-shrink: 0; }
-        .brand { text-align: center; margin-bottom: 40px; } .brand h2 { font-weight: 800; letter-spacing: 2px; font-size: 1.5rem; color: var(--accent); }
-        .nav-links { flex: 1; display: flex; flex-direction: column; gap: 5px; }
-        .nav-link { display: flex; align-items: center; padding: 12px 16px; color: var(--text-muted); text-decoration: none; font-weight: 600; border-radius: 8px; transition: 0.3s; }
-        .nav-link:hover, .nav-link.active { background: var(--accent-light); color: var(--accent); }
-        .user-mini { display: flex; align-items: center; gap: 12px; padding-top: 20px; border-top: 1px solid var(--border-color); margin-top: auto; }
-        .avatar-circle { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
-        .user-info-mini h4 { font-size: 0.9rem; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
-        .user-info-mini p { font-size: 0.75rem; color: var(--text-muted); }
-        .btn-logout { margin-top: 15px; text-align: center; font-size: 0.85rem; color: #E53E3E; text-decoration: none; font-weight: 600; padding: 8px; border-radius: 6px; }
         
         /* Main Dashboard */
         main { flex: 1; padding: 40px; overflow-y: auto; }
@@ -117,24 +94,7 @@ function renderAvatar($avatarData) {
 </head>
 <body>
 
-    <nav class="sidebar">
-        <div class="brand"><h2>A P H</h2></div>
-        <div class="nav-links">
-            <a href="dashboard.php" class="nav-link active">⌂ Panel Central</a>
-            <a href="estado-humano.php" class="nav-link">👤 Estado Humano</a>
-            <a href="registro-diario.php" class="nav-link">⏱ Registro Diario</a>
-            <a href="proyectos.php" class="nav-link">🚀 Proyectos</a>
-            <a href="arbol_de_decisiones.php" class="nav-link">🌳 Árbol de Decisiones</a>
-        </div>
-        <div class="user-mini">
-            <?= renderAvatar($user['profile_picture']) ?>
-            <div class="user-info-mini">
-                <h4><?= htmlspecialchars($user['username'] ?? 'Usuario') ?></h4>
-                <p><?= htmlspecialchars($user['profession'] ?? 'Sin asignar') ?></p>
-            </div>
-        </div>
-        <a href="logout.php" class="btn-logout">Cerrar Sesión</a>
-    </nav>
+    <?php include 'sidebar.php'; ?>
 
     <main>
         <div class="header-dash">
