@@ -14,7 +14,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $username = trim($_POST['username']);
     $profession = trim($_POST['profession']);
     $profile_picture = trim($_POST['profile_picture']);
-    $birthdate = !empty($_POST['birthdate']) ? $_POST['birthdate'] : null;
+    $birth_date = !empty($_POST['birth_date']) ? $_POST['birth_date'] : null;
     $bio = trim($_POST['bio']);
     $password = $_POST['password'];
 
@@ -22,12 +22,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if (!empty($password)) {
             // Si ingresa contraseña, la actualizamos también
             $password_hash = password_hash($password, PASSWORD_BCRYPT);
-            $stmt = $pdo->prepare("UPDATE users SET username = ?, profession = ?, profile_picture = ?, birthdate = ?, bio = ?, password_hash = ? WHERE id = ?");
-            $stmt->execute([$username, $profession, $profile_picture, $birthdate, $bio, $password_hash, $user_id]);
+            $stmt = $pdo->prepare("UPDATE users SET username = ?, profession = ?, profile_picture = ?, birth_date = ?, bio = ?, password_hash = ? WHERE id = ?");
+            $stmt->execute([$username, $profession, $profile_picture, $birth_date, $bio, $password_hash, $user_id]);
         } else {
             // Si la contraseña está vacía, actualizamos solo el resto de datos
-            $stmt = $pdo->prepare("UPDATE users SET username = ?, profession = ?, profile_picture = ?, birthdate = ?, bio = ? WHERE id = ?");
-            $stmt->execute([$username, $profession, $profile_picture, $birthdate, $bio, $user_id]);
+            $stmt = $pdo->prepare("UPDATE users SET username = ?, profession = ?, profile_picture = ?, birth_date = ?, bio = ? WHERE id = ?");
+            $stmt->execute([$username, $profession, $profile_picture, $birth_date, $bio, $user_id]);
         }
         $mensaje = "<span style='color: #38A169;'>Perfil actualizado correctamente.</span>";
     } catch (PDOException $e) {
@@ -35,15 +35,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 
-// Obtener los datos actuales del usuario
-$stmt = $pdo->prepare("SELECT email, username, profession, profile_picture, birthdate, bio FROM users WHERE id = ?");
-$stmt->execute([$user_id]);
-$user = $stmt->fetch(PDO::FETCH_ASSOC);
+// Obtener los datos actuales del usuario con manejo de errores
+try {
+    $stmt = $pdo->prepare("SELECT email, username, profession, profile_picture, birth_date, bio FROM users WHERE id = ?");
+    $stmt->execute([$user_id]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-if (!$user) {
-    session_destroy();
-    header("Location: login.php");
-    exit;
+    if (!$user) {
+        session_destroy();
+        header("Location: login.php");
+        exit;
+    }
+} catch (PDOException $e) {
+    die("Error de base de datos: " . htmlspecialchars($e->getMessage()));
 }
 ?>
 <!DOCTYPE html>
@@ -66,7 +70,6 @@ if (!$user) {
         .input-group input:disabled { background: #EDF2F7; color: #A0AEC0; cursor: not-allowed; }
         .input-group textarea { resize: vertical; min-height: 100px; }
         
-        /* Estilo para el input de avatar simulando el diseño punteado */
         .avatar-input { border: 1px dashed #805AD5 !important; background: rgba(128, 90, 213, 0.02); color: #805AD5; text-align: center; font-weight: 600; }
         .avatar-input::placeholder { color: #B794F4; }
 
@@ -115,7 +118,7 @@ if (!$user) {
 
                 <div class="input-group">
                     <label>Fecha de Nacimiento</label>
-                    <input type="date" name="birthdate" value="<?= htmlspecialchars($user['birthdate'] ?? '') ?>">
+                    <input type="date" name="birth_date" value="<?= htmlspecialchars($user['birth_date'] ?? '') ?>">
                 </div>
 
                 <div class="input-group">
