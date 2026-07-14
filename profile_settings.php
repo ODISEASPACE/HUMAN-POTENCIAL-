@@ -16,18 +16,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $profile_picture = trim($_POST['profile_picture']);
     $birth_date = !empty($_POST['birth_date']) ? $_POST['birth_date'] : null;
     $bio = trim($_POST['bio']);
+    $archetype = isset($_POST['archetype']) ? (int)$_POST['archetype'] : 1;
     $password = $_POST['password'];
 
     try {
         if (!empty($password)) {
-            // Si ingresa contraseña, la actualizamos también
             $password_hash = password_hash($password, PASSWORD_BCRYPT);
-            $stmt = $pdo->prepare("UPDATE users SET username = ?, profession = ?, profile_picture = ?, birth_date = ?, bio = ?, password_hash = ? WHERE id = ?");
-            $stmt->execute([$username, $profession, $profile_picture, $birth_date, $bio, $password_hash, $user_id]);
+            $stmt = $pdo->prepare("UPDATE users SET username = ?, profession = ?, profile_picture = ?, birth_date = ?, bio = ?, archetype = ?, password_hash = ? WHERE id = ?");
+            $stmt->execute([$username, $profession, $profile_picture, $birth_date, $bio, $archetype, $password_hash, $user_id]);
         } else {
-            // Si la contraseña está vacía, actualizamos solo el resto de datos
-            $stmt = $pdo->prepare("UPDATE users SET username = ?, profession = ?, profile_picture = ?, birth_date = ?, bio = ? WHERE id = ?");
-            $stmt->execute([$username, $profession, $profile_picture, $birth_date, $bio, $user_id]);
+            $stmt = $pdo->prepare("UPDATE users SET username = ?, profession = ?, profile_picture = ?, birth_date = ?, bio = ?, archetype = ? WHERE id = ?");
+            $stmt->execute([$username, $profession, $profile_picture, $birth_date, $bio, $archetype, $user_id]);
         }
         $mensaje = "<span style='color: #38A169;'>Perfil actualizado correctamente.</span>";
     } catch (PDOException $e) {
@@ -35,9 +34,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 
-// Obtener los datos actuales del usuario con manejo de errores
+// Obtener los datos actuales del usuario, incluyendo el arquetipo
 try {
-    $stmt = $pdo->prepare("SELECT email, username, profession, profile_picture, birth_date, bio FROM users WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT email, username, profession, profile_picture, birth_date, bio, COALESCE(archetype, 1) as archetype FROM users WHERE id = ?");
     $stmt->execute([$user_id]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -65,8 +64,8 @@ try {
         .full-width { grid-column: span 2; }
         
         .input-group label { display: block; margin-bottom: 8px; font-size: 0.9rem; font-weight: 600; color: #4A5568; }
-        .input-group input, .input-group textarea { width: 100%; padding: 12px; border: 1px solid #E2E8F0; border-radius: 8px; font-family: inherit; box-sizing: border-box; font-size: 0.95rem; }
-        .input-group input:focus, .input-group textarea:focus { outline: none; border-color: #805AD5; box-shadow: 0 0 0 3px rgba(128, 90, 213, 0.1); }
+        .input-group input, .input-group textarea, .input-group select { width: 100%; padding: 12px; border: 1px solid #E2E8F0; border-radius: 8px; font-family: inherit; box-sizing: border-box; font-size: 0.95rem; background: #fff; }
+        .input-group input:focus, .input-group textarea:focus, .input-group select:focus { outline: none; border-color: #805AD5; box-shadow: 0 0 0 3px rgba(128, 90, 213, 0.1); }
         .input-group input:disabled { background: #EDF2F7; color: #A0AEC0; cursor: not-allowed; }
         .input-group textarea { resize: vertical; min-height: 100px; }
         
@@ -124,6 +123,16 @@ try {
                 <div class="input-group">
                     <label>Profesión / Estudio</label>
                     <input type="text" name="profession" value="<?= htmlspecialchars($user['profession'] ?? '') ?>" placeholder="Ej. Ing. Sistemas">
+                </div>
+                
+                <div class="input-group full-width">
+                    <label>Arquetipo (Desbloquea módulos del sistema)</label>
+                    <select name="archetype" required>
+                        <option value="1" <?= ($user['archetype'] == 1) ? 'selected' : '' ?>>Vagabundo (Nivel 1 - Básico)</option>
+                        <option value="2" <?= ($user['archetype'] == 2) ? 'selected' : '' ?>>Soñador (Nivel 2 - Estado Humano)</option>
+                        <option value="3" <?= ($user['archetype'] == 3) ? 'selected' : '' ?>>Soldado (Nivel 3 - Proyectos)</option>
+                        <option value="4" <?= ($user['archetype'] == 4) ? 'selected' : '' ?>>Ejecutor (Nivel 4 - Árboles)</option>
+                    </select>
                 </div>
 
                 <div class="input-group full-width">
