@@ -42,12 +42,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 
-// 2. DATOS DEL USUARIO (Sidebar)
-$stmtUser = $pdo->prepare("SELECT username, profile_picture, profession FROM users WHERE id = ?");
-$stmtUser->execute([$user_id]);
-$user = $stmtUser->fetch();
-
-// 3. OBTENER EL ESTADO ACTUAL (El más reciente)
+// 2. OBTENER EL ESTADO ACTUAL (El más reciente)
 $stmtState = $pdo->prepare("SELECT * FROM human_state WHERE user_id = ? ORDER BY assessment_date DESC LIMIT 1");
 $stmtState->execute([$user_id]);
 $currentState = $stmtState->fetch();
@@ -61,12 +56,6 @@ $v_pathos = $currentState['pathos_score'] ?? 50;
 $v_virtues = $currentState['virtues_notes'] ?? '';
 $v_capacities = $currentState['capacities_notes'] ?? '';
 $v_goals = $currentState['goals_notes'] ?? '';
-
-function renderAvatar($avatarData) {
-    if (empty($avatarData)) return "<div class='avatar-circle' style='background: #E2E8F0; color: #4A5568;'>👤</div>";
-    if (strpos($avatarData, '.') !== false) return "<div class='avatar-circle' style='background-image: url(\"{$avatarData}\"); background-size: cover;'></div>";
-    return "<div class='avatar-circle' style='background: rgba(128, 90, 213, 0.1); color: #805AD5;'>{$avatarData}</div>";
-}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -80,18 +69,6 @@ function renderAvatar($avatarData) {
         :root { --bg-base: #FAFAFC; --bg-panel: #FFFFFF; --text-main: #1A202C; --text-muted: #718096; --accent: #805AD5; --accent-light: rgba(128, 90, 213, 0.1); --border-color: #E2E8F0; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background-color: var(--bg-base); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
-        
-        /* Sidebar */
-        nav.sidebar { width: 260px; background: var(--bg-panel); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 30px 20px; z-index: 10; }
-        .brand { text-align: center; margin-bottom: 40px; } .brand h2 { font-weight: 800; letter-spacing: 2px; font-size: 1.5rem; color: var(--accent); }
-        .nav-links { flex: 1; display: flex; flex-direction: column; gap: 5px; }
-        .nav-link { display: flex; align-items: center; padding: 12px 16px; color: var(--text-muted); text-decoration: none; font-weight: 600; border-radius: 8px; transition: 0.3s; }
-        .nav-link:hover, .nav-link.active { background: var(--accent-light); color: var(--accent); }
-        .user-mini { display: flex; align-items: center; gap: 12px; padding-top: 20px; border-top: 1px solid var(--border-color); margin-top: auto; }
-        .avatar-circle { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
-        .user-info-mini h4 { font-size: 0.9rem; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
-        .user-info-mini p { font-size: 0.75rem; color: var(--text-muted); }
-        .btn-logout { margin-top: 15px; text-align: center; font-size: 0.85rem; color: #E53E3E; text-decoration: none; font-weight: 600; padding: 8px; border-radius: 6px; }
         
         /* Main */
         main { flex: 1; padding: 40px; overflow-y: auto; display: flex; flex-direction: column; gap: 30px; }
@@ -120,29 +97,19 @@ function renderAvatar($avatarData) {
         .btn-submit { width: 100%; background: var(--accent); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.3s; margin-top: 10px; }
         .btn-submit:hover { background: var(--accent-hover); }
         .msg-success { background: #C6F6D5; color: #276749; padding: 10px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9rem; text-align: center; }
+        .msg-error { background: #FED7D7; color: #C53030; padding: 10px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9rem; text-align: center; }
         
         .radar-container { position: relative; height: 350px; width: 100%; display: flex; justify-content: center; align-items: center; margin-bottom: 20px; }
+
+        @media (max-width: 900px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
 
-    <nav class="sidebar">
-        <div class="brand"><h2>A P H</h2></div>
-        <div class="nav-links">
-            <a href="dashboard.php" class="nav-link">⌂ Panel Central</a>
-            <a href="estado-humano.php" class="nav-link active">👤 Estado Humano</a>
-            <a href="registro-diario.php" class="nav-link">⏱ Registro Diario</a>
-            <a href="proyectos.php" class="nav-link">🚀 Proyectos</a>
-        </div>
-        <div class="user-mini">
-            <?= renderAvatar($user['profile_picture']) ?>
-            <div class="user-info-mini">
-                <h4><?= htmlspecialchars($user['username'] ?? 'Usuario') ?></h4>
-                <p><?= htmlspecialchars($user['profession'] ?? 'Sin asignar') ?></p>
-            </div>
-        </div>
-        <a href="logout.php" class="btn-logout">Cerrar Sesión</a>
-    </nav>
+    <!-- INCLUSIÓN DEL SIDEBAR MODULAR -->
+    <?php include 'sidebar.php'; ?>
 
     <main>
         <div class="header-dash">
