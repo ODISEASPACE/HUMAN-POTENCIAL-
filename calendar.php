@@ -62,47 +62,121 @@ $user_id = $_SESSION['user_id'];
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            var calendarEl = document.getElementById('calendar');
+    var calendarEl = document.getElementById('calendar');
 
-            var calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'timeGridWeek', // Vista semanal con horas por defecto
-                headerToolbar: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
-                },
-                slotMinTime: '06:00:00', // Empieza a las 6 AM
-                slotMaxTime: '23:00:00', // Termina a las 11 PM
-                editable: true, // Permite arrastrar eventos
-                selectable: true, // Permite hacer clic y arrastrar para crear
-                nowIndicator: true,
-                events: 'api_events.php', // (Pendiente) API que devolverá los eventos en JSON
-                
-                select: function(info) {
-                    let title = prompt('Título del nuevo evento/rutina:');
-                    if (title) {
-                        // Aquí iría tu llamada AJAX a PHP para guardar en DB
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'timeGridWeek', 
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        slotMinTime: '06:00:00',
+        slotMaxTime: '23:00:00',
+        editable: true, 
+        selectable: true, 
+        nowIndicator: true,
+        
+        // 1. OBTENER EVENTOS (GET api_events.php?action=fetch)
+        events: 'api_events.php?action=fetch',
+        
+        // 2. CREAR EVENTO
+        select: function(info) {
+            let title = prompt('Título del nuevo evento o rutina:');
+            
+            if (title) {
+                let formData = new FormData();
+                formData.append('action', 'add');
+                formData.append('title', title);
+                formData.append('start', info.startStr);
+                if (info.endStr) formData.append('end', info.endStr);
+
+                fetch('api_events.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
                         calendar.addEvent({
+                            id: data.id,
                             title: title,
                             start: info.startStr,
                             end: info.endStr,
                             allDay: info.allDay,
-                            backgroundColor: '#805AD5' // Accent color
+                            backgroundColor: '#805AD5'
                         });
-                        alert('Implementar guardado en BD por AJAX');
+                    } else {
+                        alert('Error al guardar el evento');
                     }
-                    calendar.unselect();
-                },
-                eventClick: function(info) {
-                    if (confirm("¿Marcar tarea como completada o eliminarla? (Aceptar para eliminar)")) {
-                        info.event.remove();
-                        // Aquí iría tu llamada AJAX para borrar de la BD
-                    }
-                }
-            });
+                })
+                .catch(error => console.error('Error:', error));
+            }
+            calendar.unselect();
+        },
 
-            calendar.render();
+        // 3. ACTUALIZAR EVENTO (Mover)
+        eventDrop: function(info) {
+            updateEvent(info.event);
+        },
+
+        // 3. ACTUALIZAR EVENTO (Redimensionar duración)
+        eventResize: function(info) {
+            updateEvent(info.event);
+        },
+
+        // 4. ELIMINAR EVENTO
+        eventClick: function(info) {
+            if (confirm(`¿Quieres eliminar el evento "${info.event.title}"?`)) {
+                let formData = new FormData();
+                formData.append('action', 'delete');
+                formData.append('id', info.event.id);
+
+                fetch('api_events.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        info.event.remove();
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        }
+    });
+
+    calendar.render();
+
+    // Función auxiliar para actualizar en BD cuando se arrastra/redimensiona
+    function updateEvent(event) {
+        let formData = new FormData();
+        formData.append('action', 'update');
+        formData.append('id', event.id);
+        formData.append('start', event.start.toISOString());
+        
+        if (event.end) {
+            formData.append('end', event.end.toISOString());
+        }
+
+        fetch('api_events.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status !== 'success') {
+                alert('Error al actualizar el evento en la base de datos.');
+                event.revert(); // Revierte el cambio visual si la BD falla
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            event.revert();
         });
+    }
+});
     </script>
 </body>
 </html>
