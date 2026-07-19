@@ -163,7 +163,8 @@ function renderAvatar($avatarData) {
                     $statusClass = 'status-' . strtolower($proj['status']);
                     $date = date("d M Y", strtotime($proj['created_at']));
                 ?>
-                    <a href="proyecto_detalle.php?id=<?= $proj['id'] ?>" class="project-card" data-category="<?= htmlspecialchars($proj['category']) ?>" style="text-decoration: none; color: inherit;"></a>
+                    <!-- Aquí el div original ha sido transformado en un tag <a> -->
+                    <a href="proyecto_detalle.php?id=<?= $proj['id'] ?>" class="project-card" data-category="<?= htmlspecialchars($proj['category']) ?>" style="text-decoration: none; color: inherit;">
                         <div class="card-category"><?= htmlspecialchars($proj['category']) ?></div>
                         <div class="card-title"><?= htmlspecialchars($proj['title']) ?></div>
                         <div class="card-desc"><?= htmlspecialchars($proj['description']) ?></div>
