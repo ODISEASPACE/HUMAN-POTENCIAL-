@@ -163,7 +163,7 @@ function renderAvatar($avatarData) {
                     $statusClass = 'status-' . strtolower($proj['status']);
                     $date = date("d M Y", strtotime($proj['created_at']));
                 ?>
-                    <div class="project-card" data-category="<?= htmlspecialchars($proj['category']) ?>">
+                    <a href="proyecto_detalle.php?id=<?= $proj['id'] ?>" class="project-card" data-category="<?= htmlspecialchars($proj['category']) ?>" style="text-decoration: none; color: inherit;"></a>
                         <div class="card-category"><?= htmlspecialchars($proj['category']) ?></div>
                         <div class="card-title"><?= htmlspecialchars($proj['title']) ?></div>
                         <div class="card-desc"><?= htmlspecialchars($proj['description']) ?></div>
@@ -171,7 +171,7 @@ function renderAvatar($avatarData) {
                             <span class="status-badge <?= $statusClass ?>"><?= htmlspecialchars($proj['status']) ?></span>
                             <span class="card-date"><?= $date ?></span>
                         </div>
-                    </div>
+                    </a>
                 <?php endforeach; ?>
             <?php endif; ?>
         </div>
