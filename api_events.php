@@ -14,20 +14,18 @@ $action = isset($_GET['action']) ? $_GET['action'] : (isset($_POST['action']) ? 
 
 try {
     // ---------------------------------------------------------
-    // 1. OBTENER EVENTOS (GET api_events.php?action=fetch)
+    // 1. FETCH
     // ---------------------------------------------------------
     if ($action === 'fetch') {
         $start = $_GET['start'] ?? null;
         $end = $_GET['end'] ?? null;
-        $type = $_GET['type'] ?? 'all'; // all, agenda, rutinas, progreso
+        $type = $_GET['type'] ?? 'all'; 
         
         $final_events = [];
 
-        // A. Cargar eventos del calendario (Agenda o Rutinas)
         if (in_array($type, ['all', 'agenda', 'rutinas'])) {
             $query = "SELECT id, title, start_time AS start, end_time AS end, color AS backgroundColor, is_completed, event_type 
-                      FROM calendar_events 
-                      WHERE user_id = ?";
+                      FROM calendar_events WHERE user_id = ?";
             $params = [$user_id];
 
             if ($start && $end) {
@@ -35,26 +33,17 @@ try {
                 $params[] = $start;
                 $params[] = $end;
             }
-
-            if ($type === 'agenda') {
-                $query .= " AND (event_type = 'agenda' OR event_type IS NULL)";
-            } elseif ($type === 'rutinas') {
-                $query .= " AND event_type = 'rutina'";
-            }
+            if ($type === 'agenda') { $query .= " AND (event_type = 'agenda' OR event_type IS NULL)"; } 
+            elseif ($type === 'rutinas') { $query .= " AND event_type = 'rutina'"; }
 
             $stmt = $pdo->prepare($query);
             $stmt->execute($params);
             $final_events = array_merge($final_events, $stmt->fetchAll(PDO::FETCH_ASSOC));
         }
 
-        // B. Cargar registros de la Bitácora (Progreso)
         if (in_array($type, ['all', 'progreso'])) {
-            // Usamos created_at como el momento exacto en el que se guardó el progreso
-            $queryProgress = "SELECT id, COALESCE(title, 'Registro Diario') AS title, 
-                                     created_at AS start, created_at AS end, 
-                                     '#38A169' AS backgroundColor 
-                              FROM daily_logs 
-                              WHERE user_id = ?";
+            $queryProgress = "SELECT id, COALESCE(title, 'Registro Diario') AS title, created_at AS start, created_at AS end 
+                              FROM daily_logs WHERE user_id = ?";
             $paramsProgress = [$user_id];
 
             if ($start && $end) {
@@ -67,16 +56,15 @@ try {
             $stmtProg->execute($paramsProgress);
             $progress_logs = $stmtProg->fetchAll(PDO::FETCH_ASSOC);
 
-            // Mapeamos los resultados para añadirles el icono y la bandera de "is_progress"
             foreach ($progress_logs as $log) {
                 $final_events[] = [
                     'id' => $log['id'],
                     'title' => '📝 ' . $log['title'],
                     'start' => $log['start'],
                     'end' => $log['end'],
-                    'backgroundColor' => '#2F855A', // Verde oscuro para diferenciar progreso
+                    'backgroundColor' => '#2F855A',
                     'borderColor' => '#22543D',
-                    'is_progress' => true // Esta bandera la lee FullCalendar para bloquear la edición
+                    'is_progress' => true 
                 ];
             }
         }
@@ -86,16 +74,14 @@ try {
     } 
     
     // ---------------------------------------------------------
-    // 2. CREAR EVENTO MANUAL
+    // 2. AÑADIR
     // ---------------------------------------------------------
     elseif ($action === 'add') {
         $title = $_POST['title'];
         $start = $_POST['start'];
         $end = !empty($_POST['end']) ? $_POST['end'] : null;
         $event_type = $_POST['event_type'] ?? 'agenda'; 
-        
-        // Asignar colores según el tipo
-        $color = ($event_type === 'rutina') ? '#3182CE' : '#805AD5';
+        $color = $_POST['color'] ?? '#805AD5';
 
         $stmt = $pdo->prepare("INSERT INTO calendar_events (user_id, title, start_time, end_time, color, event_type) VALUES (?, ?, ?, ?, ?, ?) RETURNING id");
         $stmt->execute([$user_id, $title, $start, $end, $color, $event_type]);
@@ -106,22 +92,25 @@ try {
     }
     
     // ---------------------------------------------------------
-    // 3. ACTUALIZAR EVENTO (Arrastrar / Redimensionar)
+    // 3. ACTUALIZAR (Modal o Arrastrar)
     // ---------------------------------------------------------
     elseif ($action === 'update') {
         $id = $_POST['id'];
+        $title = $_POST['title'];
         $start = $_POST['start'];
         $end = !empty($_POST['end']) ? $_POST['end'] : null;
+        $color = $_POST['color'] ?? '#805AD5';
+        $event_type = $_POST['event_type'] ?? 'agenda'; 
         
-        $stmt = $pdo->prepare("UPDATE calendar_events SET start_time = ?, end_time = ? WHERE id = ? AND user_id = ?");
-        $stmt->execute([$start, $end, $id, $user_id]);
+        $stmt = $pdo->prepare("UPDATE calendar_events SET title = ?, start_time = ?, end_time = ?, color = ?, event_type = ? WHERE id = ? AND user_id = ?");
+        $stmt->execute([$title, $start, $end, $color, $event_type, $id, $user_id]);
 
         echo json_encode(['status' => 'success']);
         exit;
     }
     
     // ---------------------------------------------------------
-    // 4. ELIMINAR EVENTO
+    // 4. ELIMINAR
     // ---------------------------------------------------------
     elseif ($action === 'delete') {
         $id = $_POST['id'];
@@ -133,16 +122,24 @@ try {
     }
 
     // ---------------------------------------------------------
-    // 5. GENERADOR DE RUTINAS AUTOMÁTICAS
+    // 5. GENERAR RUTINAS (Todo el mes actual)
     // ---------------------------------------------------------
     elseif ($action === 'generate_routines') {
         $level = $_POST['level'];
-        $start_date = $_POST['start_date']; // Fecha de inicio enviada por el calendario
+        $start_date = $_POST['start_date']; // Ej: 2026-07-19
+        
+        // Calculamos cuántos días faltan desde $start_date hasta el fin de ESE mes
+        $start_dt = new DateTime($start_date);
+        $end_dt = new DateTime($start_date);
+        $end_dt->modify('last day of this month'); // Toma el último día del mes (ej. 31 de Julio)
+        
+        $interval = $start_dt->diff($end_dt);
+        $days_to_inject = $interval->days + 1; // +1 para incluir el día final
         
         $stmt = $pdo->prepare("INSERT INTO calendar_events (user_id, title, start_time, end_time, color, event_type) VALUES (?, ?, ?, ?, ?, 'rutina')");
         
-        // Loop para inyectar 7 días de rutinas
-        for ($i = 0; $i < 7; $i++) {
+        // Ejecutamos el loop por la cantidad exacta de días
+        for ($i = 0; $i < $days_to_inject; $i++) {
             $currentDate = (new DateTime($start_date))->modify("+$i days")->format('Y-m-d');
             $nextDate = (new DateTime($start_date))->modify("+".($i+1)." days")->format('Y-m-d');
             
@@ -170,14 +167,13 @@ try {
                 $routines = [
                     ['title' => '💤 Sueño (6h)', 'start' => "$currentDate 23:00:00", 'end' => "$nextDate 05:00:00", 'color' => '#4A5568'],
                     ['title' => '⚡ Deep Work I', 'start' => "$currentDate 06:00:00", 'end' => "$currentDate 10:00:00", 'color' => '#E53E3E'],
-                    ['title' => '🥩 Primera Comida (Ayuno Roto)', 'start' => "$currentDate 12:00:00", 'end' => "$currentDate 13:00:00", 'color' => '#38A169'],
+                    ['title' => '🥩 Primera Comida', 'start' => "$currentDate 12:00:00", 'end' => "$currentDate 13:00:00", 'color' => '#38A169'],
                     ['title' => '⚡ Deep Work II', 'start' => "$currentDate 14:00:00", 'end' => "$currentDate 18:00:00", 'color' => '#E53E3E'],
                     ['title' => '🦍 Entrenamiento Intenso', 'start' => "$currentDate 18:30:00", 'end' => "$currentDate 20:00:00", 'color' => '#3182CE'],
                     ['title' => '🥗 Última Comida', 'start' => "$currentDate 20:30:00", 'end' => "$currentDate 21:00:00", 'color' => '#38A169'],
                 ];
             }
 
-            // Insertamos cada rutina en la BD
             foreach ($routines as $r) {
                 $stmt->execute([$user_id, $r['title'], $r['start'], $r['end'], $r['color']]);
             }
