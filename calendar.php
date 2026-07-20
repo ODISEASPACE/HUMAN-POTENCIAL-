@@ -59,22 +59,51 @@ $user_id = $_SESSION['user_id'];
         .calendar-wrapper { flex: 1; background: var(--bg-panel); padding: 20px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 10px 25px rgba(0,0,0,0.02); min-height: 0; display: flex; flex-direction: column; }
         #calendar { flex: 1; min-height: 0; } 
         
+        /* Mejoras visuales FullCalendar */
         .fc-theme-standard td, .fc-theme-standard th { border-color: var(--border-color); }
         .fc-button-primary { background-color: var(--accent) !important; border-color: var(--accent) !important; text-transform: capitalize; }
-        .fc-event { border-radius: 6px; border: none; padding: 2px 4px; font-size: 0.8em; font-weight: 600; cursor: pointer; color: #fff !important; }
+        .fc-event { 
+            border-radius: 6px; 
+            border: 1px solid rgba(0,0,0,0.1) !important; /* Borde sutil para separar eventos */
+            padding: 3px 6px; 
+            font-size: 0.8em; 
+            font-weight: 600; 
+            cursor: pointer; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Sombra para dar profundidad */
+            color: #ffffff !important;
+        }
+        .fc-v-event .fc-event-main-frame { padding: 2px; } /* Ajuste de padding en vista semanal */
 
-        /* Modales (Ventanas Emergentes) */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 1000; opacity: 0; transition: opacity 0.2s ease; }
+        /* Modales */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 1000; opacity: 0; transition: opacity 0.2s ease; }
         .modal-overlay.active { display: flex; opacity: 1; }
-        .modal-content { background: #fff; width: 100%; max-width: 450px; border-radius: 16px; padding: 30px; position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.1); transform: translateY(20px); transition: transform 0.2s ease; }
-        .modal-overlay.active .modal-content { transform: translateY(0); }
-        .close-btn { position: absolute; top: 20px; right: 20px; font-size: 1.5rem; cursor: pointer; border: none; background: none; color: var(--text-muted); line-height: 1; }
+        .modal-content { background: #fff; width: 100%; max-width: 450px; border-radius: 16px; padding: 30px; position: relative; box-shadow: 0 25px 50px rgba(0,0,0,0.15); transform: scale(0.95); transition: transform 0.2s ease; }
+        .modal-overlay.active .modal-content { transform: scale(1); }
+        .close-btn { position: absolute; top: 20px; right: 20px; font-size: 1.5rem; cursor: pointer; border: none; background: none; color: var(--text-muted); line-height: 1; transition: 0.2s; }
+        .close-btn:hover { color: var(--danger); transform: scale(1.1); }
         
         /* Formularios en Modal */
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 8px; color: var(--text-muted); }
-        .form-group input, .form-group select { width: 100%; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 8px; font-family: inherit; font-size: 0.95rem; }
-        .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--accent); }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 6px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-group input[type="text"], .form-group input[type="datetime-local"], .form-group select { 
+            width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-family: inherit; font-size: 0.95rem; transition: 0.2s; background: var(--bg-base);
+        }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(128, 90, 213, 0.1); }
+        
+        /* Reset nativo para el input type color */
+        input[type="color"] {
+            -webkit-appearance: none;
+            border: none;
+            width: 100%;
+            height: 45px;
+            border-radius: 8px;
+            cursor: pointer;
+            padding: 0;
+            background: none;
+        }
+        input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+        input[type="color"]::-webkit-color-swatch { border: 2px solid var(--border-color); border-radius: 8px; }
+
         .modal-actions { display: flex; gap: 10px; margin-top: 25px; }
     </style>
 </head>
@@ -129,15 +158,11 @@ $user_id = $_SESSION['user_id'];
         </div>
     </main>
 
-    <!-- ========================================== -->
-    <!-- SISTEMA DE MODALES (Reemplaza las Alertas) -->
-    <!-- ========================================== -->
-
-    <!-- 1. Modal para Crear/Editar Eventos -->
+    <!-- Modales -->
     <div id="eventModal" class="modal-overlay">
         <div class="modal-content">
             <button class="close-btn" onclick="closeModal('eventModal')">&times;</button>
-            <h2 id="modalTitle" style="margin-bottom: 20px; color: var(--accent);">Nuevo Registro</h2>
+            <h2 id="modalTitle" style="margin-bottom: 25px; color: var(--text-main); font-weight: 800;">Nuevo Registro</h2>
             
             <form id="eventForm" onsubmit="saveEvent(event)">
                 <input type="hidden" id="eventId">
@@ -147,7 +172,7 @@ $user_id = $_SESSION['user_id'];
                     <input type="text" id="eventTitle" required placeholder="Ej. Sesión de Estudio, Gimnasio...">
                 </div>
                 
-                <div style="display: flex; gap: 10px;">
+                <div style="display: flex; gap: 15px;">
                     <div class="form-group" style="flex: 1;">
                         <label>Inicio</label>
                         <input type="datetime-local" id="eventStart" required>
@@ -168,21 +193,21 @@ $user_id = $_SESSION['user_id'];
 
                 <div class="form-group">
                     <label>Color de Etiqueta</label>
-                    <input type="color" id="eventColor" value="#805AD5" style="padding: 0; height: 40px; cursor:pointer;">
+                    <input type="color" id="eventColor" value="#805AD5">
                 </div>
 
                 <div class="modal-actions">
                     <button type="button" id="btnDelete" class="btn btn-danger" onclick="requestDelete()" style="display: none;">Eliminar</button>
-                    <button type="submit" class="btn btn-primary" style="flex: 1;">Guardar Registro</button>
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">Guardar Cambios</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- 2. Modal de Confirmación -->
+    <!-- Confirm Modal -->
     <div id="confirmModal" class="modal-overlay">
         <div class="modal-content" style="max-width: 400px; text-align: center;">
-            <h2 id="confirmTitle" style="color: var(--text-main); margin-bottom: 10px;">¿Estás seguro?</h2>
+            <h2 id="confirmTitle" style="color: var(--text-main); margin-bottom: 10px; font-weight: 800;">¿Estás seguro?</h2>
             <p id="confirmMessage" style="color: var(--text-muted); margin-bottom: 25px; line-height: 1.5;"></p>
             <div class="modal-actions" style="justify-content: center;">
                 <button class="btn btn-outline" onclick="closeModal('confirmModal')">Cancelar</button>
@@ -191,11 +216,11 @@ $user_id = $_SESSION['user_id'];
         </div>
     </div>
 
-    <!-- 3. Modal de Información (Solo lectura/Avisos) -->
+    <!-- Info Modal -->
     <div id="infoModal" class="modal-overlay">
         <div class="modal-content" style="max-width: 400px; text-align: center;">
             <div style="font-size: 3rem; margin-bottom: 10px;">💡</div>
-            <h2 id="infoTitle" style="color: var(--text-main); margin-bottom: 10px;">Información</h2>
+            <h2 id="infoTitle" style="color: var(--text-main); margin-bottom: 10px; font-weight: 800;">Información</h2>
             <p id="infoMessage" style="color: var(--text-muted); margin-bottom: 25px; line-height: 1.5;"></p>
             <button class="btn btn-primary" style="width: 100%;" onclick="closeModal('infoModal')">Entendido</button>
         </div>
@@ -205,9 +230,6 @@ $user_id = $_SESSION['user_id'];
         let calendar;
         let currentFilter = 'all';
 
-        // ==========================================
-        // CONTROLADOR DE INTERFAZ Y MODALES
-        // ==========================================
         function setFilter(type, btn) {
             currentFilter = type;
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -244,7 +266,6 @@ $user_id = $_SESSION['user_id'];
             const btn = document.getElementById('confirmActionBtn');
             btn.style.background = buttonColor;
             
-            // Limpiamos eventos previos clonando el botón
             const newBtn = btn.cloneNode(true);
             btn.parentNode.replaceChild(newBtn, btn);
             
@@ -268,12 +289,16 @@ $user_id = $_SESSION['user_id'];
                 document.getElementById('eventStart').value = formatForInput(eventData.start);
                 document.getElementById('eventEnd').value = eventData.end ? formatForInput(eventData.end) : '';
                 document.getElementById('eventType').value = eventData.extendedProps.event_type || 'agenda';
-                document.getElementById('eventColor').value = eventData.backgroundColor || '#805AD5';
+                
+                // Mapeo seguro del color para el input
+                document.getElementById('eventColor').value = eventData.backgroundColor || eventData.borderColor || '#805AD5';
+                
                 btnDelete.style.display = 'block';
             } else {
                 form.reset();
                 titleEl.innerText = "Nuevo Registro";
                 document.getElementById('eventId').value = '';
+                document.getElementById('eventColor').value = '#805AD5';
                 btnDelete.style.display = 'none';
                 
                 if(eventData) {
@@ -285,9 +310,6 @@ $user_id = $_SESSION['user_id'];
             document.getElementById('eventModal').classList.add('active');
         }
 
-        // ==========================================
-        // LÓGICA DE DATOS (CRUD)
-        // ==========================================
         function saveEvent(e) {
             e.preventDefault();
             const id = document.getElementById('eventId').value;
@@ -335,7 +357,7 @@ $user_id = $_SESSION['user_id'];
                         }
                     });
                 }, 
-                'var(--danger)' // Pasamos color rojo para indicar peligro
+                'var(--danger)'
             );
         }
 
@@ -364,9 +386,6 @@ $user_id = $_SESSION['user_id'];
             );
         }
 
-        // ==========================================
-        // INICIALIZACIÓN DE FULLCALENDAR
-        // ==========================================
         document.addEventListener('DOMContentLoaded', function() {
             var calendarEl = document.getElementById('calendar');
 
@@ -376,6 +395,14 @@ $user_id = $_SESSION['user_id'];
                 headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek' },
                 slotMinTime: '04:00:00',
                 slotMaxTime: '24:00:00',
+                
+                /* =========================================
+                   CONFIGURACIÓN CLAVE PARA EVITAR EL CAOS 
+                   ========================================= */
+                slotEventOverlap: false, // ¡Soluciona el problema de eventos uno encima de otro!
+                dayMaxEvents: 3,         // Agrupa eventos extra en "+X más" en la vista mensual
+                eventDisplay: 'block',   // Convierte los puntos feos en chips sólidos de color
+                
                 editable: true, 
                 selectable: true, 
                 nowIndicator: true,
@@ -389,7 +416,7 @@ $user_id = $_SESSION['user_id'];
                 
                 select: function(info) {
                     if(currentFilter === 'progreso') {
-                        showInfo("Modo de Lectura", "La Línea de Progreso se genera automáticamente en base a tu Bitácora. No puedes añadir eventos manualmente aquí.");
+                        showInfo("Modo de Lectura", "La Línea de Progreso se genera automáticamente en base a tu Bitácora.");
                         calendar.unselect();
                         return;
                     }
@@ -404,7 +431,7 @@ $user_id = $_SESSION['user_id'];
                     if (info.event.extendedProps.is_progress) {
                         showInfo(
                             "Registro de Progreso", 
-                            `Título: ${info.event.title}\n\nEste es un registro histórico. Si deseas modificarlo, debes hacerlo desde el módulo de Registro Diario (Bitácora).`
+                            `Título: ${info.event.title}\n\nEste es un registro histórico de tu bitácora.`
                         );
                         return;
                     }
@@ -416,7 +443,7 @@ $user_id = $_SESSION['user_id'];
 
             function updateDragDrop(event) {
                 if (event.extendedProps.is_progress) {
-                    showInfo("Acción no permitida", "No puedes arrastrar ni modificar el horario de los registros históricos del sistema.");
+                    showInfo("Acción no permitida", "No puedes modificar el horario de los registros históricos.");
                     event.revert(); 
                     return;
                 }
@@ -426,7 +453,9 @@ $user_id = $_SESSION['user_id'];
                 formData.append('title', event.title);
                 formData.append('start', event.start.toISOString());
                 if (event.end) formData.append('end', event.end.toISOString());
-                formData.append('color', event.backgroundColor);
+                
+                // Extraer el color actual para no perderlo al moverlo
+                formData.append('color', event.backgroundColor || event.borderColor);
                 formData.append('event_type', event.extendedProps.event_type);
 
                 fetch('api_events.php', { method: 'POST', body: formData })

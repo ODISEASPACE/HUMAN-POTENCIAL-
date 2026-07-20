@@ -14,7 +14,7 @@ $action = isset($_GET['action']) ? $_GET['action'] : (isset($_POST['action']) ? 
 
 try {
     // ---------------------------------------------------------
-    // 1. FETCH
+    // 1. FETCH (EXTRACCIÓN DE DATOS)
     // ---------------------------------------------------------
     if ($action === 'fetch') {
         $start = $_GET['start'] ?? null;
@@ -24,7 +24,8 @@ try {
         $final_events = [];
 
         if (in_array($type, ['all', 'agenda', 'rutinas'])) {
-            $query = "SELECT id, title, start_time AS start, end_time AS end, color AS backgroundColor, is_completed, event_type 
+            // CAMBIO CLAVE: Pedimos 'color' en lugar de 'color AS backgroundColor'
+            $query = "SELECT id, title, start_time AS start, end_time AS end, color, is_completed, event_type 
                       FROM calendar_events WHERE user_id = ?";
             $params = [$user_id];
 
@@ -33,12 +34,24 @@ try {
                 $params[] = $start;
                 $params[] = $end;
             }
-            if ($type === 'agenda') { $query .= " AND (event_type = 'agenda' OR event_type IS NULL)"; } 
-            elseif ($type === 'rutinas') { $query .= " AND event_type = 'rutina'"; }
+            
+            if ($type === 'agenda') { 
+                $query .= " AND (event_type = 'agenda' OR event_type IS NULL)"; 
+            } elseif ($type === 'rutinas') { 
+                $query .= " AND event_type = 'rutina'"; 
+            }
 
             $stmt = $pdo->prepare($query);
             $stmt->execute($params);
-            $final_events = array_merge($final_events, $stmt->fetchAll(PDO::FETCH_ASSOC));
+            $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Garantizamos que todos tengan color, si en la BD es NULL, asignamos el morado por defecto
+            foreach ($events as &$evt) {
+                if (empty($evt['color'])) {
+                    $evt['color'] = '#805AD5';
+                }
+            }
+            $final_events = array_merge($final_events, $events);
         }
 
         if (in_array($type, ['all', 'progreso'])) {
@@ -62,8 +75,7 @@ try {
                     'title' => '📝 ' . $log['title'],
                     'start' => $log['start'],
                     'end' => $log['end'],
-                    'backgroundColor' => '#2F855A',
-                    'borderColor' => '#22543D',
+                    'color' => '#2F855A', // Verde oscuro para el progreso
                     'is_progress' => true 
                 ];
             }
@@ -81,7 +93,7 @@ try {
         $start = $_POST['start'];
         $end = !empty($_POST['end']) ? $_POST['end'] : null;
         $event_type = $_POST['event_type'] ?? 'agenda'; 
-        $color = $_POST['color'] ?? '#805AD5';
+        $color = !empty($_POST['color']) ? $_POST['color'] : '#805AD5'; // Validación estricta del color
 
         $stmt = $pdo->prepare("INSERT INTO calendar_events (user_id, title, start_time, end_time, color, event_type) VALUES (?, ?, ?, ?, ?, ?) RETURNING id");
         $stmt->execute([$user_id, $title, $start, $end, $color, $event_type]);
@@ -92,14 +104,14 @@ try {
     }
     
     // ---------------------------------------------------------
-    // 3. ACTUALIZAR (Modal o Arrastrar)
+    // 3. ACTUALIZAR
     // ---------------------------------------------------------
     elseif ($action === 'update') {
         $id = $_POST['id'];
         $title = $_POST['title'];
         $start = $_POST['start'];
         $end = !empty($_POST['end']) ? $_POST['end'] : null;
-        $color = $_POST['color'] ?? '#805AD5';
+        $color = !empty($_POST['color']) ? $_POST['color'] : '#805AD5';
         $event_type = $_POST['event_type'] ?? 'agenda'; 
         
         $stmt = $pdo->prepare("UPDATE calendar_events SET title = ?, start_time = ?, end_time = ?, color = ?, event_type = ? WHERE id = ? AND user_id = ?");
@@ -122,23 +134,21 @@ try {
     }
 
     // ---------------------------------------------------------
-    // 5. GENERAR RUTINAS (Todo el mes actual)
+    // 5. GENERAR RUTINAS MASIVAS
     // ---------------------------------------------------------
     elseif ($action === 'generate_routines') {
         $level = $_POST['level'];
-        $start_date = $_POST['start_date']; // Ej: 2026-07-19
+        $start_date = $_POST['start_date']; 
         
-        // Calculamos cuántos días faltan desde $start_date hasta el fin de ESE mes
         $start_dt = new DateTime($start_date);
         $end_dt = new DateTime($start_date);
-        $end_dt->modify('last day of this month'); // Toma el último día del mes (ej. 31 de Julio)
+        $end_dt->modify('last day of this month');
         
         $interval = $start_dt->diff($end_dt);
-        $days_to_inject = $interval->days + 1; // +1 para incluir el día final
+        $days_to_inject = $interval->days + 1; 
         
         $stmt = $pdo->prepare("INSERT INTO calendar_events (user_id, title, start_time, end_time, color, event_type) VALUES (?, ?, ?, ?, ?, 'rutina')");
         
-        // Ejecutamos el loop por la cantidad exacta de días
         for ($i = 0; $i < $days_to_inject; $i++) {
             $currentDate = (new DateTime($start_date))->modify("+$i days")->format('Y-m-d');
             $nextDate = (new DateTime($start_date))->modify("+".($i+1)." days")->format('Y-m-d');
