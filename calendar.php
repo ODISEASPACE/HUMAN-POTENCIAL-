@@ -21,7 +21,7 @@ $user_id = $_SESSION['user_id'];
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
     
     <style>
-        :root { --bg-base: #FAFAFC; --bg-panel: #FFFFFF; --text-main: #1A202C; --text-muted: #718096; --accent: #805AD5; --accent-hover: #6B46C1; --border-color: #E2E8F0; }
+        :root { --bg-base: #FAFAFC; --bg-panel: #FFFFFF; --text-main: #1A202C; --text-muted: #718096; --accent: #805AD5; --accent-hover: #6B46C1; --border-color: #E2E8F0; --danger: #E53E3E; --danger-light: #FED7D7; }
         * { box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background-color: var(--bg-base); color: var(--text-main); display: flex; height: 100vh; margin: 0; overflow: hidden;}
         
@@ -45,8 +45,15 @@ $user_id = $_SESSION['user_id'];
         .routine-card:hover { border-color: var(--accent); transform: translateY(-2px); }
         .routine-card h4 { margin-bottom: 5px; font-size: 1rem; }
         .routine-card p { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px; flex-grow: 1; }
-        .btn-generate { background: var(--accent); color: white; border: none; padding: 8px 15px; border-radius: 6px; font-weight: 600; cursor: pointer; width: 100%; font-size: 0.85rem;}
-        .btn-generate:hover { background: var(--accent-hover); }
+        
+        /* Botones Base */
+        .btn { border: none; padding: 10px 15px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 0.9rem; font-family: inherit; }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-outline { background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); }
+        .btn-outline:hover { background: var(--bg-base); color: var(--text-main); }
+        .btn-danger { background: var(--danger-light); color: var(--danger); }
+        .btn-danger:hover { background: #FEB2B2; }
 
         /* Contenedor del Calendario Responsivo */
         .calendar-wrapper { flex: 1; background: var(--bg-panel); padding: 20px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 10px 25px rgba(0,0,0,0.02); min-height: 0; display: flex; flex-direction: column; }
@@ -56,18 +63,19 @@ $user_id = $_SESSION['user_id'];
         .fc-button-primary { background-color: var(--accent) !important; border-color: var(--accent) !important; text-transform: capitalize; }
         .fc-event { border-radius: 6px; border: none; padding: 2px 4px; font-size: 0.8em; font-weight: 600; cursor: pointer; color: #fff !important; }
 
-        /* Modal Personalizado */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 1000; }
-        .modal-overlay.active { display: flex; }
-        .modal-content { background: #fff; width: 100%; max-width: 450px; border-radius: 16px; padding: 30px; position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
-        .close-btn { position: absolute; top: 20px; right: 20px; font-size: 1.5rem; cursor: pointer; border: none; background: none; color: var(--text-muted); }
+        /* Modales (Ventanas Emergentes) */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 1000; opacity: 0; transition: opacity 0.2s ease; }
+        .modal-overlay.active { display: flex; opacity: 1; }
+        .modal-content { background: #fff; width: 100%; max-width: 450px; border-radius: 16px; padding: 30px; position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.1); transform: translateY(20px); transition: transform 0.2s ease; }
+        .modal-overlay.active .modal-content { transform: translateY(0); }
+        .close-btn { position: absolute; top: 20px; right: 20px; font-size: 1.5rem; cursor: pointer; border: none; background: none; color: var(--text-muted); line-height: 1; }
+        
+        /* Formularios en Modal */
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 8px; color: var(--text-muted); }
         .form-group input, .form-group select { width: 100%; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 8px; font-family: inherit; font-size: 0.95rem; }
         .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--accent); }
-        .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
-        .btn-save { flex: 1; background: var(--accent); color: white; border: none; padding: 10px; border-radius: 8px; font-weight: 600; cursor: pointer; }
-        .btn-delete { background: #FED7D7; color: #C53030; border: none; padding: 10px 15px; border-radius: 8px; font-weight: 600; cursor: pointer; display: none; }
+        .modal-actions { display: flex; gap: 10px; margin-top: 25px; }
     </style>
 </head>
 <body>
@@ -100,33 +108,36 @@ $user_id = $_SESSION['user_id'];
             <div class="routines-grid">
                 <div class="routine-card">
                     <h4 style="color: #38A169;">Nivel Simple</h4>
-                    <p>8h sueño, 3 comidas base, 30m actividad física leve. Ideal para mantenimiento.</p>
-                    <button class="btn-generate" onclick="generateRoutine('simple')">Aplicar hasta fin de mes</button>
+                    <p>8h sueño, 3 comidas base, 30m actividad física leve.</p>
+                    <button class="btn btn-primary" style="width: 100%; background: #38A169;" onclick="generateRoutine('simple')">Aplicar al mes</button>
                 </div>
                 <div class="routine-card">
                     <h4 style="color: #D69E2E;">Nivel Intermedio</h4>
-                    <p>7h sueño, 4h Deep Work, 1h ejercicio, lectura. Enfoque y disciplina.</p>
-                    <button class="btn-generate" style="background:#D69E2E;" onclick="generateRoutine('intermedio')">Aplicar hasta fin de mes</button>
+                    <p>7h sueño, 4h Deep Work, 1h ejercicio, lectura.</p>
+                    <button class="btn btn-primary" style="width: 100%; background:#D69E2E;" onclick="generateRoutine('intermedio')">Aplicar al mes</button>
                 </div>
                 <div class="routine-card">
                     <h4 style="color: #E53E3E;">Nivel Extremo</h4>
-                    <p>6h sueño, 8h bloques de trabajo, entrenamiento intenso, ayuno pautado.</p>
-                    <button class="btn-generate" style="background:#E53E3E;" onclick="generateRoutine('extremo')">Aplicar hasta fin de mes</button>
+                    <p>6h sueño, 8h bloques, entrenamiento intenso, ayuno.</p>
+                    <button class="btn btn-primary" style="width: 100%; background:#E53E3E;" onclick="generateRoutine('extremo')">Aplicar al mes</button>
                 </div>
             </div>
         </div>
 
-        <!-- Contenedor adaptativo -->
         <div class="calendar-wrapper">
             <div id='calendar'></div>
         </div>
     </main>
 
-    <!-- Modal para Eventos -->
+    <!-- ========================================== -->
+    <!-- SISTEMA DE MODALES (Reemplaza las Alertas) -->
+    <!-- ========================================== -->
+
+    <!-- 1. Modal para Crear/Editar Eventos -->
     <div id="eventModal" class="modal-overlay">
         <div class="modal-content">
-            <button class="close-btn" onclick="closeModal()">&times;</button>
-            <h2 id="modalTitle" style="margin-bottom: 20px; color: var(--accent);">Nuevo Evento</h2>
+            <button class="close-btn" onclick="closeModal('eventModal')">&times;</button>
+            <h2 id="modalTitle" style="margin-bottom: 20px; color: var(--accent);">Nuevo Registro</h2>
             
             <form id="eventForm" onsubmit="saveEvent(event)">
                 <input type="hidden" id="eventId">
@@ -156,15 +167,37 @@ $user_id = $_SESSION['user_id'];
                 </div>
 
                 <div class="form-group">
-                    <label>Color</label>
+                    <label>Color de Etiqueta</label>
                     <input type="color" id="eventColor" value="#805AD5" style="padding: 0; height: 40px; cursor:pointer;">
                 </div>
 
                 <div class="modal-actions">
-                    <button type="button" id="btnDelete" class="btn-delete" onclick="deleteEvent()">Eliminar</button>
-                    <button type="submit" class="btn-save">Guardar Registro</button>
+                    <button type="button" id="btnDelete" class="btn btn-danger" onclick="requestDelete()" style="display: none;">Eliminar</button>
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">Guardar Registro</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- 2. Modal de Confirmación -->
+    <div id="confirmModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <h2 id="confirmTitle" style="color: var(--text-main); margin-bottom: 10px;">¿Estás seguro?</h2>
+            <p id="confirmMessage" style="color: var(--text-muted); margin-bottom: 25px; line-height: 1.5;"></p>
+            <div class="modal-actions" style="justify-content: center;">
+                <button class="btn btn-outline" onclick="closeModal('confirmModal')">Cancelar</button>
+                <button id="confirmActionBtn" class="btn btn-primary">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Modal de Información (Solo lectura/Avisos) -->
+    <div id="infoModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <div style="font-size: 3rem; margin-bottom: 10px;">💡</div>
+            <h2 id="infoTitle" style="color: var(--text-main); margin-bottom: 10px;">Información</h2>
+            <p id="infoMessage" style="color: var(--text-muted); margin-bottom: 25px; line-height: 1.5;"></p>
+            <button class="btn btn-primary" style="width: 100%;" onclick="closeModal('infoModal')">Entendido</button>
         </div>
     </div>
 
@@ -172,6 +205,9 @@ $user_id = $_SESSION['user_id'];
         let calendar;
         let currentFilter = 'all';
 
+        // ==========================================
+        // CONTROLADOR DE INTERFAZ Y MODALES
+        // ==========================================
         function setFilter(type, btn) {
             currentFilter = type;
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -184,7 +220,6 @@ $user_id = $_SESSION['user_id'];
             calendar.refetchEvents();
         }
 
-        // Formatear fechas para el input datetime-local
         function formatForInput(dateStr) {
             if(!dateStr) return '';
             const d = new Date(dateStr);
@@ -192,15 +227,42 @@ $user_id = $_SESSION['user_id'];
             return d.toISOString().slice(0,16);
         }
 
-        // Manejo del Modal
-        function openModal(isEdit = false, eventData = null) {
-            document.getElementById('eventModal').classList.add('active');
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function showInfo(title, message) {
+            document.getElementById('infoTitle').innerText = title;
+            document.getElementById('infoMessage').innerText = message;
+            document.getElementById('infoModal').classList.add('active');
+        }
+
+        function showConfirm(title, message, confirmCallback, buttonColor = 'var(--accent)') {
+            document.getElementById('confirmTitle').innerText = title;
+            document.getElementById('confirmMessage').innerText = message;
+            
+            const btn = document.getElementById('confirmActionBtn');
+            btn.style.background = buttonColor;
+            
+            // Limpiamos eventos previos clonando el botón
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+            
+            newBtn.onclick = function() {
+                closeModal('confirmModal');
+                confirmCallback();
+            };
+            
+            document.getElementById('confirmModal').classList.add('active');
+        }
+
+        function openEventModal(isEdit = false, eventData = null) {
             const form = document.getElementById('eventForm');
             const btnDelete = document.getElementById('btnDelete');
             const titleEl = document.getElementById('modalTitle');
 
             if (isEdit && eventData) {
-                titleEl.innerText = "Editar Evento";
+                titleEl.innerText = "Editar Registro";
                 document.getElementById('eventId').value = eventData.id;
                 document.getElementById('eventTitle').value = eventData.title;
                 document.getElementById('eventStart').value = formatForInput(eventData.start);
@@ -210,7 +272,7 @@ $user_id = $_SESSION['user_id'];
                 btnDelete.style.display = 'block';
             } else {
                 form.reset();
-                titleEl.innerText = "Nuevo Evento";
+                titleEl.innerText = "Nuevo Registro";
                 document.getElementById('eventId').value = '';
                 btnDelete.style.display = 'none';
                 
@@ -220,13 +282,12 @@ $user_id = $_SESSION['user_id'];
                     if(currentFilter === 'rutinas') document.getElementById('eventType').value = 'rutina';
                 }
             }
+            document.getElementById('eventModal').classList.add('active');
         }
 
-        function closeModal() {
-            document.getElementById('eventModal').classList.remove('active');
-        }
-
-        // Guardar desde el Modal
+        // ==========================================
+        // LÓGICA DE DATOS (CRUD)
+        // ==========================================
         function saveEvent(e) {
             e.preventDefault();
             const id = document.getElementById('eventId').value;
@@ -246,54 +307,71 @@ $user_id = $_SESSION['user_id'];
             .then(data => {
                 if (data.status === 'success') {
                     calendar.refetchEvents();
-                    closeModal();
-                } else { alert('Error al guardar: ' + data.message); }
+                    closeModal('eventModal');
+                } else { 
+                    showInfo("Error", "No se pudo guardar: " + data.message); 
+                }
             });
         }
 
-        // Eliminar desde el Modal
-        function deleteEvent() {
+        function requestDelete() {
             const id = document.getElementById('eventId').value;
-            if(confirm("¿Eliminar este registro permanentemente?")) {
-                let formData = new FormData();
-                formData.append('action', 'delete');
-                formData.append('id', id);
+            const title = document.getElementById('eventTitle').value;
+            
+            showConfirm(
+                "Eliminar Registro", 
+                `¿Estás seguro de que deseas eliminar permanentemente "${title}"? Esta acción no se puede deshacer.`, 
+                function() {
+                    let formData = new FormData();
+                    formData.append('action', 'delete');
+                    formData.append('id', id);
 
-                fetch('api_events.php', { method: 'POST', body: formData })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        calendar.refetchEvents();
-                        closeModal();
-                    }
-                });
-            }
+                    fetch('api_events.php', { method: 'POST', body: formData })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            calendar.refetchEvents();
+                            closeModal('eventModal');
+                        }
+                    });
+                }, 
+                'var(--danger)' // Pasamos color rojo para indicar peligro
+            );
         }
 
-        // Inyección de Rutinas (Mes Completo)
         function generateRoutine(level) {
             const startDate = document.getElementById('routineStartDate').value;
-            if (confirm(`¿Inyectar rutina "${level}" desde el ${startDate} hasta el último día del mes?`)) {
-                let formData = new FormData();
-                formData.append('action', 'generate_routines');
-                formData.append('level', level);
-                formData.append('start_date', startDate);
+            
+            showConfirm(
+                "Inyectar Rutina " + level.toUpperCase(),
+                `Se aplicará este bloque de rutinas desde el ${startDate} hasta el último día del mes actual.`,
+                function() {
+                    let formData = new FormData();
+                    formData.append('action', 'generate_routines');
+                    formData.append('level', level);
+                    formData.append('start_date', startDate);
 
-                fetch('api_events.php', { method: 'POST', body: formData })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        calendar.refetchEvents();
-                    } else { alert('Error: ' + data.message); }
-                });
-            }
+                    fetch('api_events.php', { method: 'POST', body: formData })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            calendar.refetchEvents();
+                        } else { 
+                            showInfo("Error", "No se pudo inyectar: " + data.message); 
+                        }
+                    });
+                }
+            );
         }
 
+        // ==========================================
+        // INICIALIZACIÓN DE FULLCALENDAR
+        // ==========================================
         document.addEventListener('DOMContentLoaded', function() {
             var calendarEl = document.getElementById('calendar');
 
             calendar = new FullCalendar.Calendar(calendarEl, {
-                height: '100%', // Hace que el calendario ocupe exactamente el espacio disponible
+                height: '100%', 
                 initialView: 'timeGridWeek', 
                 headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek' },
                 slotMinTime: '04:00:00',
@@ -311,11 +389,11 @@ $user_id = $_SESSION['user_id'];
                 
                 select: function(info) {
                     if(currentFilter === 'progreso') {
-                        alert("Los registros de progreso son automáticos.");
+                        showInfo("Modo de Lectura", "La Línea de Progreso se genera automáticamente en base a tu Bitácora. No puedes añadir eventos manualmente aquí.");
                         calendar.unselect();
                         return;
                     }
-                    openModal(false, { start: info.startStr, end: info.endStr });
+                    openEventModal(false, { start: info.startStr, end: info.endStr });
                     calendar.unselect();
                 },
 
@@ -324,10 +402,13 @@ $user_id = $_SESSION['user_id'];
 
                 eventClick: function(info) {
                     if (info.event.extendedProps.is_progress) {
-                        alert(`Registro de Progreso:\n\n${info.event.title}\n\nNota: Ve a la Bitácora para editar esto.`);
+                        showInfo(
+                            "Registro de Progreso", 
+                            `Título: ${info.event.title}\n\nEste es un registro histórico. Si deseas modificarlo, debes hacerlo desde el módulo de Registro Diario (Bitácora).`
+                        );
                         return;
                     }
-                    openModal(true, info.event);
+                    openEventModal(true, info.event);
                 }
             });
 
@@ -335,8 +416,9 @@ $user_id = $_SESSION['user_id'];
 
             function updateDragDrop(event) {
                 if (event.extendedProps.is_progress) {
-                    alert("No puedes mover el historial.");
-                    event.revert(); return;
+                    showInfo("Acción no permitida", "No puedes arrastrar ni modificar el horario de los registros históricos del sistema.");
+                    event.revert(); 
+                    return;
                 }
                 let formData = new FormData();
                 formData.append('action', 'update');
@@ -349,7 +431,12 @@ $user_id = $_SESSION['user_id'];
 
                 fetch('api_events.php', { method: 'POST', body: formData })
                 .then(r => r.json())
-                .then(d => { if(d.status !== 'success') event.revert(); });
+                .then(d => { 
+                    if(d.status !== 'success') {
+                        showInfo("Error", "Error de sincronización con el servidor.");
+                        event.revert(); 
+                    }
+                });
             }
         });
     </script>
