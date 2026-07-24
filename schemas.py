@@ -34,3 +34,8 @@ class AlphaFeedbackCreate(BaseModel):
     friction_detection: str
     cognitive_clarity: str
     tracktime_expectation: str
+
+    # --- AÑADE ESTO AL FINAL DE TUS ESQUEMAS ---
+class UserLogin(BaseModel):
+    email: str
+    password: str

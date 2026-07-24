@@ -78,15 +78,16 @@
         } else {
             const userResponses = JSON.parse(rawStorageData);
             
-            // 2. Calculate Axis Scores
+           // 2. Calculate Axis Scores
             let scoreX = 0; // Discipline
             let scoreY = 0; // Purpose
 
             userResponses.forEach(item => {
-                if (item.axis === 'X') scoreX += item.score;
-                if (item.axis === 'Y') scoreY += item.score;
+                if (item.axis === 'X') scoreX += item.score; // Aquí usa item.score, que ya está invertido
+                if (item.axis === 'Y') scoreY += item.score; // Aquí también
             });
 
+            
             // 3. Evaluate Thresholds (18 points is the mathematical threshold)
             let assignedArchetype = "";
 
@@ -102,16 +103,47 @@
             // Show UI Elements
             document.getElementById('loadingState').classList.add('hidden');
             document.getElementById('outcomeContainer').classList.remove('hidden');
-        }
+            
+            // 5. Enviar Resultados a Python y Continuar (AHORA DENTRO DEL SCOPE CORRECTO)
+            document.getElementById('btnNextStep').onclick = async () => {
+                // A. Recuperamos el ID del usuario que se acaba de registrar
+               const userId = localStorage.getItem('user_id');
+            const payload = {
+                score_x_discipline: scoreX,
+                score_y_purpose: scoreY,
+                archetype: assignedArchetype
+            };
 
-            // 5. Next Step Action
-                    document.getElementById('btnNextStep').onclick = () => {
-                        const userFeedback = document.getElementById('feedbackInput').value;
-                        console.log("Captured Alpha Feedback:", userFeedback);
-                        
-                        // Redirigir a la pantalla de Selección de Objetivos
+            // MODO FANTASMA: Si no está registrado, guardamos en memoria y lo dejamos pasar
+            if (!userId) {
+                localStorage.setItem('pending_test', JSON.stringify(payload));
+                window.location.href = 'selection_goals.html';
+                return; // Detenemos la función aquí para que no intente usar fetch
+            }
+
+            try {
+                // (Mantén tu código fetch original aquí abajo...)                    // C. Disparamos los datos al Endpoint de FastAPI
+                    const response = await fetch(`http://52.87.151.219:8000/api/test-voc/${userId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.ok) {
+                        console.log("¡Test guardado en la base de datos!");
                         window.location.href = 'selection_goals.html';
-                    };
+                    } else {
+                        const errorData = await response.json();
+                        alert("El servidor rechazó los datos: " + JSON.stringify(errorData));
+                    }
+
+                } catch (error) {
+                    console.error("Error de conexión:", error);
+                    alert("La API está apagada o el túnel se cayó.");
+                }
+            };
+        }
     </script>
+    
 </body>
 </html>

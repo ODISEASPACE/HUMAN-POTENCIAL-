@@ -3,7 +3,7 @@ from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 # Cambia los datos de conexión según tu configuración de PostgreSQL
-SQLALCHEMY_DATABASE_URL = "postgresql://postgres:Limitless20xx@aph-database.cy78m00i65y5.us-east-1.rds.amazonaws.com:5432/postgres"
+SQLALCHEMY_DATABASE_URL = "postgresql://postgres:Limitless20xx@localhost:5432/postgres"
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

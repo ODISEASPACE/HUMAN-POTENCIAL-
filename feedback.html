@@ -31,7 +31,6 @@
         </div>
 
         <div class="flex flex-col gap-8 mb-10">
-            
             <div>
                 <label class="block text-base font-bold text-primaryText mb-2">
                     1. ¿En qué momento exacto del registro o durante el test sentiste la tentación de cerrar la aplicación o respondiste sin pensar?
@@ -52,7 +51,6 @@
                 </label>
                 <textarea id="expectationInput" rows="3" class="w-full p-4 border-2 border-slate-200 rounded-xl focus:border-accentAction focus:ring-0 outline-none transition-colors text-slate-700" placeholder="Espero que me regañe si fallo, que me muestre gráficas de..."></textarea>
             </div>
-
         </div>
 
         <button id="btnSubmitFinal" class="w-full bg-accentAction text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 hover:scale-[1.02] transition-all text-lg uppercase tracking-wide">
@@ -61,105 +59,134 @@
 
     </main>
 
-    <main id="successContainer" class="hidden max-w-xl w-full bg-white p-10 text-center rounded-2xl shadow-xl">
-        <div class="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-        </div>
-        <h1 class="text-3xl font-extrabold mb-4 text-primaryText">¡Misión Cumplida!</h1>
-        <p class="text-slate-600 mb-8">
-            Tus datos han sido procesados. Bienvenido al ecosistema de Odisea. Pronto se desbloqueará tu TrackTime diario.
-        </p>
-    </main>
-
     <main id="registerContainer" class="hidden max-w-xl w-full bg-white p-10 text-center rounded-2xl shadow-xl">
-        <div class="w-20 h-20 bg-blue-100 text-accentAction rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-        </div>
-        <h1 class="text-3xl font-extrabold mb-4 text-primaryText">¡Test Completado!</h1>
-        <p class="text-slate-600 mb-8">
-            Para asignarte una <strong>Ruta de Hábitos Personalizada</strong> basada en tu Arquetipo y notificarte cuando tu TrackTime esté listo, necesitamos que crees tu cuenta.
-        </p>
+        <h1 class="text-3xl font-extrabold mb-4 text-primaryText">¡No pierdas tu progreso!</h1>
+        <p class="text-slate-600 mb-8">Crea tu cuenta ahora para guardar tu Arquetipo y Objetivos en la base de datos central.</p>
         
-        <div class="flex flex-col gap-4">
-            <input type="email" id="emailInput" placeholder="Tu correo electrónico" class="w-full p-4 border-2 border-slate-200 rounded-xl focus:border-accentAction focus:ring-0 outline-none text-slate-700">
+        <div class="flex flex-col gap-4 text-left">
+            <input type="text" id="regName" placeholder="Tu Nombre o Alias" class="w-full p-4 border-2 border-slate-200 rounded-xl outline-none">
+            <input type="email" id="regEmail" placeholder="Tu correo electrónico" class="w-full p-4 border-2 border-slate-200 rounded-xl outline-none">
+            <input type="password" id="regPassword" placeholder="Contraseña (Mínimo 8)" class="w-full p-4 border-2 border-slate-200 rounded-xl outline-none">
             
-            <button id="btnRegisterNew" class="w-full bg-primaryText text-white font-bold py-4 rounded-xl shadow-lg hover:bg-slate-800 transition-all text-lg">
-                Crear Cuenta y Guardar Ruta
-            </button>
-            
-            <button id="btnSkipRegistration" class="text-slate-500 font-semibold hover:text-primaryText mt-2 transition-colors">
-                Saltar por ahora, ya estoy registrado
+            <button id="btnRegisterAndSave" class="w-full bg-accentAction text-white font-bold py-4 rounded-xl shadow-lg mt-2">
+                Crear Cuenta y Guardar Todo
             </button>
         </div>
     </main>
 
     <script>
-        const btnSubmitFinal = document.getElementById('btnSubmitFinal');
-        
-        // Función para mostrar la pantalla final de éxito
-        function showSuccessScreen() {
-            document.getElementById('feedbackContainer').classList.add('hidden');
-            document.getElementById('registerContainer').classList.add('hidden');
-            document.getElementById('successContainer').classList.remove('hidden');
-            // Limpiamos memoria
-            localStorage.removeItem('odisea_voc_responses');
-            localStorage.removeItem('odisea_tracktime_config');
-        }
-
-        btnSubmitFinal.onclick = () => {
-            // 1. Capturar Feedback
-            const alphaFeedback = {
-                friction: document.getElementById('frictionInput').value.trim(),
-                clarity: document.getElementById('clarityInput').value.trim(),
-                expectations: document.getElementById('expectationInput').value.trim()
+        // LÓGICA PRINCIPAL
+        document.getElementById('btnSubmitFinal').onclick = async () => {
+            const userId = localStorage.getItem('user_id');
+            
+            // Empaquetamos las respuestas de esta pantalla
+            const feedbackPayload = {
+                identity_validation: "Dato no capturado en esta pantalla", 
+                friction_detection: document.getElementById('frictionInput').value.trim(),
+                cognitive_clarity: document.getElementById('clarityInput').value.trim(),
+                tracktime_expectation: document.getElementById('expectationInput').value.trim()
             };
 
-            // 2. Recuperar datos previos
-            const testResponses = JSON.parse(localStorage.getItem('odisea_voc_responses')) || [];
-            const trackTimeConfig = JSON.parse(localStorage.getItem('odisea_tracktime_config')) || {};
-
-            // 3. Empaquetar
-            const finalPayload = {
-                timestamp: new Date().toISOString(),
-                test_responses: testResponses,
-                tracktime_configuration: trackTimeConfig,
-                alpha_qa_feedback: alphaFeedback
-            };
-
-            console.log("FINAL PAYLOAD READY FOR BACKEND:", JSON.stringify(finalPayload, null, 2));
-
-            // 4. LÓGICA DE RUTEO CONDICIONAL
-            // Simulamos preguntar: "¿El usuario inició sesión en la Pantalla 0?"
-            // (Si en tu index.html hicieran login, guardarías esto en true)
-            const isRegistered = localStorage.getItem('is_logged_in') === 'true'; 
-
-            document.getElementById('feedbackContainer').classList.add('hidden');
-
-            if (isRegistered) {
-                // Si ya está registrado, vamos directo a Misión Cumplida
-                showSuccessScreen();
-            } else {
-                // Si es un invitado, le mostramos la pantalla para pedir su correo
+            // CASO A: Es un Invitado (Fantasma)
+            if (!userId) {
+                // Guardamos el feedback en la memoria del navegador temporalmente
+                localStorage.setItem('pending_feedback', JSON.stringify(feedbackPayload));
+                
+                // Ocultamos las preguntas y lo obligamos a registrarse
+                document.getElementById('feedbackContainer').classList.add('hidden');
                 document.getElementById('registerContainer').classList.remove('hidden');
+                return; // Detenemos la ejecución aquí
+            }
+
+            // CASO B: Ya es un usuario registrado
+            try {
+                const response = await fetch(`http://52.87.151.219/api/alpha-feedback/${userId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(feedbackPayload)
+                });
+
+                if (response.ok) {
+                    // Limpiamos los datos temporales por si acaso y redirigimos
+                    localStorage.removeItem('odisea_voc_responses');
+                    window.location.href = 'success.html';
+                } else {
+                    const errorData = await response.json();
+                    alert("Error en el servidor: " + JSON.stringify(errorData));
+                }
+            } catch (error) {
+                console.error("Error:", error);
+                alert("Fallo de conexión con la base de datos.");
             }
         };
 
-        // Lógica de botones de la pantalla de registro
-        document.getElementById('btnRegisterNew').onclick = () => {
-            const email = document.getElementById('emailInput').value;
-            if (isRegistered) {
-                // Si ya está registrado, vamos directo a Misión Cumplida
-                showSuccessScreen();
-            } else {
-                // Si es un invitado, le mostramos la pantalla para pedir su correo
-                document.getElementById('registerContainer').classList.remove('hidden');
-            }
-        };
+        // LÓGICA DEL REGISTRO FINAL (AMETRALLADORA DE DATOS)
+        document.getElementById('btnRegisterAndSave').onclick = async () => {
+            const name = document.getElementById('regName').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
 
-        document.getElementById('btnSkipRegistration').onclick = () => {
-            showSuccessScreen();
+            if (!name || !email || !password) {
+                alert("Por favor, llena todos los campos.");
+                return;
+            }
+
+            try {
+                // 1. REGISTRAR EL USUARIO EN FASTAPI
+                const res = await fetch('http://52.87.151.219:8000/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: name, email: email, password: password })
+                });
+                
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.detail || "Error en el registro");
+                }
+                
+                const userData = await res.json();
+                const newUserId = userData.id;
+
+                // 2. RECUPERAR DATOS FANTASMAS DE LA MEMORIA
+                const pendingTest = localStorage.getItem('pending_test');
+                const pendingGoals = localStorage.getItem('pending_goals');
+                const pendingFeedback = localStorage.getItem('pending_feedback');
+
+                // 3. DISPARAR TODO A POSTGRESQL USANDO EL NUEVO ID
+                if (pendingTest) {
+                    await fetch(`http://52.87.151.219:8000/api/test-voc/${newUserId}`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: pendingTest
+                    });
+                }
+                
+                if (pendingGoals) {
+                    await fetch(`http://52.87.151.219:8000/api/tracktime-goals/${newUserId}`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: pendingGoals
+                    });
+                }
+
+                if (pendingFeedback) {
+                    await fetch(`http://52.87.151.219:8000/api/alpha-feedback/${newUserId}`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: pendingFeedback
+                    });
+                }
+
+                // 4. LIMPIEZA FINAL Y REDIRECCIÓN
+                localStorage.setItem('user_id', newUserId);
+                localStorage.setItem('is_logged_in', 'true');
+                
+                localStorage.removeItem('pending_test');
+                localStorage.removeItem('pending_goals');
+                localStorage.removeItem('pending_feedback');
+                localStorage.removeItem('odisea_voc_responses');
+                
+                window.location.href = 'success.html';
+
+            } catch (error) {
+                console.error(error);
+                alert("Ocurrió un error: " + error.message);
+            }
         };
     </script>
-
 </body>
 </html>

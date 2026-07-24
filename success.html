@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Odisea | Misión Cumplida</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] }, colors: { bgMain: '#F8FAFC', primaryText: '#0F172A', accentAction: '#2563EB' } } } }
+    </script>
+</head>
+
+<body class="bg-bgMain text-primaryText font-sans min-h-screen flex items-center justify-center p-4">
+
+    <main class="max-w-xl w-full bg-white p-10 text-center rounded-2xl shadow-xl">
+        <div class="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+        </div>
+        
+        <h1 class="text-3xl font-extrabold mb-4 text-primaryText">¡Estás en la Base de Datos!</h1>
+        <p class="text-slate-600 mb-8 text-lg">
+            Tu arquetipo y objetivos están seguros. Como Beta Tester, te enviaremos una notificación a tu correo cuando el <strong>Dashboard de TrackTime</strong> esté habilitado en la próxima actualización.
+        </p>
+
+        <button id="btnLogout" class="text-slate-500 font-semibold hover:text-red-500 transition-colors">
+            Cerrar Sesión
+        </button>
+    </main>
+
+    <script>
+        // Si alguien intenta entrar aquí sin iniciar sesión, lo echamos
+        if (localStorage.getItem('is_logged_in') !== 'true') {
+            window.location.href = 'login.html';
+        }
+
+        // Lógica para cerrar sesión
+        document.getElementById('btnLogout').onclick = () => {
+            localStorage.clear(); // Borramos su rastro
+            window.location.href = 'login.html'; // Lo devolvemos al login
+        };
+    </script>
+</body>
+</html>

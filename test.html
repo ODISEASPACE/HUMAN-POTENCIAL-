@@ -35,7 +35,7 @@
         </div>
     </div>
 
-    <main class="max-w-2xl w-full bg-white p-8 md:p-12 rounded-2xl shadow-xl flex flex-col min-h-[400px]">
+    <main class="max-w-2xl w-full bg-white p-8 md:p-12 rounded-2xl shadow-xl flex flex-col min-h-[450px]">
         
         <div class="flex-grow flex items-center justify-center mb-8">
             <h2 id="questionText" class="text-2xl md:text-3xl font-extrabold text-center tracking-tight leading-tight">
@@ -46,10 +46,17 @@
         <div class="flex flex-col gap-3 w-full" id="optionsContainer">
             </div>
 
+        <div class="mt-8 flex justify-start">
+            <button id="btnBack" class="hidden text-slate-500 font-bold hover:text-acento transition-colors flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                Volver a la pregunta anterior
+            </button>
+        </div>
+
     </main>
 
     <script>
-        // 1. Base de Datos de Preguntas (Las 12 oficiales de Odisea)
+        // 1. Base de Datos de Preguntas
         const questions = [
             { id: 1, axis: "X", text: "Cuando cometo un error o encuentro un obstáculo serio en un proyecto, mantengo mi ritmo de trabajo en lugar de detenerme." },
             { id: 2, axis: "X", text: "Frecuentemente me entusiasmo con la idea de crear nuevos hábitos (como madrugar o ir al gimnasio), pero los abandono a las pocas semanas." },
@@ -65,7 +72,7 @@
             { id: 12, axis: "Y", text: "Con frecuencia siento que opero en 'modo automático', resolviendo problemas del día a día sin saber exactamente para qué lo hago." }
         ];
 
-        // Opciones de respuesta fijas (Escala Likert 1-5)
+        // Opciones de respuesta fijas
         const options = [
             { value: 1, label: "Totalmente en desacuerdo" },
             { value: 2, label: "Moderadamente en desacuerdo" },
@@ -76,49 +83,73 @@
 
         // 2. Estado de la Aplicación
         let currentIndex = 0;
-        let userResponses = [];
+        let userResponses = []; // Actuará como una cajonera de 12 posiciones
 
         // 3. Captura de Elementos del DOM
         const questionText = document.getElementById('questionText');
         const optionsContainer = document.getElementById('optionsContainer');
         const progressText = document.getElementById('progressText');
         const progressBar = document.getElementById('progressBar');
+        const btnBack = document.getElementById('btnBack');
 
         // 4. Función para Renderizar la Pregunta
         function renderQuestion() {
-            // Actualizar texto
+            // Actualizar texto y progreso
             questionText.innerText = questions[currentIndex].text;
-            
-            // Actualizar progreso
             progressText.innerText = `${currentIndex + 1} / ${questions.length}`;
             progressBar.style.width = `${((currentIndex + 1) / questions.length) * 100}%`;
 
-            // Limpiar opciones anteriores
+            // Mostrar u ocultar el botón de Retroceder
+            if (currentIndex > 0) {
+                btnBack.classList.remove('hidden');
+            } else {
+                btnBack.classList.add('hidden');
+            }
+
+            // Limpiar opciones
             optionsContainer.innerHTML = '';
 
-            // Crear los 5 botones anchos dinámicamente
+            // ¿Ya habíamos respondido esta pregunta antes? 
+            // Buscamos el 'raw_value' (lo que el usuario vio y clickeó) para pintar la pantalla correctamente
+            const savedAnswer = userResponses[currentIndex] ? userResponses[currentIndex].raw_value : null;
+
+            // Crear botones dinámicamente
             options.forEach(opt => {
                 const btn = document.createElement('button');
-                btn.className = "w-full text-left font-semibold text-slate-700 bg-slate-50 border-2 border-slate-200 p-4 rounded-xl hover:border-acento hover:bg-blue-50 transition-all duration-200";
+                
+                // Si esta opción fue la que marcamos antes, la pintamos de azul para recordarlo
+                if (savedAnswer === opt.value) {
+                    btn.className = "w-full text-left font-semibold border-2 p-4 rounded-xl transition-all duration-200 border-acento bg-blue-50 text-acento";
+                } else {
+                    btn.className = "w-full text-left font-semibold text-slate-700 bg-slate-50 border-2 border-slate-200 p-4 rounded-xl hover:border-acento hover:bg-blue-50 transition-all duration-200";
+                }
+                
                 btn.innerText = opt.label;
-                
-                // Evento al hacer clic en una respuesta
                 btn.onclick = () => handleAnswer(opt.value);
-                
                 optionsContainer.appendChild(btn);
             });
         }
 
         // 5. Lógica al Responder
         function handleAnswer(value) {
-            // Guardar respuesta (pregunta_id y valor)
-            userResponses.push({
-                question_id: questions[currentIndex].id,
-                axis: questions[currentIndex].axis,
-                score: value
-            });
+            const currentQuestion = questions[currentIndex];
+            
+            // --- LÓGICA PSICOMÉTRICA DE INVERSIÓN ---
+            // Detectamos si el ID de la pregunta es par (2, 4, 6...) o impar (1, 3, 5...)
+            const isEven = currentQuestion.id % 2 === 0;
+            
+            // Si es par, aplicamos la inversión (6 - valor). Si es impar, se queda igual.
+            const finalScore = isEven ? (6 - value) : value;
 
-            // Avanzar a la siguiente o terminar
+            // SOBRESCRIBIR el cajón exacto de esta pregunta con la doble memoria
+            userResponses[currentIndex] = {
+                question_id: currentQuestion.id,
+                axis: currentQuestion.axis,
+                raw_value: value,     // Para la interfaz visual (no se envía a la DB)
+                score: finalScore     // Para el cálculo final matemático (sí se envía a la DB)
+            };
+
+            // Avanzar a la siguiente o terminar el test
             if (currentIndex < questions.length - 1) {
                 currentIndex++;
                 renderQuestion();
@@ -126,16 +157,22 @@
                 finishTest();
             }
         }
+                // 6. Lógica al Retroceder
+        btnBack.onclick = () => {
+            if (currentIndex > 0) {
+                currentIndex--;
+                renderQuestion();
+            }
+        };
 
-        // 6. Función de Finalización
+        // 7. Función de Finalización
         function finishTest() {
+            // Guardamos el arreglo final con las 12 respuestas consolidadas
             localStorage.setItem('odisea_voc_responses', JSON.stringify(userResponses));
-            
-            // REDIRIGIR A LA PANTALLA DE RESULTADOS
             window.location.href = 'outcomes.html';
         }
 
-        // 7. Inicializar el test al cargar la página
+        // Inicializar el test
         renderQuestion();
 
     </script>

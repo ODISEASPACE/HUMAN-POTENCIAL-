@@ -182,29 +182,54 @@
             }
         }
 
-        // 5. Save Data and Route
-        btnSaveGoals.onclick = () => {
+        // 5. Save Data and Route (Conectado a FastAPI)
+        btnSaveGoals.onclick = async () => {
+            const userId = localStorage.getItem('user_id');
             const customGoal = customGoalInput.value.trim();
-            if (customGoal && selectedSecondary.length < 2) {
-                selectedSecondary.push(`custom_${customGoal}`);
-            }
+            let sec1 = selectedSecondary.length > 0 ? selectedSecondary[0] : null;
+            let sec2 = selectedSecondary.length > 1 ? selectedSecondary[1] : null;
 
-            const trackTimeConfig = {
+            const payload = {
                 primary_goal: selectedPrimary,
-                secondary_goals: selectedSecondary
+                secondary_goal_1: sec1,
+                secondary_goal_2: sec2,
+                custom_goal_text: customGoal || null
             };
 
-            // Save to browser memory alongside the test responses
-            localStorage.setItem('odisea_tracktime_config', JSON.stringify(trackTimeConfig));
-            console.log("TrackTime Configuration Saved:", trackTimeConfig);
+            // MODO FANTASMA
+            if (!userId) {
+                localStorage.setItem('pending_goals', JSON.stringify(payload));
+                window.location.href = 'feedback.html';
+                return;
+            }
 
-            // Redirect to Final Feedback Screen
-            window.location.href = 'feedback.html';
-        };
+            try {
+                // (Mantén tu código fetch original aquí abajo...)
+                // Disparamos a la API
+                const response = await fetch(`http://52.87.151.219:8000/api/tracktime-goals/${userId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
 
-        // Initialize UI
+                if (response.ok) {
+                    console.log("Objetivos guardados en PostgreSQL.");
+                    // Redirigir a la pantalla de Feedback
+                    window.location.href = 'feedback.html';
+                } else {
+                    const errorData = await response.json();
+                    alert("El servidor rechazó los datos: " + JSON.stringify(errorData));
+                }
+            } catch (error) {
+                console.error("Error de conexión:", error);
+                alert("Fallo de conexión con la API o el túnel SSH.");
+            }
+        }; // <-- Aquí termina la función del botón de forma limpia
+
+        // INSTRUCCIÓN DE ARRANQUE
         renderGoals();
 
     </script>
+    
 </body>
 </html>
