@@ -62,7 +62,7 @@
 
     <script>
         // Variable Global protegida
-        window.API_URL = "http://" + (window.location.hostname || "127.0.0.1") + ":8000/api";
+        window.API_URL = window.location.origin + "/api";
 
         const goalCategories = [
             { id: "academic", label: "Académico Universitario" },
