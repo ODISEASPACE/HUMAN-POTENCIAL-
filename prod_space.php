@@ -269,7 +269,6 @@
                 sessionBtn.style.borderColor = 'var(--success)';
             }
         });
-
         // Control de Apertura y Cierre de Modal
         loginBtnTrigger.addEventListener('click', (e) => {
             e.preventDefault();
