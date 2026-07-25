@@ -53,6 +53,8 @@
     </main>
 
     <script>
+        // El código detectará si estás en localhost o en AWS automáticamente
+const API_URL = "http://" + window.location.hostname + ":8000/api";
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault(); 
             
@@ -66,7 +68,7 @@
 
             try {
                 // Disparamos la petición a nuestra nueva ruta de Python
-                const response = await fetch('http://52.87.151.219:8000/api/login', {
+                const response = await fetch(API_URL + '/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)

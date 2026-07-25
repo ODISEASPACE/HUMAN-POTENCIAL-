@@ -75,6 +75,8 @@
     </main>
 
     <script>
+        // El código detectará si estás en localhost o en AWS automáticamente
+const API_URL = "http://" + window.location.hostname + ":8000/api";
         // LÓGICA PRINCIPAL
         document.getElementById('btnSubmitFinal').onclick = async () => {
             const userId = localStorage.getItem('user_id');
@@ -100,7 +102,7 @@
 
             // CASO B: Ya es un usuario registrado
             try {
-                const response = await fetch(`http://52.87.151.219/api/alpha-feedback/${userId}`, {
+                const response = await fetch(API_URL + '/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(feedbackPayload)
@@ -133,7 +135,7 @@
 
             try {
                 // 1. REGISTRAR EL USUARIO EN FASTAPI
-                const res = await fetch('http://52.87.151.219:8000/api/register', {
+                const res = await fetch(API_URL + '/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name: name, email: email, password: password })
@@ -154,19 +156,19 @@
 
                 // 3. DISPARAR TODO A POSTGRESQL USANDO EL NUEVO ID
                 if (pendingTest) {
-                    await fetch(`http://52.87.151.219:8000/api/test-voc/${newUserId}`, {
+                    await fetch(API_URL + '/register', {
                         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: pendingTest
                     });
                 }
                 
                 if (pendingGoals) {
-                    await fetch(`http://52.87.151.219:8000/api/tracktime-goals/${newUserId}`, {
+                    await fetch(API_URL + '/register', {
                         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: pendingGoals
                     });
                 }
 
                 if (pendingFeedback) {
-                    await fetch(`http://52.87.151.219:8000/api/alpha-feedback/${newUserId}`, {
+                    await fetch(API_URL + '/register', {
                         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: pendingFeedback
                     });
                 }

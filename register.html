@@ -59,6 +59,10 @@
     </main>
 
     <script>
+            // El código detectará si estás en localhost o en AWS automáticamente
+const API_URL = "http://" + window.location.hostname + ":8000/api";
+
+
         document.getElementById('registerForm').addEventListener('submit', async function(e) {
             e.preventDefault(); // Evita que la página parpadee al hacer clic
             
@@ -76,7 +80,7 @@
 
             try {
                 // 3. ¡El disparo! Lanzamos los datos al puerto 8000 donde escucha FastAPI
-                const response = await fetch('http://52.87.151.219:8000/api/register', {
+                const response = await fetch(API_URL + '/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)

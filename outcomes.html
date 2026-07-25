@@ -49,6 +49,8 @@
     </main>
 
     <script>
+        // El código detectará si estás en localhost o en AWS automáticamente
+const API_URL = "http://" + window.location.hostname + ":8000/api";
         // Archetype Database
         const archetypesDB = {
             "Executor": {
@@ -123,7 +125,7 @@
 
             try {
                 // (Mantén tu código fetch original aquí abajo...)                    // C. Disparamos los datos al Endpoint de FastAPI
-                    const response = await fetch(`http://52.87.151.219:8000/api/test-voc/${userId}`, {
+                    const response = await fetch(API_URL + '/register', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
