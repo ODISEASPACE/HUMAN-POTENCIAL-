@@ -6,6 +6,7 @@
     <title>Odisea | Potencial Humano</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     
     <script>
@@ -16,9 +17,9 @@
                         sans: ['Inter', 'sans-serif'],
                     },
                     colors: {
-                        fondo: '#F8FAFC',     
-                        primario: '#0F172A',  
-                        acento: '#2563EB'     
+                        fondo: '#F8FAFC',     /* Gris Off-White para no cansar la vista */
+                        primario: '#0F172A',  /* Azul marino oscuro para textos (Seriedad) */
+                        acento: '#2563EB'     /* Azul eléctrico para el botón principal (Acción) */
                     }
                 }
             }
@@ -39,8 +40,7 @@
 
         <div class="flex flex-col gap-4 w-full md:w-3/4 mx-auto">
             
-            <!-- SE AGREGÓ EL ID: btnStartTest -->
-            <a href="legal.html" id="btnStartTest" class="bg-acento hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg transition-transform transform hover:scale-105 text-lg">
+            <a href="legal.html" class="bg-acento hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg transition-transform transform hover:scale-105 text-lg">
                 Iniciar Test VOC
             </a>
 
@@ -48,31 +48,13 @@
                 <a href="register.html" class="bg-white border-2 border-slate-200 hover:border-primario hover:text-primario text-slate-600 font-semibold py-3 px-4 rounded-xl transition-all block text-center">
                     Registrarse
                 </a>
-                
-                <!-- SE CORRIGIÓ EL HTML: Se eliminó el <button> envolvente -->
-                <a href="login.html" class="bg-white border-2 border-slate-200 hover:border-primario hover:text-primario text-slate-600 font-semibold py-3 px-4 rounded-xl transition-all block text-center">
-                    Iniciar sesión
-                </a>  
+                <a href="register.html" class="bg-white border-2 border-slate-200 hover:border-primario hover:text-primario text-slate-600 font-semibold py-3 px-4 rounded-xl transition-all block text-center">
+                    Registrarse
+                </a>
             </div>
             
         </div>
     </main>
 
-    <!-- SCRIPT DE PIZARRA LIMPIA -->
-    <script>
-        document.getElementById('btnStartTest').addEventListener('click', function(event) {
-            // 1. Detenemos la redirección automática
-            event.preventDefault(); 
-
-            // 2. Purgamos la memoria de cualquier usuario zombi o test inconcluso
-            localStorage.removeItem('user_id'); 
-            localStorage.removeItem('odisea_voc_responses');
-            localStorage.removeItem('temp_identity_validation');
-            localStorage.removeItem('pending_test');
-
-            // 3. Redirigimos manualmente a la pantalla legal
-            window.location.href = this.href; 
-        });
-    </script>
 </body>
 </html>
