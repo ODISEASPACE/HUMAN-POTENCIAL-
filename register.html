@@ -1,4 +1,4 @@
-|<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -53,25 +53,22 @@
         </form>
 
         <div class="mt-6 text-sm text-slate-500">
-            ¿Ya tienes cuenta? <a href="#" class="text-accentAction font-bold hover:underline" href="login.html">Inicia Sesión</a>
+            ¿Ya tienes cuenta? <a href="login.html" class="text-accentAction font-bold hover:underline">Inicia Sesión</a>
         </div>
         
     </main>
 
     <script>
-            // El código detectará si estás en localhost o en AWS automáticamente
-const API_URL = "http://" + window.location.hostname + ":8000/api";
-
+        // Variable Global protegida
+        window.API_URL = "http://" + (window.location.hostname || "127.0.0.1") + ":8000/api";
 
         document.getElementById('registerForm').addEventListener('submit', async function(e) {
-            e.preventDefault(); // Evita que la página parpadee al hacer clic
+            e.preventDefault(); 
             
-            // 1. Recogemos lo que el usuario escribió en las cajas de texto
             const name = document.getElementById('nameInput').value;
             const email = document.getElementById('emailInput').value;
             const password = document.getElementById('passwordInput').value;
 
-            // 2. Preparamos el paquete de datos en formato JSON
             const payload = {
                 name: name,
                 email: email,
@@ -79,8 +76,8 @@ const API_URL = "http://" + window.location.hostname + ":8000/api";
             };
 
             try {
-                // 3. ¡El disparo! Lanzamos los datos al puerto 8000 donde escucha FastAPI
-                const response = await fetch(API_URL + '/register', {
+                // Endpoint correcto: /register
+                const response = await fetch(window.API_URL + '/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -88,20 +85,17 @@ const API_URL = "http://" + window.location.hostname + ":8000/api";
 
                 const data = await response.json();
 
-                // 4. Revisamos qué nos respondió Python
                 if (response.ok) {
-                    // ¡Éxito absoluto! Guardamos el ID del usuario y pasamos al Test
                     localStorage.setItem('user_id', data.id);
                     localStorage.setItem('is_logged_in', 'true');
                     window.location.href = 'legal.html'; 
                 } else {
-                    // Python rechazó la orden (ej. Correo repetido o contraseña muy corta)
                     alert("Error: " + data.detail);
                 }
 
             } catch (error) {
                 console.error("Error de conexión:", error);
-                alert("No se pudo conectar con el servidor. ¿Está encendida la consola negra?");
+                alert("No se pudo conectar con el servidor.");
             }
         });
     </script>

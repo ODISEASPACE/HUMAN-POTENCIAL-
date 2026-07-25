@@ -53,8 +53,9 @@
     </main>
 
     <script>
-        // El código detectará si estás en localhost o en AWS automáticamente
-const API_URL = "http://" + window.location.hostname + ":8000/api";
+        // Variable Global protegida
+        window.API_URL = "http://" + (window.location.hostname || "127.0.0.1") + ":8000/api";
+
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault(); 
             
@@ -67,8 +68,8 @@ const API_URL = "http://" + window.location.hostname + ":8000/api";
             };
 
             try {
-                // Disparamos la petición a nuestra nueva ruta de Python
-                const response = await fetch(API_URL + '/register', {
+                // Endpoint correcto: /login (Tenías /register)
+                const response = await fetch(window.API_URL + '/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -76,30 +77,25 @@ const API_URL = "http://" + window.location.hostname + ":8000/api";
 
                 const data = await response.json();
 
-            if (response.ok) {
-                    // Guardamos la sesión
+                if (response.ok) {
                     localStorage.setItem('user_id', data.user_id);
                     localStorage.setItem('is_logged_in', 'true');
                     
                     alert(`¡Bienvenido de vuelta, ${data.name}!`);
                     
-                    // LÓGICA DE REDIRECCIÓN INTELIGENTE
                     if (data.has_completed_test === true) {
-                        // Si ya hizo el test, lo mandamos directo a la sala de espera/éxito
                         window.location.href = 'success.html'; 
                     } else {
-                        // Si NO ha hecho el test (ej. se registró y cerró la pestaña), lo mandamos al inicio del test
-                        window.location.href = 'legal.html'; // (O pon 'index.html' si tu test empieza ahí)
+                        window.location.href = 'legal.html'; 
                     }
 
                 } else {
                     alert("Error: " + data.detail);
                 }
 
-
             } catch (error) {
                 console.error("Error de conexión:", error);
-                alert("No se pudo conectar con el servidor. Revisa si el backend y el túnel están encendidos.");
+                alert("No se pudo conectar con el servidor.");
             }
         });
     </script>

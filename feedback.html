@@ -75,13 +75,12 @@
     </main>
 
     <script>
-        // El código detectará si estás en localhost o en AWS automáticamente
-const API_URL = "http://" + window.location.hostname + ":8000/api";
-        // LÓGICA PRINCIPAL
+        // Variable Global protegida
+        window.API_URL = "http://" + (window.location.hostname || "127.0.0.1") + ":8000/api";
+
         document.getElementById('btnSubmitFinal').onclick = async () => {
             const userId = localStorage.getItem('user_id');
             
-            // Empaquetamos las respuestas de esta pantalla
             const feedbackPayload = {
                 identity_validation: "Dato no capturado en esta pantalla", 
                 friction_detection: document.getElementById('frictionInput').value.trim(),
@@ -89,27 +88,22 @@ const API_URL = "http://" + window.location.hostname + ":8000/api";
                 tracktime_expectation: document.getElementById('expectationInput').value.trim()
             };
 
-            // CASO A: Es un Invitado (Fantasma)
             if (!userId) {
-                // Guardamos el feedback en la memoria del navegador temporalmente
                 localStorage.setItem('pending_feedback', JSON.stringify(feedbackPayload));
-                
-                // Ocultamos las preguntas y lo obligamos a registrarse
                 document.getElementById('feedbackContainer').classList.add('hidden');
                 document.getElementById('registerContainer').classList.remove('hidden');
-                return; // Detenemos la ejecución aquí
+                return; 
             }
 
-            // CASO B: Ya es un usuario registrado
             try {
-                const response = await fetch(API_URL + '/register', {
+                // Endpoint correcto para el feedback
+                const response = await fetch(window.API_URL + '/alpha-feedback/' + userId, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(feedbackPayload)
                 });
 
                 if (response.ok) {
-                    // Limpiamos los datos temporales por si acaso y redirigimos
                     localStorage.removeItem('odisea_voc_responses');
                     window.location.href = 'success.html';
                 } else {
@@ -134,8 +128,8 @@ const API_URL = "http://" + window.location.hostname + ":8000/api";
             }
 
             try {
-                // 1. REGISTRAR EL USUARIO EN FASTAPI
-                const res = await fetch(API_URL + '/register', {
+                // 1. REGISTRAR EL USUARIO
+                const res = await fetch(window.API_URL + '/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name: name, email: email, password: password })
@@ -154,21 +148,21 @@ const API_URL = "http://" + window.location.hostname + ":8000/api";
                 const pendingGoals = localStorage.getItem('pending_goals');
                 const pendingFeedback = localStorage.getItem('pending_feedback');
 
-                // 3. DISPARAR TODO A POSTGRESQL USANDO EL NUEVO ID
+                // 3. DISPARAR TODO A POSTGRESQL USANDO EL NUEVO ID Y RUTAS CORRECTAS
                 if (pendingTest) {
-                    await fetch(API_URL + '/register', {
+                    await fetch(window.API_URL + '/test-voc/' + newUserId, {
                         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: pendingTest
                     });
                 }
                 
                 if (pendingGoals) {
-                    await fetch(API_URL + '/register', {
+                    await fetch(window.API_URL + '/tracktime-goals/' + newUserId, {
                         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: pendingGoals
                     });
                 }
 
                 if (pendingFeedback) {
-                    await fetch(API_URL + '/register', {
+                    await fetch(window.API_URL + '/alpha-feedback/' + newUserId, {
                         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: pendingFeedback
                     });
                 }

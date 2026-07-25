@@ -49,9 +49,9 @@
     </main>
 
     <script>
-        // El código detectará si estás en localhost o en AWS automáticamente
-const API_URL = "http://" + window.location.hostname + ":8000/api";
-        // Archetype Database
+        // Variable Global protegida
+        window.API_URL = "http://" + (window.location.hostname || "127.0.0.1") + ":8000/api";
+
         const archetypesDB = {
             "Executor": {
                 name: "El Ejecutor",
@@ -71,7 +71,6 @@ const API_URL = "http://" + window.location.hostname + ":8000/api";
             }
         };
 
-        // 1. Fetch data from Local Storage
         const rawStorageData = localStorage.getItem('odisea_voc_responses');
         
         if (!rawStorageData) {
@@ -80,17 +79,14 @@ const API_URL = "http://" + window.location.hostname + ":8000/api";
         } else {
             const userResponses = JSON.parse(rawStorageData);
             
-           // 2. Calculate Axis Scores
-            let scoreX = 0; // Discipline
-            let scoreY = 0; // Purpose
+            let scoreX = 0; 
+            let scoreY = 0; 
 
             userResponses.forEach(item => {
-                if (item.axis === 'X') scoreX += item.score; // Aquí usa item.score, que ya está invertido
-                if (item.axis === 'Y') scoreY += item.score; // Aquí también
+                if (item.axis === 'X') scoreX += item.score; 
+                if (item.axis === 'Y') scoreY += item.score; 
             });
 
-            
-            // 3. Evaluate Thresholds (18 points is the mathematical threshold)
             let assignedArchetype = "";
 
             if (scoreX >= 18 && scoreY >= 18) assignedArchetype = "Executor";
@@ -98,34 +94,29 @@ const API_URL = "http://" + window.location.hostname + ":8000/api";
             else if (scoreX < 18 && scoreY >= 18) assignedArchetype = "Dreamer";
             else if (scoreX < 18 && scoreY < 18) assignedArchetype = "Wanderer";
 
-            // 4. Inject Data into the DOM
             document.getElementById('archetypeName').innerText = archetypesDB[assignedArchetype].name;
             document.getElementById('archetypeDescription').innerText = archetypesDB[assignedArchetype].description;
 
-            // Show UI Elements
             document.getElementById('loadingState').classList.add('hidden');
             document.getElementById('outcomeContainer').classList.remove('hidden');
             
-            // 5. Enviar Resultados a Python y Continuar (AHORA DENTRO DEL SCOPE CORRECTO)
             document.getElementById('btnNextStep').onclick = async () => {
-                // A. Recuperamos el ID del usuario que se acaba de registrar
-               const userId = localStorage.getItem('user_id');
-            const payload = {
-                score_x_discipline: scoreX,
-                score_y_purpose: scoreY,
-                archetype: assignedArchetype
-            };
+                const userId = localStorage.getItem('user_id');
+                const payload = {
+                    score_x_discipline: scoreX,
+                    score_y_purpose: scoreY,
+                    archetype: assignedArchetype
+                };
 
-            // MODO FANTASMA: Si no está registrado, guardamos en memoria y lo dejamos pasar
-            if (!userId) {
-                localStorage.setItem('pending_test', JSON.stringify(payload));
-                window.location.href = 'selection_goals.html';
-                return; // Detenemos la función aquí para que no intente usar fetch
-            }
+                if (!userId) {
+                    localStorage.setItem('pending_test', JSON.stringify(payload));
+                    window.location.href = 'selection_goals.html';
+                    return; 
+                }
 
-            try {
-                // (Mantén tu código fetch original aquí abajo...)                    // C. Disparamos los datos al Endpoint de FastAPI
-                    const response = await fetch(API_URL + '/register', {
+                try {
+                    // Endpoint correcto: /test-voc/{userId} (Tenías /register)
+                    const response = await fetch(window.API_URL + '/test-voc/' + userId, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
@@ -146,6 +137,5 @@ const API_URL = "http://" + window.location.hostname + ":8000/api";
             };
         }
     </script>
-    
 </body>
 </html>
