@@ -21,7 +21,7 @@ $user = [
             --accent: #805AD5; --accent-hover: #6B46C1; --accent-light: rgba(128, 90, 213, 0.1); 
             --border-color: #E2E8F0;
             
-            /* Colores por Foco - Respetando la paleta sin tonos verdes */
+            /* Colores por Foco */
             --c-acad: #3182CE; 
             --c-lab: #DD6B20; 
             --c-fin: #D69E2E; 
@@ -48,7 +48,6 @@ $user = [
 
         /* ESTRUCTURA PRINCIPAL Y SIDEBAR */
         .app-container { display: flex; width: 100%; height: 100%; }
-        
         nav.sidebar { width: 220px; background: var(--bg-panel); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 25px 15px; flex-shrink: 0; z-index: 20; }
         .brand { text-align: center; margin-bottom: 30px; } .brand h2 { font-weight: 800; letter-spacing: 2px; font-size: 1.2rem; color: var(--accent); }
         .nav-links { flex: 1; display: flex; flex-direction: column; gap: 5px; }
@@ -66,11 +65,7 @@ $user = [
         .matrix-header { font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; padding-bottom: 5px; border-bottom: 2px solid var(--border-color); margin-bottom: 5px; }
         .foco-title { font-weight: 700; color: var(--text-main); font-size: 0.8rem; padding-right: 10px; }
         
-        .route-node {
-            display: flex; align-items: center; justify-content: center; width: 100%; padding: 6px 8px; 
-            background: var(--bg-base); border: 1px solid var(--border-color); border-radius: 6px;
-            cursor: pointer; transition: 0.2s; font-weight: 600; font-size: 0.75rem; color: var(--text-muted);
-        }
+        .route-node { display: flex; align-items: center; justify-content: center; width: 100%; padding: 6px 8px; background: var(--bg-base); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; transition: 0.2s; font-weight: 600; font-size: 0.75rem; color: var(--text-muted); }
         .route-node:hover { transform: translateY(-1px); border-color: var(--accent); color: var(--accent); }
         
         .route-node.active[data-obj="academico"] { border-color: var(--c-acad); background: var(--c-acad); color: white; }
@@ -99,7 +94,10 @@ $user = [
         .day-header:hover { background: var(--border-color); color: var(--accent); }
         
         .day-body { padding: 6px; display: flex; flex-direction: column; gap: 4px; min-height: 80px; }
-        .grid-day .day-body { min-height: auto; padding: 15px; gap: 10px; }
+        
+        /* Ajustes específicos para la Vista de Día (Línea de tiempo) */
+        .grid-day .day-body { min-height: auto; padding: 20px; gap: 12px; background: #FFFFFF; }
+        .grid-day .day-header { background: var(--bg-base); font-size: 0.9rem; text-align: left; border-bottom: 2px solid var(--border-color); }
 
         .habit-block {
             padding: 5px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; color: white; 
@@ -107,7 +105,25 @@ $user = [
             display: flex; align-items: flex-start; gap: 5px;
         }
         .habit-block:hover { transform: translateY(-1px); box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .grid-day .habit-block { font-size: 0.85rem; padding: 10px; border-radius: 6px; }
+        
+        /* Diseño de bloque en Vista Día */
+        .grid-day .habit-block { 
+            font-size: 0.9rem; 
+            padding: 12px 15px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            align-items: center;
+        }
+        .grid-day .habit-time {
+            background: rgba(0,0,0,0.15);
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-right: 10px;
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 1px;
+            font-size: 0.8rem;
+        }
+
         .month-minimal .habit-block { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.65rem; padding: 4px; }
 
         /* MODAL DE DESCRIPCIÓN */
@@ -118,7 +134,7 @@ $user = [
         .close-btn { position: absolute; top: 15px; right: 15px; font-size: 1.5rem; cursor: pointer; border: none; background: none; color: var(--text-muted); line-height: 1; }
         .close-btn:hover { color: var(--text-main); }
         
-        .modal-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; color: white; margin-bottom: 15px; }
+        .modal-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; color: white; margin-bottom: 15px; font-family: 'Orbitron', sans-serif;}
         .modal-title { font-size: 1.2rem; font-weight: 800; color: var(--text-main); margin-bottom: 10px; }
         .modal-desc { font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; white-space: pre-wrap; }
     </style>
@@ -139,7 +155,7 @@ $user = [
             <div class="header-dash">
                 <div>
                     <h1>Planificador de 24 Rutas</h1>
-                    <p>Mapa de evolución de hábitos agnóstico a la fecha real.</p>
+                    <p>Mapa de evolución de hábitos con orden cronológico biológico.</p>
                 </div>
             </div>
 
@@ -158,19 +174,19 @@ $user = [
                 <div class="planner-header">
                     <div class="month-title" id="calendarTitle">Selecciona una ruta</div>
                     <div class="view-controls">
-                        <button class="btn-view active" onclick="setViewMode('month')" id="btn-month">Mes</button>
+                        <button class="btn-view" onclick="setViewMode('month')" id="btn-month">Mes</button>
                         <button class="btn-view" onclick="setViewMode('week')" id="btn-week">Semana</button>
-                        <button class="btn-view" onclick="setViewMode('day')" id="btn-day">Día</button>
+                        <button class="btn-view active" onclick="setViewMode('day')" id="btn-day">Día</button>
                     </div>
                 </div>
                 
-                <div id="subnavControls" style="display:none; justify-content:space-between; margin-bottom: 15px;">
+                <div id="subnavControls" style="display:flex; justify-content:space-between; margin-bottom: 15px;">
                     <button class="btn-view" onclick="navigate(-1)">⬅ Anterior</button>
                     <span id="subnavLabel" style="font-weight: 700; color: var(--text-main); font-size: 0.9rem; align-self: center;"></span>
                     <button class="btn-view" onclick="navigate(1)">Siguiente ➡</button>
                 </div>
 
-                <div class="dynamic-grid grid-month month-minimal" id="calendarGrid"></div>
+                <div class="dynamic-grid grid-day" id="calendarGrid"></div>
             </div>
         </main>
     </div>
@@ -187,7 +203,7 @@ $user = [
 
     <script>
         // ---------------------------------------------------------
-        // 1. DATA CIENTÍFICA EMBEBIDA (Focos Específicos)
+        // 1. DATA CIENTÍFICA EMBEBIDA
         // ---------------------------------------------------------
         const LibreriaRutas = {
             laboral: {
@@ -203,7 +219,7 @@ $user = [
                 1: [{ time: "15:30", title: "Hidratación + Activación Mínima", desc: "Beber 500ml de agua al despertar y hacer 10 sentadillas. Rompe la inercia del sueño.", ciencia: "Habit Stacking (James Clear): Anclar un micro-hábito a una acción biológica inevitable garantiza retención." }],
                 2: [{ time: "18:00", title: "Exposición al Esfuerzo (45m)", desc: "Entrenamiento 3 veces por semana. El objetivo es presentarse, incluso si el rendimiento es bajo.", ciencia: "Neuroplasticidad Inversa: Forzar al cuerpo a la fricción reconstruye receptores de dopamina, elevando la tolerancia al aburrimiento." }],
                 3: [
-                    { time: "07:30", title: "Higiene Circadiana", desc: "Bloqueo de luz al terminar el turno. Vital para dormir de día y evitar fatiga.", ciencia: "Biología Circadiana (Huberman Lab): La irregularidad lumínica destruye la producción de melatonina y cortisol." },
+                    { time: "08:15", title: "Higiene Circadiana", desc: "Bloqueo de luz al terminar el turno. Vital para dormir de día y evitar fatiga.", ciencia: "Biología Circadiana (Huberman Lab): La irregularidad lumínica destruye la producción de melatonina y cortisol." },
                     { time: "17:00", title: "Entrenamiento Estructurado", desc: "Rutina periodizada con registro de cargas.", ciencia: "Sobrecarga Progresiva: El estímulo debe superar la capacidad actual matemática y mediblemente." }
                 ],
                 4: [{ time: "20:00", title: "Meal Prep y Biométrica", desc: "Planificación nutricional semanal y seguimiento del sueño.", ciencia: "Psiquiatría Nutricional: El intestino produce el 90% de la serotonina. Sistematizar elimina fatiga de decisión." }]
@@ -244,13 +260,12 @@ $user = [
         ];
 
         let currentRoute = { objId: 'laboral', level: 1, name: 'Competencia Laboral' };
-        let currentView = 'month'; 
+        let currentView = 'day'; 
         let currentPointer = 1; 
 
         function renderMatrix() {
             const container = document.getElementById('matrixBody');
             let html = '';
-            
             objetivos.forEach(obj => {
                 html += `
                     <div class="foco-title">${obj.name}</div>
@@ -264,15 +279,15 @@ $user = [
         }
 
         // ---------------------------------------------------------
-        // 2. LÓGICA DE FUSIÓN: CHASIS BASE + FOCO ESPECÍFICO
+        // 2. LÓGICA DE FUSIÓN + NIGHT SHIFT OFFSET ALGORITHM
         // ---------------------------------------------------------
         function getRoutineData(objId, level, dayNum) {
             let blocks = [];
             const isWeekend = (dayNum % 7 === 6 || dayNum % 7 === 0);
             const focusColor = objetivos.find(o => o.id === objId).color;
-            const baseColor = "var(--text-muted)"; // Color neutral para el chasis
+            const baseColor = "#718096"; // Gris plomo para el chasis
             
-            // --- EL CHASIS BASE (Ejemplo: Horario Nocturno 02:00 a 08:00) ---
+            // --- EL CHASIS BASE (Turno Operativo de Madrugada) ---
             if (!isWeekend) {
                 blocks.push({ time: "02:00", title: "Turno Operativo de Soporte", desc: "Bloque de trabajo fijo.", color: baseColor });
                 blocks.push({ time: "08:00", title: "Bloque de Sueño Principal", desc: "7 a 8 horas de descanso profundo post-turno.", color: baseColor });
@@ -290,41 +305,42 @@ $user = [
                 const rutinasNivel = LibreriaRutas[objId][level];
 
                 rutinasNivel.forEach(rutina => {
-                    // Evitar inyectar rutinas de foco si es un día de descanso programado
                     if (level === 2 && isWeekend && objId !== 'creativo' && objId !== 'financiero' && objId !== 'salud') {
                         return;
                     }
-                    
                     let descFull = rutina.desc;
                     if (rutina.ciencia) descFull += `\n\n🔬 Fundamento Científico:\n${rutina.ciencia}`;
 
-                    // Si la rutina choca con un horario base, sobreescribe el color para resaltar la prioridad
                     const existingBlockIndex = blocks.findIndex(b => b.time === rutina.time);
                     if (existingBlockIndex !== -1 && objId === 'laboral' && (rutina.time === '01:45' || rutina.time === '02:00')) {
                         blocks[existingBlockIndex].title = rutina.title;
                         blocks[existingBlockIndex].desc = descFull;
                         blocks[existingBlockIndex].color = focusColor;
                     } else {
-                        blocks.push({
-                            time: rutina.time,
-                            title: rutina.title,
-                            desc: descFull,
-                            color: focusColor
-                        });
+                        blocks.push({ time: rutina.time, title: rutina.title, desc: descFull, color: focusColor });
                     }
                 });
             }
 
-            // --- ALGORITMO DE ORDENAMIENTO CRONOLÓGICO ---
+            // --- ORDENAMIENTO (NIGHT SHIFT OFFSET) ---
+            // Como tu día empieza a las 15:30 y termina a las 08:00 del día siguiente, 
+            // el algoritmo trata las horas de 12:00 PM en adelante como el inicio, 
+            // y las horas de 00:00 a 11:59 AM como el final del ciclo biológico.
             blocks.sort((a, b) => {
-                // Manejo de valores no-numéricos ("ANY", "AM", "PM", "DOM", etc.)
                 const specialTimes = ["ANY", "ALL", "AM", "PM", "DOM", "FINDE", "PAGO"];
                 if (specialTimes.includes(a.time) && specialTimes.includes(b.time)) return 0;
-                if (specialTimes.includes(a.time)) return -1; // Los especiales van arriba
+                if (specialTimes.includes(a.time)) return -1; 
                 if (specialTimes.includes(b.time)) return 1;
                 
-                // Ordenar por hora (formato HH:MM)
-                return a.time.localeCompare(b.time);
+                let getWeight = (t) => {
+                    let parts = t.split(':');
+                    let h = parseInt(parts[0], 10);
+                    let m = parseInt(parts[1], 10);
+                    // Las 12 PM o más pesan normal. Las horas de madrugada (0 a 11) se envían al "final" sumándoles 24h.
+                    return h >= 12 ? (h * 60 + m) : ((h + 24) * 60 + m); 
+                };
+
+                return getWeight(a.time) - getWeight(b.time);
             });
 
             return blocks;
@@ -399,12 +415,20 @@ $user = [
                     <div class="day-body">`;
                 
                 routines.forEach((r) => {
-                    dayHtml += `
-                        <div class="habit-block" style="background-color: ${r.color};" 
-                             onclick="openModal('${r.title}', '${r.time}', \`${r.desc}\`, '${r.color}')">
+                    // Diseño condicional para la vista de Día
+                    if(currentView === 'day') {
+                        dayHtml += `
+                        <div class="habit-block" style="background-color: ${r.color};" onclick="openModal('${r.title}', '${r.time}', \`${r.desc}\`, '${r.color}')">
+                            <span class="habit-time">${r.time}</span>
+                            <span>${r.title}</span>
+                        </div>`;
+                    } else {
+                        dayHtml += `
+                        <div class="habit-block" style="background-color: ${r.color};" onclick="openModal('${r.title}', '${r.time}', \`${r.desc}\`, '${r.color}')">
                             <span style="opacity:0.8;">${r.time}</span>
                             <span>${r.title}</span>
                         </div>`;
+                    }
                 });
                 
                 dayHtml += `</div></div>`;
@@ -428,7 +452,7 @@ $user = [
         // INICIALIZAR
         document.addEventListener('DOMContentLoaded', () => {
             renderMatrix();
-            // Fuerza la selección inicial
+            // Selecciona 'Competencia Laboral - Nivel 1' e inicia en vista 'Día' por defecto
             selectRoute('laboral', 1, 'Competencia Laboral');
         });
     </script>
