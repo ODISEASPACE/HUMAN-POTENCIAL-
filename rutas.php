@@ -187,50 +187,50 @@ $user = [
 
     <script>
         // ---------------------------------------------------------
-        // 1. DATA CIENTÍFICA EMBEBIDA (LibreriaRutas)
+        // 1. DATA CIENTÍFICA EMBEBIDA (Focos Específicos)
         // ---------------------------------------------------------
         const LibreriaRutas = {
             laboral: {
-                1: [{ time: "07:50", title: "Desinfección del Entorno", desc: "5 minutos para limpiar el escritorio físico y cerrar pestañas irrelevantes antes de empezar. Reduce la carga cognitiva pasiva.", ciencia: "Teoría de las Ventanas Rotas (Kelling & Wilson): Un entorno caótico induce comportamientos caóticos y micro-distracciones." }],
-                2: [{ time: "08:00", title: "Práctica Aislada (Código)", desc: "30 minutos escribiendo código (ej. PHP, Python) o estudiando documentación, sin saltar de tarea.", ciencia: "Intenciones de Implementación (Gollwitzer): Predefinir el 'cuándo' y 'dónde' aumenta la tasa de ejecución en un 70% frente a la motivación cruda." }],
+                1: [{ time: "01:50", title: "Desinfección del Entorno", desc: "5 minutos para limpiar el escritorio físico y cerrar pestañas irrelevantes antes de empezar. Reduce la carga cognitiva pasiva.", ciencia: "Teoría de las Ventanas Rotas (Kelling & Wilson): Un entorno caótico induce comportamientos caóticos y micro-distracciones." }],
+                2: [{ time: "16:00", title: "Práctica Aislada (Código)", desc: "30 minutos escribiendo código (ej. PHP, Python) o estudiando documentación, sin saltar de tarea.", ciencia: "Intenciones de Implementación (Gollwitzer): Predefinir el 'cuándo' y 'dónde' aumenta la tasa de ejecución en un 70% frente a la motivación cruda." }],
                 3: [
                     { time: "01:45", title: "Triage de Turno / Tickets", desc: "Categorización despiadada de tareas urgentes antes de iniciar un turno de alta exigencia. Cero multitarea.", ciencia: "Teoría de la Carga Cognitiva (Sweller): El cerebro tiene memoria de trabajo limitada; externalizar prioridades evita el colapso mental bajo presión." },
                     { time: "02:00", title: "Bloque Operativo Profundo", desc: "Ejecución continua de responsabilidades laborales utilizando bloques de tiempo ininterrumpidos.", ciencia: "Deep Work (Cal Newport): La capacidad de concentrarse sin distracciones empuja las habilidades cognitivas a su límite, generando valor real." }
                 ],
-                4: [{ time: "09:00", title: "Desarrollo de Arquitectura Core", desc: "Construcción y despliegue de módulos complejos (bases de datos, integraciones). Posicionamiento para liderazgo.", ciencia: "Estado de Flow (Csikszentmihalyi): Operar en el límite exacto entre el desafío técnico y la habilidad actual, anulando la noción del tiempo." }]
+                4: [{ time: "17:00", title: "Desarrollo de Arquitectura Core", desc: "Construcción y despliegue de módulos complejos (bases de datos, integraciones). Posicionamiento para liderazgo.", ciencia: "Estado de Flow (Csikszentmihalyi): Operar en el límite exacto entre el desafío técnico y la habilidad actual, anulando la noción del tiempo." }]
             },
             salud: {
-                1: [{ time: "AM", title: "Hidratación + Activación Mínima", desc: "Beber 500ml de agua al despertar y hacer 10 sentadillas. Rompe la inercia del sueño.", ciencia: "Habit Stacking (James Clear): Anclar un micro-hábito a una acción biológica inevitable garantiza retención." }],
+                1: [{ time: "15:30", title: "Hidratación + Activación Mínima", desc: "Beber 500ml de agua al despertar y hacer 10 sentadillas. Rompe la inercia del sueño.", ciencia: "Habit Stacking (James Clear): Anclar un micro-hábito a una acción biológica inevitable garantiza retención." }],
                 2: [{ time: "18:00", title: "Exposición al Esfuerzo (45m)", desc: "Entrenamiento 3 veces por semana. El objetivo es presentarse, incluso si el rendimiento es bajo.", ciencia: "Neuroplasticidad Inversa: Forzar al cuerpo a la fricción reconstruye receptores de dopamina, elevando la tolerancia al aburrimiento." }],
                 3: [
-                    { time: "22:00", title: "Higiene Circadiana", desc: "Bloqueo de luz azul. Vital si se opera en turnos nocturnos para evitar fatiga.", ciencia: "Biología Circadiana (Huberman Lab): La irregularidad lumínica destruye la producción de melatonina y cortisol." },
+                    { time: "07:30", title: "Higiene Circadiana", desc: "Bloqueo de luz al terminar el turno. Vital para dormir de día y evitar fatiga.", ciencia: "Biología Circadiana (Huberman Lab): La irregularidad lumínica destruye la producción de melatonina y cortisol." },
                     { time: "17:00", title: "Entrenamiento Estructurado", desc: "Rutina periodizada con registro de cargas.", ciencia: "Sobrecarga Progresiva: El estímulo debe superar la capacidad actual matemática y mediblemente." }
                 ],
-                4: [{ time: "DOM", title: "Meal Prep y Biométrica", desc: "Planificación nutricional semanal y seguimiento del sueño.", ciencia: "Psiquiatría Nutricional: El intestino produce el 90% de la serotonina. Sistematizar elimina fatiga de decisión." }]
+                4: [{ time: "20:00", title: "Meal Prep y Biométrica", desc: "Planificación nutricional semanal y seguimiento del sueño.", ciencia: "Psiquiatría Nutricional: El intestino produce el 90% de la serotonina. Sistematizar elimina fatiga de decisión." }]
             },
             academico: {
-                1: [{ time: "PM", title: "Contacto Térmico (10m)", desc: "Leer apuntes recientes 10 minutos. No memorizar, solo exponer al cerebro.", ciencia: "Curva del Olvido (Ebbinghaus): Repasar en las primeras 24h aplana drásticamente la pérdida de memoria." }],
-                2: [{ time: "15:00", title: "Inmersión Limitada", desc: "45m de estudio enfocado. Cero teléfono.", ciencia: "Modos de Pensamiento (Oakley): Alternar modo 'Enfocado' y 'Difuso' consolida redes neuronales." }],
-                3: [{ time: "14:00", title: "Ataque a Materias Filtro", desc: "2 horas aisladas exclusivas para materias complejas.", ciencia: "Práctica Deliberada (Ericsson): El aprendizaje real ocurre al enfrentar problemas ligeramente por encima de la competencia actual." }],
-                4: [{ time: "ANY", title: "Ingeniería Inversa del Sílabo", desc: "Estudio adelantado al currículo. Base de conocimiento interconectada.", ciencia: "Técnica Feynman: La comprensión suprema se alcanza al desensamblar un concepto complejo en términos simples." }]
+                1: [{ time: "19:00", title: "Contacto Térmico (10m)", desc: "Leer apuntes recientes 10 minutos. No memorizar, solo exponer al cerebro.", ciencia: "Curva del Olvido (Ebbinghaus): Repasar en las primeras 24h aplana drásticamente la pérdida de memoria." }],
+                2: [{ time: "16:00", title: "Inmersión Limitada", desc: "45m de estudio enfocado. Cero teléfono.", ciencia: "Modos de Pensamiento (Oakley): Alternar modo 'Enfocado' y 'Difuso' consolida redes neuronales." }],
+                3: [{ time: "16:00", title: "Ataque a Materias Filtro", desc: "2 horas aisladas exclusivas para materias complejas.", ciencia: "Práctica Deliberada (Ericsson): El aprendizaje real ocurre al enfrentar problemas ligeramente por encima de la competencia actual." }],
+                4: [{ time: "00:00", title: "Ingeniería Inversa del Sílabo", desc: "Estudio adelantado al currículo. Base de conocimiento interconectada.", ciencia: "Técnica Feynman: La comprensión suprema se alcanza al desensamblar un concepto complejo en términos simples." }]
             },
             financiero: {
-                1: [{ time: "ANY", title: "Registro de Impacto Único", desc: "Registrar 1 solo gasto del día.", ciencia: "Micro-hábitos (Fogg): Bajar la motivación requerida asegura la ejecución." }],
-                2: [{ time: "DOM", title: "Auditoría de Flujo (15m)", desc: "Revisar gastos contra presupuesto rígido.", ciencia: "Ley de Parkinson: Presupuestar restringe la expansión artificial de gastos." }],
-                3: [{ time: "PAGO", title: "Automatización de Escudo", desc: "Débito automático de ahorros antes de verlos.", ciencia: "Economía Conductual (Thaler): La 'arquitectura de decisiones' automatizada vence al sesgo del presente." }],
-                4: [{ time: "FINDE", title: "Construcción de Asimetría", desc: "Desarrollo de fuentes de ingresos escalables (e-commerce).", ciencia: "Efecto Compuesto: Sistemas independientes del tiempo generan crecimiento exponencial." }]
+                1: [{ time: "23:50", title: "Registro de Impacto Único", desc: "Registrar 1 solo gasto del día.", ciencia: "Micro-hábitos (Fogg): Bajar la motivación requerida asegura la ejecución." }],
+                2: [{ time: "18:00", title: "Auditoría de Flujo (15m)", desc: "Revisar gastos contra presupuesto rígido.", ciencia: "Ley de Parkinson: Presupuestar restringe la expansión artificial de gastos." }],
+                3: [{ time: "15:45", title: "Automatización de Escudo", desc: "Débito automático de ahorros antes de verlos.", ciencia: "Economía Conductual (Thaler): La 'arquitectura de decisiones' automatizada vence al sesgo del presente." }],
+                4: [{ time: "19:00", title: "Construcción de Asimetría", desc: "Desarrollo de fuentes de ingresos escalables (e-commerce).", ciencia: "Efecto Compuesto: Sistemas independientes del tiempo generan crecimiento exponencial." }]
             },
             autonomo: {
-                1: [{ time: "ANY", title: "Consumo Pasivo Estratégico", desc: "10m de podcast técnico/inglés en tarea mecánica.", ciencia: "Teoría de la Inmersión (Krashen): Adquisición inconsciente de estructuras mediante exposición de baja presión." }],
-                2: [{ time: "19:00", title: "Replicación de Modelos", desc: "30m siguiendo un tutorial replicando código exacto.", ciencia: "Recuerdo Activo (Active Recall): Recuperar info genera conexiones más fuertes que leer." }],
-                3: [{ time: "20:00", title: "Resolución sin Asistencia", desc: "1h solucionando lógica de programación sin tutoriales.", ciencia: "Dificultad Deseable (Bjork): A mayor esfuerzo para recuperar información, mayor retención a largo plazo." }],
-                4: [{ time: "ANY", title: "Construcción de Sistemas", desc: "Construir aplicaciones desde cero leyendo documentación oficial.", ciencia: "Constructivismo (Piaget): El conocimiento se construye al superar fallos sistémicos." }]
+                1: [{ time: "21:00", title: "Consumo Pasivo Estratégico", desc: "10m de podcast técnico/inglés en tarea mecánica.", ciencia: "Teoría de la Inmersión (Krashen): Adquisición inconsciente de estructuras mediante exposición de baja presión." }],
+                2: [{ time: "17:00", title: "Replicación de Modelos", desc: "30m siguiendo un tutorial replicando código exacto.", ciencia: "Recuerdo Activo (Active Recall): Recuperar info genera conexiones más fuertes que leer." }],
+                3: [{ time: "17:00", title: "Resolución sin Asistencia", desc: "1h solucionando lógica de programación sin tutoriales.", ciencia: "Dificultad Deseable (Bjork): A mayor esfuerzo para recuperar información, mayor retención a largo plazo." }],
+                4: [{ time: "20:00", title: "Construcción de Sistemas", desc: "Construir aplicaciones desde cero leyendo documentación oficial.", ciencia: "Constructivismo (Piaget): El conocimiento se construye al superar fallos sistémicos." }]
             },
             creativo: {
-                1: [{ time: "PM", title: "Interacción Deliberada", desc: "Mensaje a círculo cercano o 1 partida rápida de juego limitada por tiempo.", ciencia: "Línea Base de Dopamina (Lembke): Limitar estímulos de alta recompensa previene agotamiento de receptores." }],
-                2: [{ time: "FINDE", title: "Gestión de Comunidad / Hobby", desc: "45m ininterrumpidos en proyectos pasionales.", ciencia: "Autodeterminación (Deci & Ryan): Motivación florece con autonomía y competencia." }],
-                3: [{ time: "FINDE", title: "Bloqueo Off-Screen", desc: "Tiempo de calidad innegociable. Teléfono lejos.", ciencia: "Línea Base Social (Coan): Proximidad física con vínculos cercanos reduce el estrés acumulado (carga alostática)." }],
-                4: [{ time: "ANY", title: "Producción de Alto Estándar", desc: "Desarrollo de proyectos visuales/creativos.", ciencia: "Aprendizaje Basado en Proyectos (PBL): Integrar disciplinas complejas maximiza retención de habilidades." }]
+                1: [{ time: "22:00", title: "Interacción Deliberada", desc: "Mensaje a círculo cercano o 1 partida rápida de juego limitada por tiempo.", ciencia: "Línea Base de Dopamina (Lembke): Limitar estímulos de alta recompensa previene agotamiento de receptores." }],
+                2: [{ time: "19:00", title: "Gestión de Comunidad / Hobby", desc: "45m ininterrumpidos en proyectos pasionales.", ciencia: "Autodeterminación (Deci & Ryan): Motivación florece con autonomía y competencia." }],
+                3: [{ time: "19:00", title: "Bloqueo Off-Screen", desc: "Tiempo de calidad innegociable. Teléfono lejos.", ciencia: "Línea Base Social (Coan): Proximidad física con vínculos cercanos reduce el estrés acumulado (carga alostática)." }],
+                4: [{ time: "16:00", title: "Producción de Alto Estándar", desc: "Desarrollo de proyectos visuales/creativos.", ciencia: "Aprendizaje Basado en Proyectos (PBL): Integrar disciplinas complejas maximiza retención de habilidades." }]
             }
         };
 
@@ -247,7 +247,6 @@ $user = [
         let currentView = 'month'; 
         let currentPointer = 1; 
 
-        // RENDER MATRIZ
         function renderMatrix() {
             const container = document.getElementById('matrixBody');
             let html = '';
@@ -264,44 +263,69 @@ $user = [
             container.innerHTML = html;
         }
 
-        // LÓGICA DE DATOS
+        // ---------------------------------------------------------
+        // 2. LÓGICA DE FUSIÓN: CHASIS BASE + FOCO ESPECÍFICO
+        // ---------------------------------------------------------
         function getRoutineData(objId, level, dayNum) {
             let blocks = [];
-            const color = objetivos.find(o => o.id === objId).color;
-
-            if (!LibreriaRutas[objId] || !LibreriaRutas[objId][level]) {
-                return []; 
-            }
-
-            const rutinasNivel = LibreriaRutas[objId][level];
             const isWeekend = (dayNum % 7 === 6 || dayNum % 7 === 0);
+            const focusColor = objetivos.find(o => o.id === objId).color;
+            const baseColor = "var(--text-muted)"; // Color neutral para el chasis
+            
+            // --- EL CHASIS BASE (Ejemplo: Horario Nocturno 02:00 a 08:00) ---
+            if (!isWeekend) {
+                blocks.push({ time: "02:00", title: "Turno Operativo de Soporte", desc: "Bloque de trabajo fijo.", color: baseColor });
+                blocks.push({ time: "08:00", title: "Bloque de Sueño Principal", desc: "7 a 8 horas de descanso profundo post-turno.", color: baseColor });
+                blocks.push({ time: "15:30", title: "Despertar y Primera Comida", desc: "Reactivación metabólica.", color: baseColor });
+                blocks.push({ time: "21:00", title: "Segunda Comida", desc: "Nutrición y descanso breve.", color: baseColor });
+                blocks.push({ time: "01:00", title: "Tercera Comida / Preparación", desc: "Última comida antes de iniciar el turno laboral.", color: baseColor });
+            } else {
+                blocks.push({ time: "04:00", title: "Bloque de Sueño (Fin de Semana)", desc: "Recuperación de deuda de sueño.", color: baseColor });
+                blocks.push({ time: "12:00", title: "Despertar y Primera Comida", desc: "Ajuste de horario libre.", color: baseColor });
+                blocks.push({ time: "19:00", title: "Segunda Comida", desc: "Nutrición.", color: baseColor });
+            }
 
-            rutinasNivel.forEach(rutina => {
-                // Lógica de descanso opcional (excepto creativo/financiero que suelen hacerse el finde)
-                if (level === 2 && isWeekend && objId !== 'creativo' && objId !== 'financiero' && objId !== 'salud') {
-                    return;
-                }
+            // --- INYECCIÓN DEL FOCO ---
+            if (LibreriaRutas[objId] && LibreriaRutas[objId][level]) {
+                const rutinasNivel = LibreriaRutas[objId][level];
 
-                let descFull = rutina.desc;
-                if (rutina.ciencia) descFull += `\n\n🔬 Fundamento Científico:\n${rutina.ciencia}`;
+                rutinasNivel.forEach(rutina => {
+                    // Evitar inyectar rutinas de foco si es un día de descanso programado
+                    if (level === 2 && isWeekend && objId !== 'creativo' && objId !== 'financiero' && objId !== 'salud') {
+                        return;
+                    }
+                    
+                    let descFull = rutina.desc;
+                    if (rutina.ciencia) descFull += `\n\n🔬 Fundamento Científico:\n${rutina.ciencia}`;
 
-                blocks.push({
-                    time: rutina.time,
-                    title: rutina.title,
-                    desc: descFull,
-                    color: color
-                });
-            });
-
-            // Si está vacío, inyectamos un bloque de descanso automático
-            if (blocks.length === 0) {
-                blocks.push({ 
-                    time: "ALL", 
-                    title: "Recuperación Activa", 
-                    desc: "Día de descanso programado para asimilar el conocimiento y relajar el Sistema Nervioso Central.", 
-                    color: "var(--text-muted)" 
+                    // Si la rutina choca con un horario base, sobreescribe el color para resaltar la prioridad
+                    const existingBlockIndex = blocks.findIndex(b => b.time === rutina.time);
+                    if (existingBlockIndex !== -1 && objId === 'laboral' && (rutina.time === '01:45' || rutina.time === '02:00')) {
+                        blocks[existingBlockIndex].title = rutina.title;
+                        blocks[existingBlockIndex].desc = descFull;
+                        blocks[existingBlockIndex].color = focusColor;
+                    } else {
+                        blocks.push({
+                            time: rutina.time,
+                            title: rutina.title,
+                            desc: descFull,
+                            color: focusColor
+                        });
+                    }
                 });
             }
+
+            // --- ALGORITMO DE ORDENAMIENTO CRONOLÓGICO ---
+            blocks.sort((a, b) => {
+                // Manejo de valores no-numéricos ("ANY", "AM", "PM", "DOM", etc.)
+                const specialTimes = ["ANY", "ALL", "AM", "PM", "DOM", "FINDE", "PAGO"];
+                if (specialTimes.includes(a.time) && specialTimes.includes(b.time)) return 0;
+                if (specialTimes.includes(a.time)) return -1; // Los especiales van arriba
+                if (specialTimes.includes(b.time)) return 1;
+                
+                // Ordenar por hora (formato HH:MM)
+                return a.time.localeCompare(b.time);
+            });
 
             return blocks;
         }
