@@ -122,8 +122,11 @@
                 };
 
 
-                // MODO FANTASMA BLINDADO
-                if (!userId || userId === "null" || userId === "undefined" || userId.trim() === "") {
+                // Limpiamos la variable de cualquier comilla doble, simple o espacios invisibles
+                const cleanUserId = userId ? String(userId).replace(/['"]/g, '').trim().toLowerCase() : "";
+
+                // MODO FANTASMA ULTRA BLINDADO
+                if (!cleanUserId || cleanUserId === "null" || cleanUserId === "undefined" || cleanUserId === "") {
                     localStorage.setItem('pending_test', JSON.stringify(payload));
                     window.location.href = 'selection_goals.html';
                     return; 
