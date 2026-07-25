@@ -256,7 +256,7 @@
         // en backend.py (@app.post("/api/v1/auth/login"), etc.)
         // Backend en el puerto 8002
         // ====================================================================
-        const API_BASE_URL = "http://52.87.151.219:8002/api/v1";
+        const API_BASE_URL = "http://52.87.151.219:8002/api/v1/auth/login";
 
         // VERIFICAR SESIÓN AL CARGAR LA PÁGINA
         window.addEventListener('DOMContentLoaded', () => {
