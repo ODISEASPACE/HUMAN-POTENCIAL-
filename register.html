@@ -59,8 +59,8 @@
     </main>
 
     <script>
-        // Variable Global protegida
-        window.API_URL = "http://" + (window.location.hostname || "127.0.0.1") + ":8000/api";
+        // Variable Global protegida dinámica
+        window.API_URL = window.location.origin + "/api";
 
         document.getElementById('registerForm').addEventListener('submit', async function(e) {
             e.preventDefault(); 
@@ -76,7 +76,7 @@
             };
 
             try {
-                // Endpoint correcto: /register
+                // Endpoint dinámico
                 const response = await fetch(window.API_URL + '/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
