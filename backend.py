@@ -6,6 +6,9 @@ from sqlalchemy.orm import sessionmaker, Session
 from dotenv import load_dotenv
 from pydantic import BaseModel
 from passlib.context import CryptContext
+from fastapi import FastAPI, HTTPException, Depends, Header
+import secrets
+from datetime import datetime, timedelta, timezone
 
 # 1. Carga estricta de variables de entorno
 load_dotenv()
@@ -126,13 +129,39 @@ def login_user(user: UserLogin, db: Session = Depends(get_db)):
         WHERE u.email = :email AND u.activo = true
     """)
     db_user = db.execute(query, {"email": user.email}).fetchone()
-
     if not db_user or not verify_password(user.password, db_user.password_hash):
         raise HTTPException(status_code=401, detail="Credenciales de acceso inválidas")
+
+    token = secrets.token_hex(32)
+    expira = datetime.now(timezone.utc) + timedelta(hours=8)
+    db.execute(text("""
+        INSERT INTO sesiones (usuario_id, token_sesion, expira_en)
+        VALUES (:usuario_id, :token, :expira)
+    """), {"usuario_id": db_user.id, "token": token, "expira": expira})
+    db.commit()
 
     return {
         "status": "success",
         "user_id": db_user.id,
         "nombre": db_user.nombre_completo,
-        "rol": db_user.rol_nombre 
+        "rol": db_user.rol_nombre,
+        "token": token
     }
+@app.get("/api/v1/auth/verify")
+def verify_session(authorization: str = Header(None), db: Session = Depends(get_db)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Falta el token de sesión")
+    token = authorization.split(" ", 1)[1]
+
+    query = text("""
+        SELECT u.id, u.nombre_completo, r.nombre as rol_nombre, s.expira_en
+        FROM sesiones s
+        JOIN usuarios u ON s.usuario_id = u.id
+        JOIN roles r ON u.rol_id = r.id
+        WHERE s.token_sesion = :token
+    """)
+    session = db.execute(query, {"token": token}).fetchone()
+    if not session or session.expira_en < datetime.now(timezone.utc):
+        raise HTTPException(status_code=401, detail="Sesión inválida o expirada")
+
+    return {"user_id": session.id, "nombre": session.nombre_completo, "rol": session.rol_nombre}

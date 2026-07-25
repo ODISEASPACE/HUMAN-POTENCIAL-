@@ -1,3 +1,7 @@
+<?php
+require_once __DIR__ . '/../auth_guard.php';
+$usuario = verificar_sesion(['Administrador', 'Desarrollador']);
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>

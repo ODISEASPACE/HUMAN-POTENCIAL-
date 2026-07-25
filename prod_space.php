@@ -252,10 +252,11 @@
         const sessionBtn = document.getElementById('sessionStatusBtn');
 
         // ====================================================================
-        // AQUÍ ESTÁ LA MAGIA: Añadimos "/api/v1" para que coincida exactamente
-        // con los endpoints de tu nuevo y unificado backend.py
+        // API_BASE_URL incluye /api/v1 porque así están montadas las rutas
+        // en backend.py (@app.post("/api/v1/auth/login"), etc.)
+        // Backend en el puerto 8002
         // ====================================================================
-        const API_BASE_URL = "http://52.87.151.219:8002"; // Quita el /api/v1
+        const API_BASE_URL = "http://52.87.151.219:8002/api/v1";
 
         // VERIFICAR SESIÓN AL CARGAR LA PÁGINA
         window.addEventListener('DOMContentLoaded', () => {
@@ -306,7 +307,7 @@
             const password = document.getElementById('loginPassword').value;
 
             try {
-                // Al hacer esto, la URL final será: http://52.87.151.219:8000/api/v1/auth/login
+                // Al hacer esto, la URL final será: http://52.87.151.219:8002/api/v1/auth/login
                 const response = await fetch(`${API_BASE_URL}/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -320,6 +321,10 @@
                     
                     // Almacenar temporalmente los datos del usuario logueado en la sesión web
                     sessionStorage.setItem('sessionUser', JSON.stringify(data));
+
+                    // Cookie con el token de sesión: la necesitan admin.php, developer.php y user.php
+                    // para validar la sesión del lado del servidor (PHP) al cargar cada página
+                    document.cookie = `session_token=${data.token}; path=/; max-age=28800`;
                     
                     // Actualizar UI inmediatamente
                     sessionBtn.textContent = `Usuario: ${data.nombre}`;
@@ -343,7 +348,7 @@
                 }
             } catch (error) {
                 console.error("Error de red detallado:", error);
-                alert("Imposible establecer comunicación con el Core API (FastAPI). Verifica que esté encendido y el puerto 8000 esté abierto en AWS.");
+                alert("Imposible establecer comunicación con el Core API (FastAPI). Verifica que esté encendido y el puerto 8002 esté abierto en AWS.");
             }
         });
 
@@ -358,7 +363,7 @@
             const password = document.getElementById('regPassword').value;
 
             try {
-                // Al hacer esto, la URL final será: http://52.87.151.219:8000/api/v1/auth/register
+                // Al hacer esto, la URL final será: http://52.87.151.219:8002/api/v1/auth/register
                 const response = await fetch(`${API_BASE_URL}/auth/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },

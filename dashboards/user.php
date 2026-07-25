@@ -1,3 +1,7 @@
+<?php
+require_once __DIR__ . '/../auth_guard.php';
+$usuario = verificar_sesion(['Usuario_Estandar', 'Administrador', 'Desarrollador']);
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -84,6 +88,7 @@
             border: 1px solid #FC8181;
             border-radius: 8px;
             transition: 0.3s;
+            cursor: pointer;
         }
         .logout-btn:hover { background: #FFF5F5; }
 
@@ -186,9 +191,9 @@
 
     <nav>
         <div class="user-profile">
-            <div class="avatar">U</div>
-            <h3 id="display-name">Usuario Estándar</h3>
-            <span id="display-email">usuario@aph.os</span>
+            <div class="avatar"><?php echo htmlspecialchars(strtoupper(substr($usuario['nombre'], 0, 1))); ?></div>
+            <h3 id="display-name"><?php echo htmlspecialchars($usuario['nombre']); ?></h3>
+            <span id="display-role"><?php echo htmlspecialchars($usuario['rol']); ?></span>
         </div>
         
         <div class="nav-links">
@@ -198,7 +203,7 @@
             <a href="#" class="nav-link">⚙️ Configuración</a>
         </div>
 
-        <a href="login.html" class="logout-btn">Cerrar Sesión</a>
+        <a href="#" onclick="cerrarSesion(); return false;" class="logout-btn">Cerrar Sesión</a>
     </nav>
 
     <main>
@@ -262,9 +267,15 @@
         // En un entorno real, estos datos vendrían del backend al renderizar la vista
         // o mediante una petición fetch() a tu API.
         document.addEventListener('DOMContentLoaded', () => {
-            console.log("Dashboard inicializado. Esperando datos reales de la BD.");
-            // Aquí iría la lógica para validar el token de sesión.
+            console.log("Dashboard inicializado.");
         });
+
+        // Cierra sesión: borra la cookie de sesión y el estado local, y vuelve al login
+        function cerrarSesion() {
+            document.cookie = 'session_token=; path=/; max-age=0';
+            sessionStorage.removeItem('sessionUser');
+            window.location.href = '/prod_space.php';
+        }
     </script>
 </body>
 </html>

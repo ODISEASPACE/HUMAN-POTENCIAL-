@@ -1,9 +1,3 @@
-from fastapi import FastAPI, Depends
-from fastapi.middleware.cors import CORSMiddleware # IMPORTACIÓN CRÍTICA AÑADIDA
-from fastapi.responses import RedirectResponse
-from sqlalchemy import create_engine, text, Column, Integer, String
-from sqlalchemy.orm import declarative_base, sessionmaker, Session
-from sqlalchemy.exc import OperationalError
 
 # 1. Configuración de la Base de Datos
 DATABASE_URL = "postgresql://postgres:Daniel_2419@aph-database.cy78m00i65y5.us-east-1.rds.amazonaws.com:5432/postgres"
@@ -91,15 +85,3 @@ def get_modulos(db: Session = Depends(get_db)):
         modulos = db.query(Modulo).all() # Volvemos a leer
 
     return modulos
-from fastapi.middleware.cors import CORSMiddleware
-
-app = FastAPI()
-
-# Configuración necesaria para permitir conexiones desde tu Canvas
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"], # Permitir todos los orígenes (para desarrollo)
-    allow_credentials=True,
-    allow_methods=["*"], # Permitir todos los métodos (GET, POST, etc.)
-    allow_headers=["*"], # Permitir todos los encabezados
-)
