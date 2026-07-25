@@ -121,12 +121,15 @@
                     archetype: assignedArchetype
                 };
 
-                // MODO FANTASMA
-                if (!userId) {
+
+                // MODO FANTASMA BLINDADO
+                if (!userId || userId === "null" || userId === "undefined" || userId.trim() === "") {
                     localStorage.setItem('pending_test', JSON.stringify(payload));
                     window.location.href = 'selection_goals.html';
                     return; 
                 }
+
+
 
                 try {
                     const response = await fetch(window.API_URL + '/test-voc/' + userId, {
