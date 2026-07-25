@@ -13,11 +13,10 @@ from datetime import datetime, timedelta, timezone
 # 1. Carga estricta de variables de entorno
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
-
-# Si el archivo .env falla, forzamos la URL que ya sabemos que funciona
 if not DATABASE_URL:
-    DATABASE_URL = "postgresql://produccion:Limitless20xx@aph-database.cy78m00i65y5.us-east-1.rds.amazonaws.com:5432/postgres"
+    DATABASE_URL="postgresql://postgres:Daniel_2419@aph-database.cy78m00i65y5.us-east-1.rds.amazonaws.com:5432/postgres?sslmode=require"
 
+# 2. Configuración del Motor de Base de Datos (SQLAlchemy)
 # 2. Configuración del Motor de Base de Datos (SQLAlchemy)
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
