@@ -79,13 +79,27 @@
         window.API_URL = window.location.origin + "/api";
 
         document.getElementById('btnSubmitFinal').onclick = async () => {
+            // --- NUEVO: VALIDACIÓN OBLIGATORIA DE LAS 3 PREGUNTAS ---
+            const friction = document.getElementById('frictionInput').value.trim();
+            const clarity = document.getElementById('clarityInput').value.trim();
+            const expectation = document.getElementById('expectationInput').value.trim();
+
+            if (!friction || !clarity || !expectation) {
+                alert("Por favor, responde a las 3 preguntas. ¡Tu opinión como Beta Tester es vital para nosotros!");
+                return; // Detiene el código si falta alguna respuesta
+            }
+            // ---------------------------------------------------------
+
             const userId = localStorage.getItem('user_id');
             
+            // Recuperamos lo que el usuario opinó sobre su arquetipo en la pantalla outcomes.html
+            const identityVal = localStorage.getItem('temp_identity_validation') || "Sin respuesta";
+
             const feedbackPayload = {
-                identity_validation: "Dato no capturado en esta pantalla", 
-                friction_detection: document.getElementById('frictionInput').value.trim(),
-                cognitive_clarity: document.getElementById('clarityInput').value.trim(),
-                tracktime_expectation: document.getElementById('expectationInput').value.trim()
+                identity_validation: identityVal, 
+                friction_detection: friction,
+                cognitive_clarity: clarity,
+                tracktime_expectation: expectation
             };
 
             if (!userId) {
@@ -96,7 +110,6 @@
             }
 
             try {
-                // Endpoint correcto para el feedback
                 const response = await fetch(window.API_URL + '/alpha-feedback/' + userId, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -105,6 +118,7 @@
 
                 if (response.ok) {
                     localStorage.removeItem('odisea_voc_responses');
+                    localStorage.removeItem('temp_identity_validation'); // Limpiamos la memoria
                     window.location.href = 'success.html';
                 } else {
                     const errorData = await response.json();

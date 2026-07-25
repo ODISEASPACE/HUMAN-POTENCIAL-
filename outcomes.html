@@ -100,7 +100,20 @@
             document.getElementById('loadingState').classList.add('hidden');
             document.getElementById('outcomeContainer').classList.remove('hidden');
             
+            // 5. Enviar Resultados a Python y Continuar
             document.getElementById('btnNextStep').onclick = async () => {
+                // --- NUEVO: VALIDACIÓN OBLIGATORIA ---
+                const feedbackText = document.getElementById('feedbackInput').value.trim();
+                
+                if (feedbackText === "") {
+                    alert("Por favor, dinos brevemente si estás de acuerdo con tu arquetipo antes de continuar.");
+                    return; // Detiene el código para obligar al usuario a escribir
+                }
+                
+                // Guardamos esta respuesta en la memoria temporal para enviarla en la última pantalla
+                localStorage.setItem('temp_identity_validation', feedbackText);
+                // -------------------------------------
+
                 const userId = localStorage.getItem('user_id');
                 const payload = {
                     score_x_discipline: scoreX,
@@ -108,6 +121,7 @@
                     archetype: assignedArchetype
                 };
 
+                // MODO FANTASMA
                 if (!userId) {
                     localStorage.setItem('pending_test', JSON.stringify(payload));
                     window.location.href = 'selection_goals.html';
@@ -115,7 +129,6 @@
                 }
 
                 try {
-                    // Endpoint correcto: /test-voc/{userId} (Tenías /register)
                     const response = await fetch(window.API_URL + '/test-voc/' + userId, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -123,7 +136,6 @@
                     });
 
                     if (response.ok) {
-                        console.log("¡Test guardado en la base de datos!");
                         window.location.href = 'selection_goals.html';
                     } else {
                         const errorData = await response.json();
