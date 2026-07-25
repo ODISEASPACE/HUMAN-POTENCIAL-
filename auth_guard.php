@@ -21,7 +21,7 @@ function verificar_sesion(array $roles_permitidos) {
         exit;
     }
 
-    $ch = curl_init('http://127.0.0.1:8002/api/v1/auth/verify');
+    $ch = curl_init('http://127.0.0.1:8000/api/v1/auth/verify');
     curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer $token"]);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_TIMEOUT, 5);
