@@ -242,35 +242,37 @@ $user = [
         }
 
         // 2. Base de Datos Mockeada (Con descripciones)
+        // Asegúrate de pegar el objeto LibreriaRutas arriba de esta función
+
         function getRoutineData(objId, level, dayNum) {
             let blocks = [];
-            const isWeekend = (dayNum % 7 === 6 || dayNum % 7 === 0);
             const color = objetivos.find(o => o.id === objId).color;
+            
+            // Obtenemos los bloques correspondientes a la ruta y nivel
+            const rutinasNivel = LibreriaRutas[objId][level];
+            const isWeekend = (dayNum % 7 === 6 || dayNum % 7 === 0);
 
-            if (objId === 'laboral') {
-                if (level === 1) {
-                    blocks.push({ time: '07:50', title: 'Limpieza de Espacio', desc: '5 minutos para organizar el escritorio y cerrar pestañas irrelevantes. Reduce la fricción visual antes de iniciar.', color: color });
-                } 
-                else if (level === 2 && !isWeekend) {
-                    blocks.push({ time: '08:00', title: 'Práctica de Código', desc: '30 minutos enfocados en PHP/Python. Límite de tiempo estricto para forzar la ejecución de ideas.', color: color });
+            rutinasNivel.forEach(rutina => {
+                // Lógica simple para simular días de descanso en niveles intermedios
+                if (level === 2 && isWeekend && objId !== 'creativo' && objId !== 'financiero') {
+                    return; // En nivel 2, algunos focos descansan el fin de semana
                 }
-                else if (level === 3 && !isWeekend) {
-                    blocks.push({ time: '07:30', title: 'Planificación de Turno', desc: 'Categorización de requerimientos urgentes. Eliminación total de la multitarea.', color: '#4A5568' });
-                    blocks.push({ time: '08:00', title: 'Deep Work (Sin distracciones)', desc: 'Bloque de inmersión profunda. Operación enfocada apuntando al propósito central.', color: color });
-                }
-                else if (level === 4) {
-                    if (!isWeekend) {
-                        blocks.push({ time: '08:00', title: 'Desarrollo de Arquitectura Core', desc: 'Sistematización pura. Integración en el estilo de vida soportando fricción alta.', color: color });
-                    }
-                }
-            } else {
-                // Datos genéricos para los demás
-                blocks.push({ time: 'AM', title: `Hábito de ${currentRoute.name}`, desc: `Esta rutina está diseñada para el nivel ${level}. El objetivo es generar constancia progresiva.`, color: color });
-                if(level > 2) blocks.push({ time: 'PM', title: 'Auditoría / Bloque Profundo', desc: 'Revisión del sistema y trabajo ininterrumpido.', color: color });
+
+                blocks.push({
+                    time: rutina.time,
+                    title: rutina.title,
+                    desc: rutina.desc + "\n\n🔬 Fundamento Científico:\n" + rutina.ciencia,
+                    color: color
+                });
+            });
+
+            // Si es un día libre forzado (ej. Domingo en nivel 2 laboral)
+            if (blocks.length === 0) {
+                blocks.push({ time: "ALL", title: "Recuperación Activa", desc: "Día de descanso programado para asimilar el conocimiento y relajar el SNC.", color: "#718096" });
             }
+
             return blocks;
         }
-
         // 3. Manejo de Vistas
         function setViewMode(mode, targetDay = null) {
             currentView = mode;
