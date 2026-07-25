@@ -8,10 +8,10 @@ from sqlalchemy.orm import sessionmaker
 # Si es Linux ('posix'), asume que estás en el servidor EC2 de AWS.
 
 if os.name == 'nt':
-    # Entorno de Desarrollo (Local)
+    # Entorno de Desarrollo (Local en tu compu)
     SQLALCHEMY_DATABASE_URL = "postgresql://postgres:Limitless20xx@localhost:5432/postgres"
 else:
-    # Entorno de Producción (AWS)
+    # Entorno de Producción (AWS en la nube)
     SQLALCHEMY_DATABASE_URL = "postgresql://postgres:Limitless20xx@aph-database.cy78m00i65y5.us-east-1.rds.amazonaws.com:5432/postgres"
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)

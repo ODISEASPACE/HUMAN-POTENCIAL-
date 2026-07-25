@@ -1,3 +1,5 @@
+from sqlalchemy import text
+from sqlalchemy.exc import OperationalError
 import bcrypt
 from fastapi import FastAPI, HTTPException, Depends
 from sqlalchemy.orm import Session
@@ -63,6 +65,25 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
     return new_user
+
+# ==========================================
+# HEALTH CHECK (DIAGNÓSTICO DEL SISTEMA)
+# ==========================================
+@app.get("/api/status")
+def get_status():
+    db_status = "Desconectada"
+    try:
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+            db_status = "Conectada y Sincronizada"
+    except OperationalError:
+        db_status = "Fallo de conexión a la Base de Datos (Revisa el Túnel SSH o AWS)"
+
+    return {
+        "sistema": "Odisea MVP",
+        "estado_servidor": "Óptimo",
+        "estado_base_de_datos": db_status
+    }
 
 # 2. LOGIN
 @app.post("/api/login")
