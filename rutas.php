@@ -21,10 +21,10 @@ $user = [
             --accent: #805AD5; --accent-hover: #6B46C1; --accent-light: rgba(128, 90, 213, 0.1); 
             --border-color: #E2E8F0;
             
-            /* Colores por Foco (Ningún esquema verde, mantienendo consistencia temática) */
+            /* Colores por Foco - Respetando la paleta sin tonos verdes */
             --c-acad: #3182CE; 
             --c-lab: #DD6B20; 
-            --c-fin: #D69E2E; /* Dorado en lugar de verde */
+            --c-fin: #D69E2E; 
             --c-salud: #E53E3E; 
             --c-auto: #805AD5; 
             --c-crea: #D53F8C;
@@ -33,9 +33,7 @@ $user = [
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background-color: var(--bg-base); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
         
-        /* ---------------------------------------------------
-           BLOQUEO MÓVIL LANDSCAPE
-           --------------------------------------------------- */
+        /* BLOQUEO MÓVIL LANDSCAPE */
         #landscape-lock {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: var(--bg-panel); z-index: 9999; flex-direction: column; justify-content: center; align-items: center;
@@ -48,9 +46,7 @@ $user = [
             .app-container { display: none !important; }
         }
 
-        /* ---------------------------------------------------
-           ESTRUCTURA PRINCIPAL Y SIDEBAR
-           --------------------------------------------------- */
+        /* ESTRUCTURA PRINCIPAL Y SIDEBAR */
         .app-container { display: flex; width: 100%; height: 100%; }
         
         nav.sidebar { width: 220px; background: var(--bg-panel); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 25px 15px; flex-shrink: 0; z-index: 20; }
@@ -64,14 +60,10 @@ $user = [
         .header-dash h1 { font-size: 1.6rem; font-weight: 800; margin-bottom: 5px; }
         .header-dash p { color: var(--text-muted); font-size: 0.85rem; }
 
-        /* ---------------------------------------------------
-           MATRIZ DE RUTAS COMPACTA (Solución a saturación de Zoom)
-           --------------------------------------------------- */
+        /* MATRIZ DE RUTAS COMPACTA */
         .matrix-container { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-        
         .matrix-grid { display: grid; grid-template-columns: 1.2fr repeat(4, 1fr); gap: 6px; align-items: center; }
         .matrix-header { font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; padding-bottom: 5px; border-bottom: 2px solid var(--border-color); margin-bottom: 5px; }
-        
         .foco-title { font-weight: 700; color: var(--text-main); font-size: 0.8rem; padding-right: 10px; }
         
         .route-node {
@@ -81,7 +73,6 @@ $user = [
         }
         .route-node:hover { transform: translateY(-1px); border-color: var(--accent); color: var(--accent); }
         
-        /* Estados Activos */
         .route-node.active[data-obj="academico"] { border-color: var(--c-acad); background: var(--c-acad); color: white; }
         .route-node.active[data-obj="laboral"] { border-color: var(--c-lab); background: var(--c-lab); color: white; }
         .route-node.active[data-obj="financiero"] { border-color: var(--c-fin); background: var(--c-fin); color: white; }
@@ -89,11 +80,8 @@ $user = [
         .route-node.active[data-obj="autonomo"] { border-color: var(--c-auto); background: var(--c-auto); color: white; }
         .route-node.active[data-obj="creativo"] { border-color: var(--c-crea); background: var(--c-crea); color: white; }
 
-        /* ---------------------------------------------------
-           CALENDARIO Y CONTROLES DE VISTA
-           --------------------------------------------------- */
+        /* CALENDARIO Y CONTROLES DE VISTA */
         .month-planner { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; flex: 1; display: flex; flex-direction: column; }
-        
         .planner-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color); }
         .month-title { font-size: 1.1rem; font-weight: 800; color: var(--text-main); }
         
@@ -102,13 +90,11 @@ $user = [
         .btn-view.active { background: var(--bg-panel); color: var(--accent); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
 
         .dynamic-grid { display: grid; gap: 8px; flex: 1; align-content: start; }
-        /* Clases inyectadas por JS según la vista */
         .grid-month { grid-template-columns: repeat(7, 1fr); }
         .grid-week { grid-template-columns: repeat(7, 1fr); }
         .grid-day { grid-template-columns: 1fr; max-width: 600px; margin: 0 auto; width: 100%; }
 
         .day-card { background: var(--bg-base); border: 1px solid var(--border-color); border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; transition: 0.2s; }
-        
         .day-header { padding: 6px 10px; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-align: right; border-bottom: 1px solid var(--border-color); cursor: pointer; transition: background 0.2s; }
         .day-header:hover { background: var(--border-color); color: var(--accent); }
         
@@ -122,23 +108,19 @@ $user = [
         }
         .habit-block:hover { transform: translateY(-1px); box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         .grid-day .habit-block { font-size: 0.85rem; padding: 10px; border-radius: 6px; }
-
-        /* Mínimo en vista Mes */
         .month-minimal .habit-block { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.65rem; padding: 4px; }
 
-        /* ---------------------------------------------------
-           MODAL DE DESCRIPCIÓN
-           --------------------------------------------------- */
+        /* MODAL DE DESCRIPCIÓN */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 1000; opacity: 0; transition: opacity 0.2s; }
         .modal-overlay.active { display: flex; opacity: 1; }
-        .modal-content { background: #fff; width: 100%; max-width: 400px; border-radius: 12px; padding: 25px; position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.15); transform: scale(0.95); transition: transform 0.2s; }
+        .modal-content { background: #fff; width: 100%; max-width: 450px; border-radius: 12px; padding: 25px; position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.15); transform: scale(0.95); transition: transform 0.2s; }
         .modal-overlay.active .modal-content { transform: scale(1); }
         .close-btn { position: absolute; top: 15px; right: 15px; font-size: 1.5rem; cursor: pointer; border: none; background: none; color: var(--text-muted); line-height: 1; }
         .close-btn:hover { color: var(--text-main); }
         
         .modal-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; color: white; margin-bottom: 15px; }
         .modal-title { font-size: 1.2rem; font-weight: 800; color: var(--text-main); margin-bottom: 10px; }
-        .modal-desc { font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; }
+        .modal-desc { font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; white-space: pre-wrap; }
     </style>
 </head>
 <body>
@@ -161,7 +143,6 @@ $user = [
                 </div>
             </div>
 
-            <!-- MATRIZ VISUAL COMPACTA -->
             <div class="matrix-container">
                 <div class="matrix-grid">
                     <div class="matrix-header">Foco / Objetivo</div>
@@ -170,12 +151,9 @@ $user = [
                     <div class="matrix-header">Mes 3 (Soldado)</div>
                     <div class="matrix-header">Mes 4 (Ejecutor)</div>
                 </div>
-                <div class="matrix-grid" id="matrixBody">
-                    <!-- Generado por JS -->
-                </div>
+                <div class="matrix-grid" id="matrixBody"></div>
             </div>
 
-            <!-- VISTAS DEL CALENDARIO -->
             <div class="month-planner">
                 <div class="planner-header">
                     <div class="month-title" id="calendarTitle">Selecciona una ruta</div>
@@ -186,31 +164,76 @@ $user = [
                     </div>
                 </div>
                 
-                <!-- Pagidador Semana/Día (Oculto en vista mes) -->
                 <div id="subnavControls" style="display:none; justify-content:space-between; margin-bottom: 15px;">
                     <button class="btn-view" onclick="navigate(-1)">⬅ Anterior</button>
                     <span id="subnavLabel" style="font-weight: 700; color: var(--text-main); font-size: 0.9rem; align-self: center;"></span>
                     <button class="btn-view" onclick="navigate(1)">Siguiente ➡</button>
                 </div>
 
-                <div class="dynamic-grid grid-month month-minimal" id="calendarGrid">
-                    <!-- Cuadrícula generada por JS -->
-                </div>
+                <div class="dynamic-grid grid-month month-minimal" id="calendarGrid"></div>
             </div>
         </main>
     </div>
 
-    <!-- MODAL DE DESCRIPCIÓN -->
+    <!-- MODAL -->
     <div id="habitModal" class="modal-overlay">
         <div class="modal-content">
             <button class="close-btn" onclick="closeModal()">&times;</button>
             <div class="modal-badge" id="modalTime">00:00</div>
             <h2 class="modal-title" id="modalTitle">Título</h2>
-            <p class="modal-desc" id="modalDesc">Descripción de la rutina estructurada.</p>
+            <p class="modal-desc" id="modalDesc">Descripción</p>
         </div>
     </div>
 
     <script>
+        // ---------------------------------------------------------
+        // 1. DATA CIENTÍFICA EMBEBIDA (LibreriaRutas)
+        // ---------------------------------------------------------
+        const LibreriaRutas = {
+            laboral: {
+                1: [{ time: "07:50", title: "Desinfección del Entorno", desc: "5 minutos para limpiar el escritorio físico y cerrar pestañas irrelevantes antes de empezar. Reduce la carga cognitiva pasiva.", ciencia: "Teoría de las Ventanas Rotas (Kelling & Wilson): Un entorno caótico induce comportamientos caóticos y micro-distracciones." }],
+                2: [{ time: "08:00", title: "Práctica Aislada (Código)", desc: "30 minutos escribiendo código (ej. PHP, Python) o estudiando documentación, sin saltar de tarea.", ciencia: "Intenciones de Implementación (Gollwitzer): Predefinir el 'cuándo' y 'dónde' aumenta la tasa de ejecución en un 70% frente a la motivación cruda." }],
+                3: [
+                    { time: "01:45", title: "Triage de Turno / Tickets", desc: "Categorización despiadada de tareas urgentes antes de iniciar un turno de alta exigencia. Cero multitarea.", ciencia: "Teoría de la Carga Cognitiva (Sweller): El cerebro tiene memoria de trabajo limitada; externalizar prioridades evita el colapso mental bajo presión." },
+                    { time: "02:00", title: "Bloque Operativo Profundo", desc: "Ejecución continua de responsabilidades laborales utilizando bloques de tiempo ininterrumpidos.", ciencia: "Deep Work (Cal Newport): La capacidad de concentrarse sin distracciones empuja las habilidades cognitivas a su límite, generando valor real." }
+                ],
+                4: [{ time: "09:00", title: "Desarrollo de Arquitectura Core", desc: "Construcción y despliegue de módulos complejos (bases de datos, integraciones). Posicionamiento para liderazgo.", ciencia: "Estado de Flow (Csikszentmihalyi): Operar en el límite exacto entre el desafío técnico y la habilidad actual, anulando la noción del tiempo." }]
+            },
+            salud: {
+                1: [{ time: "AM", title: "Hidratación + Activación Mínima", desc: "Beber 500ml de agua al despertar y hacer 10 sentadillas. Rompe la inercia del sueño.", ciencia: "Habit Stacking (James Clear): Anclar un micro-hábito a una acción biológica inevitable garantiza retención." }],
+                2: [{ time: "18:00", title: "Exposición al Esfuerzo (45m)", desc: "Entrenamiento 3 veces por semana. El objetivo es presentarse, incluso si el rendimiento es bajo.", ciencia: "Neuroplasticidad Inversa: Forzar al cuerpo a la fricción reconstruye receptores de dopamina, elevando la tolerancia al aburrimiento." }],
+                3: [
+                    { time: "22:00", title: "Higiene Circadiana", desc: "Bloqueo de luz azul. Vital si se opera en turnos nocturnos para evitar fatiga.", ciencia: "Biología Circadiana (Huberman Lab): La irregularidad lumínica destruye la producción de melatonina y cortisol." },
+                    { time: "17:00", title: "Entrenamiento Estructurado", desc: "Rutina periodizada con registro de cargas.", ciencia: "Sobrecarga Progresiva: El estímulo debe superar la capacidad actual matemática y mediblemente." }
+                ],
+                4: [{ time: "DOM", title: "Meal Prep y Biométrica", desc: "Planificación nutricional semanal y seguimiento del sueño.", ciencia: "Psiquiatría Nutricional: El intestino produce el 90% de la serotonina. Sistematizar elimina fatiga de decisión." }]
+            },
+            academico: {
+                1: [{ time: "PM", title: "Contacto Térmico (10m)", desc: "Leer apuntes recientes 10 minutos. No memorizar, solo exponer al cerebro.", ciencia: "Curva del Olvido (Ebbinghaus): Repasar en las primeras 24h aplana drásticamente la pérdida de memoria." }],
+                2: [{ time: "15:00", title: "Inmersión Limitada", desc: "45m de estudio enfocado. Cero teléfono.", ciencia: "Modos de Pensamiento (Oakley): Alternar modo 'Enfocado' y 'Difuso' consolida redes neuronales." }],
+                3: [{ time: "14:00", title: "Ataque a Materias Filtro", desc: "2 horas aisladas exclusivas para materias complejas.", ciencia: "Práctica Deliberada (Ericsson): El aprendizaje real ocurre al enfrentar problemas ligeramente por encima de la competencia actual." }],
+                4: [{ time: "ANY", title: "Ingeniería Inversa del Sílabo", desc: "Estudio adelantado al currículo. Base de conocimiento interconectada.", ciencia: "Técnica Feynman: La comprensión suprema se alcanza al desensamblar un concepto complejo en términos simples." }]
+            },
+            financiero: {
+                1: [{ time: "ANY", title: "Registro de Impacto Único", desc: "Registrar 1 solo gasto del día.", ciencia: "Micro-hábitos (Fogg): Bajar la motivación requerida asegura la ejecución." }],
+                2: [{ time: "DOM", title: "Auditoría de Flujo (15m)", desc: "Revisar gastos contra presupuesto rígido.", ciencia: "Ley de Parkinson: Presupuestar restringe la expansión artificial de gastos." }],
+                3: [{ time: "PAGO", title: "Automatización de Escudo", desc: "Débito automático de ahorros antes de verlos.", ciencia: "Economía Conductual (Thaler): La 'arquitectura de decisiones' automatizada vence al sesgo del presente." }],
+                4: [{ time: "FINDE", title: "Construcción de Asimetría", desc: "Desarrollo de fuentes de ingresos escalables (e-commerce).", ciencia: "Efecto Compuesto: Sistemas independientes del tiempo generan crecimiento exponencial." }]
+            },
+            autonomo: {
+                1: [{ time: "ANY", title: "Consumo Pasivo Estratégico", desc: "10m de podcast técnico/inglés en tarea mecánica.", ciencia: "Teoría de la Inmersión (Krashen): Adquisición inconsciente de estructuras mediante exposición de baja presión." }],
+                2: [{ time: "19:00", title: "Replicación de Modelos", desc: "30m siguiendo un tutorial replicando código exacto.", ciencia: "Recuerdo Activo (Active Recall): Recuperar info genera conexiones más fuertes que leer." }],
+                3: [{ time: "20:00", title: "Resolución sin Asistencia", desc: "1h solucionando lógica de programación sin tutoriales.", ciencia: "Dificultad Deseable (Bjork): A mayor esfuerzo para recuperar información, mayor retención a largo plazo." }],
+                4: [{ time: "ANY", title: "Construcción de Sistemas", desc: "Construir aplicaciones desde cero leyendo documentación oficial.", ciencia: "Constructivismo (Piaget): El conocimiento se construye al superar fallos sistémicos." }]
+            },
+            creativo: {
+                1: [{ time: "PM", title: "Interacción Deliberada", desc: "Mensaje a círculo cercano o 1 partida rápida de juego limitada por tiempo.", ciencia: "Línea Base de Dopamina (Lembke): Limitar estímulos de alta recompensa previene agotamiento de receptores." }],
+                2: [{ time: "FINDE", title: "Gestión de Comunidad / Hobby", desc: "45m ininterrumpidos en proyectos pasionales.", ciencia: "Autodeterminación (Deci & Ryan): Motivación florece con autonomía y competencia." }],
+                3: [{ time: "FINDE", title: "Bloqueo Off-Screen", desc: "Tiempo de calidad innegociable. Teléfono lejos.", ciencia: "Línea Base Social (Coan): Proximidad física con vínculos cercanos reduce el estrés acumulado (carga alostática)." }],
+                4: [{ time: "ANY", title: "Producción de Alto Estándar", desc: "Desarrollo de proyectos visuales/creativos.", ciencia: "Aprendizaje Basado en Proyectos (PBL): Integrar disciplinas complejas maximiza retención de habilidades." }]
+            }
+        };
+
         const objetivos = [
             { id: 'academico', name: 'Académico Universitario', color: 'var(--c-acad)' },
             { id: 'laboral', name: 'Competencia Laboral', color: 'var(--c-lab)' },
@@ -221,10 +244,10 @@ $user = [
         ];
 
         let currentRoute = { objId: 'laboral', level: 1, name: 'Competencia Laboral' };
-        let currentView = 'month'; // 'month', 'week', 'day'
-        let currentPointer = 1; // Día actual seleccionado o inicio de semana
+        let currentView = 'month'; 
+        let currentPointer = 1; 
 
-        // 1. Render Matriz Compacta
+        // RENDER MATRIZ
         function renderMatrix() {
             const container = document.getElementById('matrixBody');
             let html = '';
@@ -241,39 +264,49 @@ $user = [
             container.innerHTML = html;
         }
 
-        // 2. Base de Datos Mockeada (Con descripciones)
-        // Asegúrate de pegar el objeto LibreriaRutas arriba de esta función
-
+        // LÓGICA DE DATOS
         function getRoutineData(objId, level, dayNum) {
             let blocks = [];
             const color = objetivos.find(o => o.id === objId).color;
-            
-            // Obtenemos los bloques correspondientes a la ruta y nivel
+
+            if (!LibreriaRutas[objId] || !LibreriaRutas[objId][level]) {
+                return []; 
+            }
+
             const rutinasNivel = LibreriaRutas[objId][level];
             const isWeekend = (dayNum % 7 === 6 || dayNum % 7 === 0);
 
             rutinasNivel.forEach(rutina => {
-                // Lógica simple para simular días de descanso en niveles intermedios
-                if (level === 2 && isWeekend && objId !== 'creativo' && objId !== 'financiero') {
-                    return; // En nivel 2, algunos focos descansan el fin de semana
+                // Lógica de descanso opcional (excepto creativo/financiero que suelen hacerse el finde)
+                if (level === 2 && isWeekend && objId !== 'creativo' && objId !== 'financiero' && objId !== 'salud') {
+                    return;
                 }
+
+                let descFull = rutina.desc;
+                if (rutina.ciencia) descFull += `\n\n🔬 Fundamento Científico:\n${rutina.ciencia}`;
 
                 blocks.push({
                     time: rutina.time,
                     title: rutina.title,
-                    desc: rutina.desc + "\n\n🔬 Fundamento Científico:\n" + rutina.ciencia,
+                    desc: descFull,
                     color: color
                 });
             });
 
-            // Si es un día libre forzado (ej. Domingo en nivel 2 laboral)
+            // Si está vacío, inyectamos un bloque de descanso automático
             if (blocks.length === 0) {
-                blocks.push({ time: "ALL", title: "Recuperación Activa", desc: "Día de descanso programado para asimilar el conocimiento y relajar el SNC.", color: "#718096" });
+                blocks.push({ 
+                    time: "ALL", 
+                    title: "Recuperación Activa", 
+                    desc: "Día de descanso programado para asimilar el conocimiento y relajar el Sistema Nervioso Central.", 
+                    color: "var(--text-muted)" 
+                });
             }
 
             return blocks;
         }
-        // 3. Manejo de Vistas
+
+        // CONTROLES DE VISTA
         function setViewMode(mode, targetDay = null) {
             currentView = mode;
             document.querySelectorAll('.btn-view').forEach(b => b.classList.remove('active'));
@@ -286,7 +319,7 @@ $user = [
             subnav.style.display = (mode === 'month') ? 'none' : 'flex';
 
             if(targetDay !== null) currentPointer = targetDay;
-            else if(mode === 'week') currentPointer = Math.floor((currentPointer - 1) / 7) * 7 + 1; // Ir al inicio de la semana actual
+            else if(mode === 'week') currentPointer = Math.floor((currentPointer - 1) / 7) * 7 + 1; 
 
             renderCalendar();
         }
@@ -295,7 +328,7 @@ $user = [
             if (currentView === 'week') {
                 currentPointer += (dir * 7);
                 if (currentPointer < 1) currentPointer = 1;
-                if (currentPointer > 30) currentPointer = 22; // Última semana
+                if (currentPointer > 30) currentPointer = 22; 
             } else if (currentView === 'day') {
                 currentPointer += dir;
                 if (currentPointer < 1) currentPointer = 1;
@@ -314,7 +347,7 @@ $user = [
             renderCalendar();
         }
 
-        // 4. Renderizado Inteligente
+        // RENDER CALENDARIO
         function renderCalendar() {
             const grid = document.getElementById('calendarGrid');
             const subnavLabel = document.getElementById('subnavLabel');
@@ -341,10 +374,10 @@ $user = [
                     </div>
                     <div class="day-body">`;
                 
-                routines.forEach((r, idx) => {
+                routines.forEach((r) => {
                     dayHtml += `
                         <div class="habit-block" style="background-color: ${r.color};" 
-                             onclick="openModal('${r.title}', '${r.time}', '${r.desc}', '${r.color}')">
+                             onclick="openModal('${r.title}', '${r.time}', \`${r.desc}\`, '${r.color}')">
                             <span style="opacity:0.8;">${r.time}</span>
                             <span>${r.title}</span>
                         </div>`;
@@ -355,7 +388,7 @@ $user = [
             }
         }
 
-        // 5. Modal Logic
+        // MODAL
         function openModal(title, time, desc, color) {
             document.getElementById('modalTitle').innerText = title;
             document.getElementById('modalTime').innerText = time;
@@ -368,9 +401,10 @@ $user = [
             document.getElementById('habitModal').classList.remove('active');
         }
 
-        // Inicializar
+        // INICIALIZAR
         document.addEventListener('DOMContentLoaded', () => {
             renderMatrix();
+            // Fuerza la selección inicial
             selectRoute('laboral', 1, 'Competencia Laboral');
         });
     </script>
