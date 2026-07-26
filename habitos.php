@@ -23,8 +23,9 @@ $user = [
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background-color: var(--bg-base); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
-        
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-base); color: var(--text-main); margin: 0; height: 100vh; overflow: hidden; }
+
+        .app-container { display: flex; width: 100%; height: 100%; }
         /* ---------------------------------------------------
            SIDEBAR
            --------------------------------------------------- */
