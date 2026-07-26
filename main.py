@@ -51,7 +51,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 # ==========================================
 
 # 1. REGISTRO
-@app.post("/api/register", response_model=schemas.UserResponse)
+@app.post("/register", response_model=schemas.UserResponse)
 def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_user = db.query(models.User).filter(models.User.email == user.email).first()
     if db_user:
@@ -69,7 +69,7 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
 # ==========================================
 # HEALTH CHECK (DIAGNÓSTICO DEL SISTEMA)
 # ==========================================
-@app.get("/api/status")
+@app.get("/status")
 def get_status():
     db_status = "Desconectada"
     try:
@@ -86,7 +86,7 @@ def get_status():
     }
 
 # 2. LOGIN
-@app.post("/api/login")
+@app.post("/login")
 def login_user(user: schemas.UserLogin, db: Session = Depends(get_db)):
     # 1. Buscamos si el correo existe
     db_user = db.query(models.User).filter(models.User.email == user.email).first()
@@ -109,7 +109,7 @@ def login_user(user: schemas.UserLogin, db: Session = Depends(get_db)):
     }
 
 # 3. TEST VOC
-@app.post("/api/test-voc/{user_id}")
+@app.post("/test-voc/{user_id}")
 def save_test_result(user_id: int, result: schemas.TestResultCreate, db: Session = Depends(get_db)):
     db_user = db.query(models.User).filter(models.User.id == user_id).first()
     if not db_user:
@@ -126,7 +126,7 @@ def save_test_result(user_id: int, result: schemas.TestResultCreate, db: Session
     return {"message": "Resultados guardados", "arquetipo": result.archetype}
 
 # 4. OBJETIVOS TRACKTIME
-@app.post("/api/tracktime-goals/{user_id}")
+@app.post("/tracktime-goals/{user_id}")
 def save_goals(user_id: int, goals: schemas.TrackTimeGoalCreate, db: Session = Depends(get_db)):
     new_goals = models.TrackTimeGoal(
         user_id=user_id,
@@ -140,7 +140,7 @@ def save_goals(user_id: int, goals: schemas.TrackTimeGoalCreate, db: Session = D
     return {"message": "Objetivos TrackTime guardados"}
 
 # 5. FEEDBACK ALPHA
-@app.post("/api/alpha-feedback/{user_id}")
+@app.post("/alpha-feedback/{user_id}")
 def save_feedback(user_id: int, feedback: schemas.AlphaFeedbackCreate, db: Session = Depends(get_db)):
     new_feedback = models.AlphaFeedback(
         user_id=user_id,
