@@ -48,12 +48,11 @@
                 <a href="register.html" class="bg-white border-2 border-slate-200 hover:border-primario hover:text-primario text-slate-600 font-semibold py-3 px-4 rounded-xl transition-all block text-center">
                     Registrarse
                 </a>
-            </div>
-            <div class="grid grid-cols-2 gap-4 mt-3">
                 <a href="login.html" class="bg-white border-2 border-slate-200 hover:border-primario hover:text-primario text-slate-600 font-semibold py-3 px-4 rounded-xl transition-all block text-center">
                     Iniciar Sesión
                 </a>
             </div>
+            
         </div>
     </main>
 
