@@ -12,14 +12,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = trim($_POST['email']);
     $password = $_POST['password'];
 
-    $stmt = $pdo->prepare("SELECT id, password_hash FROM users WHERE email = ?");
+    // 1. Añadimos is_admin a la consulta SELECT
+    $stmt = $pdo->prepare("SELECT id, password_hash, is_admin FROM users WHERE email = ?");
     $stmt->execute([$email]);
     $user = $stmt->fetch();
 
     if ($user && password_verify($password, $user['password_hash'])) {
-        // Login exitoso
+        // Login exitoso: Guardamos los datos en la sesión
         $_SESSION['user_id'] = $user['id'];
-        header("Location: dashboard.php"); // Redirige al panel privado
+        // Verificamos si la clave 'is_admin' existe (por si la columna aún no está creada o retorna null)
+        $_SESSION['is_admin'] = isset($user['is_admin']) ? (bool)$user['is_admin'] : false;
+
+        // 2. Redirección condicional según el rol
+        if ($_SESSION['is_admin'] === true) {
+            header("Location: admin_dashboard.php"); // Ruta para administradores
+        } else {
+            header("Location: dashboard.php"); // Ruta para usuarios normales
+        }
         exit;
     } else {
         $mensaje = "<span style='color: #E53E3E;'>Credenciales no válidas.</span>";
