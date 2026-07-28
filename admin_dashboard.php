@@ -13,7 +13,13 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['is_admin']) || $_SESSION['
 // 0. CONEXIÓN EXCLUSIVA A LA BD 'postgres' (V1)
 // ==========================================
 try {
-    $pdo_old = new PDO("pgsql:host=127.0.0.1;port=5432;dbname=postgres;", 'postgres', 'Limitless20xx', [
+    // Usando el endpoint real de AWS RDS extraído de tu configuración
+    $host_v1 = 'aph-database.cy78m00i65y5.us-east-1.rds.amazonaws.com';
+    $dbname_v1 = 'postgres';
+    $user_v1 = 'postgres';
+    $password_v1 = 'Limitless20xx';
+
+    $pdo_old = new PDO("pgsql:host=$host_v1;port=5432;dbname=$dbname_v1;", $user_v1, $password_v1, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
     ]);
