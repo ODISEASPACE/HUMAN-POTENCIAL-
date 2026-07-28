@@ -1,6 +1,6 @@
 <?php
 session_start();
-require 'db.php'; // Conexión a la base de datos 'postgres' original
+require 'db.php'; // Mantenemos esta para requerimientos base, pero haremos una conexión manual a la BD antigua
 
 // Validación estricta de administrador
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['is_admin']) || $_SESSION['is_admin'] !== true) {
@@ -10,24 +10,36 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['is_admin']) || $_SESSION['
 }
 
 // ==========================================
+// 0. CONEXIÓN EXCLUSIVA A LA BD 'postgres' (V1)
+// ==========================================
+try {
+    $pdo_old = new PDO("pgsql:host=127.0.0.1;port=5432;dbname=postgres;", 'postgres', 'Limitless20xx', [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+    ]);
+} catch (PDOException $e) {
+    die("Error conectando a la base de datos antigua: " . $e->getMessage());
+}
+
+// ==========================================
 // 1. CONSULTAS A LA BASE DE DATOS 'postgres'
 // ==========================================
 
-// Métricas de Usuarios
-$stmtUsers = $pdo->query("SELECT COUNT(*) as total, SUM(CASE WHEN is_verified THEN 1 ELSE 0 END) as verified FROM users");
+// Métricas de Usuarios (De la BD antigua)
+$stmtUsers = $pdo_old->query("SELECT COUNT(*) as total, SUM(CASE WHEN is_verified THEN 1 ELSE 0 END) as verified FROM users");
 $userStats = $stmtUsers->fetch(PDO::FETCH_ASSOC);
 $totalUsers = $userStats['total'] ?? 0;
 $verifiedUsers = $userStats['verified'] ?? 0;
 
 // Arquetipos (Distribución basada en test_results)
-$stmtArchetypes = $pdo->query("SELECT archetype, COUNT(*) as count FROM test_results GROUP BY archetype");
+$stmtArchetypes = $pdo_old->query("SELECT archetype, COUNT(*) as count FROM test_results GROUP BY archetype");
 $archetypesData = $stmtArchetypes->fetchAll(PDO::FETCH_KEY_PAIR);
 
 $arch_labels = json_encode(array_keys($archetypesData));
 $arch_counts = json_encode(array_values($archetypesData));
 
 // Resultados del Test (Dispersión Disciplina vs Propósito)
-$stmtScores = $pdo->query("SELECT score_x_discipline, score_y_purpose, archetype FROM test_results");
+$stmtScores = $pdo_old->query("SELECT score_x_discipline, score_y_purpose, archetype FROM test_results");
 $scoresData = $stmtScores->fetchAll(PDO::FETCH_ASSOC);
 
 $scatter_data = [];
@@ -40,12 +52,12 @@ foreach($scoresData as $row) {
 }
 $scatter_json = json_encode($scatter_data);
 
-// Últimos Usuarios Registrados
-$stmtLatestUsers = $pdo->query("SELECT id, name, email, created_at FROM users ORDER BY created_at DESC LIMIT 5");
+// Últimos Usuarios Registrados (BD antigua)
+$stmtLatestUsers = $pdo_old->query("SELECT id, name, email, created_at FROM users ORDER BY created_at DESC LIMIT 5");
 $latestUsers = $stmtLatestUsers->fetchAll(PDO::FETCH_ASSOC);
 
 // Últimos Feedbacks (Alpha Feedback)
-$stmtFeedback = $pdo->query("
+$stmtFeedback = $pdo_old->query("
     SELECT u.name, f.identity_validation, f.friction_detection, f.created_at 
     FROM alpha_feedback f 
     LEFT JOIN users u ON f.user_id = u.id 
@@ -54,7 +66,7 @@ $stmtFeedback = $pdo->query("
 $latestFeedback = $stmtFeedback->fetchAll(PDO::FETCH_ASSOC);
 
 // Últimas Metas (Tracktime Goals)
-$stmtGoals = $pdo->query("
+$stmtGoals = $pdo_old->query("
     SELECT u.name, t.primary_goal, t.created_at 
     FROM tracktime_goals t 
     LEFT JOIN users u ON t.user_id = u.id 
@@ -156,6 +168,9 @@ $latestGoals = $stmtGoals->fetchAll(PDO::FETCH_ASSOC);
             <a href="#" class="nav-link">💬 alpha_feedback</a>
             <a href="#" class="nav-link">🎯 tracktime_goals</a>
         </div>
+        <a href="dashboard.php" class="user-mini-btn" style="border: 1px solid var(--accent); margin-bottom: 10px; justify-content: center;">
+            <span style="font-weight: 600; color: var(--accent);">Volver a mi Sistema</span>
+        </a>
         <a href="#" class="user-mini-btn">
             <div class="avatar-circle">🛡️</div>
             <div class="user-info-mini">
