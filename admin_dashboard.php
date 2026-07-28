@@ -1,10 +1,9 @@
 <?php
 session_start();
-require 'db.php'; // Mantenemos esta para requerimientos base, pero haremos una conexión manual a la BD antigua
+require 'db.php'; 
 
 // Validación estricta de administrador
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['is_admin']) || $_SESSION['is_admin'] !== true) {
-    // Si no es admin, lo devolvemos al inicio o a su dashboard
     header("Location: dashboard.php");
     exit;
 }
@@ -13,7 +12,6 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['is_admin']) || $_SESSION['
 // 0. CONEXIÓN EXCLUSIVA A LA BD 'postgres' (V1)
 // ==========================================
 try {
-    // Usando el endpoint real de AWS RDS extraído de tu configuración
     $host_v1 = 'aph-database.cy78m00i65y5.us-east-1.rds.amazonaws.com';
     $dbname_v1 = 'postgres';
     $user_v1 = 'postgres';
@@ -31,20 +29,20 @@ try {
 // 1. CONSULTAS A LA BASE DE DATOS 'postgres'
 // ==========================================
 
-// Métricas de Usuarios (De la BD antigua)
+// Métricas de Usuarios 
 $stmtUsers = $pdo_old->query("SELECT COUNT(*) as total, SUM(CASE WHEN is_verified THEN 1 ELSE 0 END) as verified FROM users");
 $userStats = $stmtUsers->fetch(PDO::FETCH_ASSOC);
 $totalUsers = $userStats['total'] ?? 0;
 $verifiedUsers = $userStats['verified'] ?? 0;
 
-// Arquetipos (Distribución basada en test_results)
+// Arquetipos 
 $stmtArchetypes = $pdo_old->query("SELECT archetype, COUNT(*) as count FROM test_results GROUP BY archetype");
 $archetypesData = $stmtArchetypes->fetchAll(PDO::FETCH_KEY_PAIR);
 
 $arch_labels = json_encode(array_keys($archetypesData));
 $arch_counts = json_encode(array_values($archetypesData));
 
-// Resultados del Test (Dispersión Disciplina vs Propósito)
+// Resultados del Test 
 $stmtScores = $pdo_old->query("SELECT score_x_discipline, score_y_purpose, archetype FROM test_results");
 $scoresData = $stmtScores->fetchAll(PDO::FETCH_ASSOC);
 
@@ -58,11 +56,11 @@ foreach($scoresData as $row) {
 }
 $scatter_json = json_encode($scatter_data);
 
-// Últimos Usuarios Registrados (BD antigua)
+// Últimos Usuarios 
 $stmtLatestUsers = $pdo_old->query("SELECT id, name, email, created_at FROM users ORDER BY created_at DESC LIMIT 5");
 $latestUsers = $stmtLatestUsers->fetchAll(PDO::FETCH_ASSOC);
 
-// Últimos Feedbacks (Alpha Feedback)
+// Últimos Feedbacks 
 $stmtFeedback = $pdo_old->query("
     SELECT u.name, f.identity_validation, f.friction_detection, f.created_at 
     FROM alpha_feedback f 
@@ -71,7 +69,7 @@ $stmtFeedback = $pdo_old->query("
 ");
 $latestFeedback = $stmtFeedback->fetchAll(PDO::FETCH_ASSOC);
 
-// Últimas Metas (Tracktime Goals)
+// Últimas Metas 
 $stmtGoals = $pdo_old->query("
     SELECT u.name, t.primary_goal, t.created_at 
     FROM tracktime_goals t 
@@ -80,6 +78,7 @@ $stmtGoals = $pdo_old->query("
 ");
 $latestGoals = $stmtGoals->fetchAll(PDO::FETCH_ASSOC);
 
+$current_page = basename($_SERVER['PHP_SELF']);
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -90,7 +89,7 @@ $latestGoals = $stmtGoals->fetchAll(PDO::FETCH_ASSOC);
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* Adaptación a un modo oscuro/Administración para diferenciar del panel de usuario */
+        /* Variables por defecto (Modo Oscuro) */
         :root { 
             --bg-base: #111827; 
             --bg-panel: #1F2937; 
@@ -101,23 +100,37 @@ $latestGoals = $stmtGoals->fetchAll(PDO::FETCH_ASSOC);
             --border-color: #374151; 
             --success: #10B981; 
             --warning: #F59E0B; 
+            --shadow: rgba(0,0,0,0.2);
         }
+
+        /* Variables para Modo Claro */
+        body.light-mode {
+            --bg-base: #F3F4F6; 
+            --bg-panel: #FFFFFF; 
+            --text-main: #1F2937; 
+            --text-muted: #6B7280; 
+            --border-color: #E5E7EB; 
+            --shadow: rgba(0,0,0,0.05);
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background-color: var(--bg-base); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-base); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; transition: background-color 0.3s, color 0.3s; }
         
         /* Sidebar Admin Integrado */
-        nav.sidebar { width: 260px; background: var(--bg-panel); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 30px 20px; z-index: 100; flex-shrink: 0; }
+        nav.sidebar { width: 260px; background: var(--bg-panel); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 30px 20px; z-index: 100; flex-shrink: 0; transition: background-color 0.3s, border-color 0.3s; }
         .brand { text-align: center; margin-bottom: 40px; } 
         .brand h2 { font-weight: 800; letter-spacing: 2px; font-size: 1.5rem; color: var(--accent); }
         .nav-links { flex: 1; display: flex; flex-direction: column; gap: 5px; }
         .nav-link { display: flex; align-items: center; padding: 12px 16px; color: var(--text-muted); text-decoration: none; font-weight: 600; border-radius: 8px; transition: 0.3s; }
         .nav-link:hover, .nav-link.active { background: var(--accent-light); color: var(--accent); }
         .admin-badge { background: #EF4444; color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; margin-left: auto; }
+        
         .user-mini-btn { display: flex; align-items: center; gap: 12px; padding: 15px; border-top: 1px solid var(--border-color); margin-top: auto; text-decoration: none; border-radius: 12px; transition: 0.3s;}
-        .user-mini-btn:hover { background: rgba(255,255,255,0.05); }
-        .avatar-circle { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: #fff; }
-        .user-info-mini h4 { font-size: 0.9rem; color: var(--text-main); }
-        .user-info-mini p { font-size: 0.75rem; color: var(--text-muted); }
+        .user-mini-btn:hover { background: var(--bg-base); }
+        .avatar-circle { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: #fff; flex-shrink: 0; }
+        .user-info-mini { overflow: hidden; }
+        .user-info-mini h4 { font-size: 0.9rem; color: var(--text-main); white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+        .user-info-mini p { font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; }
         
         /* Main Dashboard */
         main { flex: 1; padding: 40px; overflow-y: auto; }
@@ -127,12 +140,12 @@ $latestGoals = $stmtGoals->fetchAll(PDO::FETCH_ASSOC);
         
         /* Stats Top */
         .stats-top { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
-        .stat-card { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .stat-card { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px var(--shadow); transition: 0.3s; }
         .stat-card h4 { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px; }
         .stat-card h2 { font-size: 1.8rem; font-weight: 800; color: var(--text-main); }
         
         .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
-        .card { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 16px; padding: 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
+        .card { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 16px; padding: 30px; box-shadow: 0 10px 25px var(--shadow); display: flex; flex-direction: column; transition: 0.3s; }
         .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
         .card-header h3 { font-size: 1.2rem; font-weight: 700; }
         
@@ -144,20 +157,42 @@ $latestGoals = $stmtGoals->fetchAll(PDO::FETCH_ASSOC);
         .canvas-container { position: relative; height: 260px; width: 100%; }
 
         /* Widgets */
-        .widget-controls { display: flex; gap: 10px; margin-bottom: 20px; background: #111827; padding: 5px; border-radius: 10px; border: 1px solid var(--border-color); }
+        .widget-controls { display: flex; gap: 10px; margin-bottom: 20px; background: var(--bg-base); padding: 5px; border-radius: 10px; border: 1px solid var(--border-color); transition: 0.3s; }
         .widget-btn { flex: 1; background: transparent; border: none; padding: 10px; border-radius: 8px; font-weight: 600; font-size: 0.85rem; color: var(--text-muted); cursor: pointer; transition: 0.3s; }
         .widget-btn:hover { color: var(--text-main); }
-        .widget-btn.active { background: var(--bg-panel); color: var(--accent); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .widget-btn.active { background: var(--bg-panel); color: var(--accent); box-shadow: 0 4px 10px var(--shadow); }
 
         .widget-panel { display: none; animation: fadeIn 0.4s ease forwards; }
         .widget-panel.active { display: block; }
         
         .metric-list { list-style: none; display: flex; flex-direction: column; gap: 15px; }
-        .metric-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border: 1px solid var(--border-color); border-radius: 10px; background: rgba(255,255,255,0.02); }
+        .metric-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border: 1px solid var(--border-color); border-radius: 10px; background: var(--bg-base); transition: 0.3s; }
         .metric-info h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 4px; color: var(--text-main); }
         .metric-info p { font-size: 0.8rem; color: var(--text-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; max-width: 250px; }
         .metric-status { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; background: var(--border-color); color: var(--text-main); white-space: nowrap; }
         
+        /* Botón de Tema */
+        .theme-toggle-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 10px 25px var(--shadow);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        .theme-toggle-btn:hover { transform: scale(1.1); border-color: var(--accent); }
+
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @media (max-width: 1024px) { .dashboard-grid { grid-template-columns: 1fr; } .stats-top { grid-template-columns: 1fr 1fr; } }
     </style>
@@ -167,21 +202,23 @@ $latestGoals = $stmtGoals->fetchAll(PDO::FETCH_ASSOC);
     <!-- Sidebar Admin -->
     <nav class="sidebar">
         <div class="brand"><h2>APH <span style="color:#EF4444">OS</span></h2></div>
+        
         <div class="nav-links">
-            <a href="#" class="nav-link active">⌂ Panel Global <span class="admin-badge">Admin</span></a>
-            <a href="#" class="nav-link">👥 Gestión (users)</a>
-            <a href="#" class="nav-link">📊 test_results</a>
-            <a href="#" class="nav-link">💬 alpha_feedback</a>
-            <a href="#" class="nav-link">🎯 tracktime_goals</a>
+            <a href="admin_dashboard.php" class="nav-link <?= ($current_page == 'admin_dashboard.php') ? 'active' : '' ?>">⌂ Panel Global <span class="admin-badge">Admin</span></a>
+            <a href="admin_users.php" class="nav-link <?= ($current_page == 'admin_users.php') ? 'active' : '' ?>">👥 Gestión (users)</a>
+            <a href="admin_test_results.php" class="nav-link <?= ($current_page == 'admin_test_results.php') ? 'active' : '' ?>">📊 test_results</a>
+            <a href="admin_alpha_feedback.php" class="nav-link <?= ($current_page == 'admin_alpha_feedback.php') ? 'active' : '' ?>">💬 alpha_feedback</a>
+            <a href="admin_tracktime_goals.php" class="nav-link <?= ($current_page == 'admin_tracktime_goals.php') ? 'active' : '' ?>">🎯 tracktime_goals</a>
         </div>
+        
         <a href="dashboard.php" class="user-mini-btn" style="border: 1px solid var(--accent); margin-bottom: 10px; justify-content: center;">
             <span style="font-weight: 600; color: var(--accent);">Volver a mi Sistema</span>
         </a>
-        <a href="#" class="user-mini-btn">
+        <a href="#" class="user-mini-btn" style="cursor: default;">
             <div class="avatar-circle">🛡️</div>
             <div class="user-info-mini">
                 <h4>Admin Root</h4>
-                <p>Nivel de Acceso: Base Antigua</p>
+                <p>Nivel de Acceso: BD Antigua</p>
             </div>
         </a>
     </nav>
@@ -314,7 +351,32 @@ $latestGoals = $stmtGoals->fetchAll(PDO::FETCH_ASSOC);
         </div>
     </main>
 
+    <!-- Botón de Tema -->
+    <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Cambiar Tema">
+        ☀️
+    </button>
+
     <script>
+        // --- 0. LÓGICA DE MODO CLARO / OSCURO ---
+        const themeBtn = document.getElementById('themeToggleBtn');
+        
+        // Cargar preferencia guardada
+        if(localStorage.getItem('aph_admin_theme') === 'light') {
+            document.body.classList.add('light-mode');
+            themeBtn.innerHTML = '🌙';
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            if (document.body.classList.contains('light-mode')) {
+                themeBtn.innerHTML = '🌙';
+                localStorage.setItem('aph_admin_theme', 'light');
+            } else {
+                themeBtn.innerHTML = '☀️';
+                localStorage.setItem('aph_admin_theme', 'dark');
+            }
+        }
+
         // --- 1. ROTACIÓN DEL CARRUSEL ---
         let currentSlide = 0;
         const totalSlides = 2; // Arquetipos, Scatter
@@ -334,8 +396,9 @@ $latestGoals = $stmtGoals->fetchAll(PDO::FETCH_ASSOC);
         }
 
         // --- 3. CONFIGURACIÓN DE GRÁFICAS (Chart.js) ---
+        // Actualizamos los colores por defecto para que se adapten mejor a ambos temas
         Chart.defaults.color = '#9CA3AF';
-        Chart.defaults.borderColor = '#374151';
+        Chart.defaults.borderColor = 'rgba(156, 163, 175, 0.2)';
 
         // Gráfica 1: Arquetipos (Bar)
         new Chart(document.getElementById('chartArchetypes'), {
