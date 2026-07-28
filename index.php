@@ -9,18 +9,28 @@ $active_modal = '';
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $action = $_POST['action'] ?? '';
 
+    
     // LÓGICA DE LOGIN
     if ($action === 'login') {
         $email = trim($_POST['email']);
         $password = $_POST['password'];
 
-        $stmt = $pdo->prepare("SELECT id, password_hash FROM users WHERE email = ?");
+        // 1. Agregamos is_admin a la consulta SQL
+        $stmt = $pdo->prepare("SELECT id, password_hash, is_admin FROM users WHERE email = ?");
         $stmt->execute([$email]);
         $user = $stmt->fetch();
 
         if ($user && password_verify($password, $user['password_hash'])) {
+            // Guardamos ID y Rol en la sesión
             $_SESSION['user_id'] = $user['id'];
-            header("Location: dashboard.php");
+            $_SESSION['is_admin'] = isset($user['is_admin']) ? (bool)$user['is_admin'] : false;
+
+            // 2. Redirección inteligente según el rol
+            if ($_SESSION['is_admin'] === true) {
+                header("Location: admin_dashboard.php");
+            } else {
+                header("Location: dashboard.php");
+            }
             exit;
         } else {
             $error_msg = "Credenciales no válidas.";
