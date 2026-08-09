@@ -11,32 +11,35 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     
     // LÓGICA DE LOGIN
-    if ($action === 'login') {
-        $email = trim($_POST['email']);
-        $password = $_POST['password'];
+if ($action === 'login') {
+    $email = trim($_POST['email']);
+    $password = $_POST['password'];
 
-        // 1. Agregamos is_admin a la consulta SQL
-        $stmt = $pdo->prepare("SELECT id, password_hash, is_admin FROM users WHERE email = ?");
-        $stmt->execute([$email]);
-        $user = $stmt->fetch();
+    // 1. Agregamos is_symbiote a la consulta SQL
+    $stmt = $pdo->prepare("SELECT id, password_hash, is_admin, is_symbiote FROM users WHERE email = ?");
+    $stmt->execute([$email]);
+    $user = $stmt->fetch();
 
-        if ($user && password_verify($password, $user['password_hash'])) {
-            // Guardamos ID y Rol en la sesión
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['is_admin'] = isset($user['is_admin']) ? (bool)$user['is_admin'] : false;
+    if ($user && password_verify($password, $user['password_hash'])) {
+        // Guardamos ID y Roles en la sesión
+        $_SESSION['user_id'] = $user['id'];
+        $_SESSION['is_admin'] = isset($user['is_admin']) ? (bool)$user['is_admin'] : false;
+        $_SESSION['is_symbiote'] = isset($user['is_symbiote']) ? (bool)$user['is_symbiote'] : false;
 
-            // 2. Redirección inteligente según el rol
-            if ($_SESSION['is_admin'] === true) {
-                header("Location: admin_dashboard.php");
-            } else {
-                header("Location: dashboard.php");
-            }
-            exit;
+        // 2. Redirección táctica (Bifurcación de Entornos)
+        if ($_SESSION['is_symbiote'] === true) {
+            header("Location: symbiote_core.php"); // Tu nuevo ecosistema
+        } elseif ($_SESSION['is_admin'] === true) {
+            header("Location: admin_dashboard.php");
         } else {
-            $error_msg = "Credenciales no válidas.";
-            $active_modal = 'login';
+            header("Location: dashboard.php"); // El dashboard normal de tus compañeros
         }
+        exit;
+    } else {
+        $error_msg = "Credenciales no válidas.";
+        $active_modal = 'login';
     }
+}
 
     // LÓGICA DE REGISTRO
     if ($action === 'register') {
