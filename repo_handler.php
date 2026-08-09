@@ -29,17 +29,16 @@ try {
         
     } elseif ($action === 'delete') {
         $stmt = $pdo->prepare("DELETE FROM projects_items WHERE id = ? AND user_id = ?");
-        // 2. Forzamos (int) para evitar errores de sintaxis en PostgreSQL
-        $stmt->execute([(int)$data['id'], $user_id]);
+        // CORRECCIÓN: Quitamos el (int) porque usamos UUIDs en PostgreSQL
+        $stmt->execute([$data['id'], $user_id]);
         echo json_encode(['status' => 'success']);
         
     } elseif ($action === 'update') {
         $stmt = $pdo->prepare("UPDATE projects_items SET title = ?, category = ?, description = ? WHERE id = ? AND user_id = ?");
-        // 2. Forzamos (int) aquí también
-        $stmt->execute([$data['title'], $data['category'], $data['description'], (int)$data['id'], $user_id]);
+        // CORRECCIÓN: Quitamos el (int) aquí también
+        $stmt->execute([$data['title'], $data['category'], $data['description'], $data['id'], $user_id]);
         echo json_encode(['status' => 'success']);
     }
 } catch (PDOException $e) {
-    // 3. Capturamos excepciones exclusivas de Base de Datos para debug
     echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
 }
