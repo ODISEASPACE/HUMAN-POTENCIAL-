@@ -29,8 +29,8 @@ if (!$apiKey) {
     exit;
 }
 
-$GEMINI_URL = 'https://googleapis.com?key=' . $apiKey;
-
+// 1. EL ENDPOINT CORRECTO DE GOOGLE AI STUDIO (Sin ?key en la URL)
+$GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent';
 
 // Recibir el payload del frontend
 $data = json_decode(file_get_contents('php://input'), true);
@@ -62,6 +62,9 @@ if ($action === 'awaken') {
     - 'response_msg': Tu análisis cognitivo breve y directo para el usuario.
     - 'suggested_category': Categoría del proyecto o tarea.
     - 'psique_impact': Un número entero estimando el impacto en la métrica Psique (ej. -5 o +10).";
+} else {
+    // Fallback preventivo
+    $prompt = $contexto_base . "\n\nAnaliza la solicitud entrante y procesa la data.";
 }
 
 // Petición cURL a Gemini Flash
@@ -76,7 +79,13 @@ $gemini_payload = [
 
 $ch = curl_init($GEMINI_URL);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+
+// 2. LA MAGIA ESTÁ AQUÍ: PASAR LA CLAVE COMO HEADER
+curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    'Content-Type: application/json',
+    'X-goog-api-key: ' . $apiKey
+]);
+
 curl_setopt($ch, CURLOPT_POST, true);
 curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($gemini_payload));
 
@@ -112,7 +121,7 @@ if (!$ai_text) {
 $parsed_data = json_decode($ai_text, true);
 
 if (json_last_error() !== JSON_ERROR_NONE) {
-    echo json_encode(['error' => 'La IA no respondió con un JSON válido.']);
+    echo json_encode(['error' => 'La IA no respondió con un JSON válido. Respuesta pura: ' . $ai_text]);
     exit;
 }
 
