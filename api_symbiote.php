@@ -62,6 +62,19 @@ if ($action === 'awaken') {
     - 'response_msg': Tu análisis cognitivo breve y directo para el usuario.
     - 'suggested_category': Categoría del proyecto o tarea.
     - 'psique_impact': Un número entero estimando el impacto en la métrica Psique (ej. -5 o +10).";
+} elseif ($action === 'analyze_context') {
+    // NUEVA LÓGICA INSERTADA AQUÍ
+    $payload_text = $data['payload'] ?? '';
+    $current_view = $data['current_view'] ?? 'Módulo Desconocido';
+    
+    $prompt = $contexto_base . "\n\nCRÍTICO: NO vas a insertar datos en la base de datos. Solo actúas como el lóbulo frontal analítico del sistema.
+    El usuario está actualmente visualizando el módulo: '{$current_view}'.
+    Ha introducido el siguiente pensamiento/dato en la consola: '{$payload_text}'.
+    
+    Instrucción: Lee su input, cruza la información con el módulo que está viendo y dale una respuesta de alto rendimiento. Analiza cómo ese dato afecta su entorno actual.
+    
+    Responde estrictamente con un objeto JSON válido con esta única clave:
+    - 'analysis': Tu respuesta, análisis o consejo estratégico (máximo 4 líneas).";
 } else {
     // Fallback preventivo
     $prompt = $contexto_base . "\n\nAnaliza la solicitud entrante y procesa la data.";

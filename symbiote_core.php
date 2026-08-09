@@ -168,8 +168,14 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
             <label style="font-size:0.8rem; color:#a1a1aa; font-family:'JetBrains Mono';">Título</label>
             <input type="text" class="input-field" id="crud-title" placeholder="Ej. Arquitectura Backend">
             
+            <!-- SECCIÓN MODIFICADA: Ahora es un Select -->
             <label style="font-size:0.8rem; color:#a1a1aa; font-family:'JetBrains Mono';">Categoría</label>
-            <input type="text" class="input-field" id="crud-category" placeholder="Ej. Fuentes de Estudio, Logros...">
+            <select class="input-field" id="crud-category">
+                <option value="Proyecto">Proyecto</option>
+                <option value="Logros">Logros</option>
+                <option value="Fuentes de Estudio">Fuentes de Estudio</option>
+                <option value="Líneas de Tiempo">Líneas de Tiempo</option>
+            </select>
             
             <label style="font-size:0.8rem; color:#a1a1aa; font-family:'JetBrains Mono';">Descripción</label>
             <textarea class="input-field" id="crud-desc" style="resize: vertical; min-height: 80px;" placeholder="Detalles de la integración..."></textarea>
@@ -260,7 +266,7 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
         }
 
         // CONTROL DEL MODAL
-        function openCrudModal(mode, id = '', title = '', category = '', desc = '') {
+        function openCrudModal(mode, id = '', title = '', category = 'Proyecto', desc = '') {
             document.getElementById('crud-modal').classList.add('active');
             document.getElementById('crud-id').value = id;
             document.getElementById('crud-title').value = title;
@@ -359,42 +365,49 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
             }
         }
 
-        // INGESTA A GEMINI API
+        // INGESTA A GEMINI API - MODIFICADA SEGÚN LA SOLICITUD
         async function ingestData() {
             const payload = document.getElementById('quick-log').value;
             if(!payload) return;
             document.getElementById('quick-log').value = '';
+
+            // 1. EL SISTEMA "LEE" LA PANTALLA ACTUAL
+            let activeView = 'Módulo Desconocido';
+            if (document.getElementById('view-calendar').classList.contains('active')) activeView = 'Cronograma Operativo (Calendario)';
+            if (document.getElementById('view-repo').classList.contains('active')) activeView = 'Repositorio Central (Proyectos y Logros)';
+            if (document.getElementById('view-skills').classList.contains('active')) activeView = 'Matriz de Habilidades (Nodos)';
             
-            logToAI(`> Analizando: "${payload}"...`, '#f59e0b');
+            logToAI(`> Analizando input desde el módulo: [${activeView}]...`, '#f59e0b');
             
             try {
                 const response = await fetch('api_symbiote.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'ingest_log', payload: payload })
+                    body: JSON.stringify({ 
+                        action: 'analyze_context', // Nueva acción específica
+                        payload: payload,
+                        current_view: activeView 
+                    })
                 });
+                
                 const result = await response.json();
                 
                 if(result.status === 'success') {
-                    // Extraemos las partes específicas del JSON estructurado
-                    const aiMsg = result.data.response_msg;
-                    const category = result.data.suggested_category;
-                    const impact = result.data.psique_impact;
-                    
-                    // Imprimimos la respuesta principal
-                    logToAI(`> Sistema: ${aiMsg}`, '#a855f7');
-                    
-                    // Imprimimos la metadata (Categoría e Impacto) en un tono más sutil
-                    let impactStr = impact > 0 ? `+${impact}` : impact;
-                    logToAI(`> [Cat: ${category} | Impacto Psique: ${impactStr}]`, '#52525b');
-                    
-                } else {
-                    logToAI(`> [ERROR] ${result.error}`, '#ef4444');
+                    try {
+                        let cleanJson = result.data.replace(/```json/g, '').replace(/```/g, '').trim();
+                        let aiData = JSON.parse(cleanJson);
+                        logToAI(`> Análisis de Conciencia:`, '#10b981');
+                        logToAI(`"${aiData.analysis}"`, '#d8b4fe');
+                    } catch(e) {
+                        // Fallback por si la IA devuelve texto en lugar de JSON
+                        logToAI(`"${result.data}"`, '#d8b4fe');
+                    }
                 }
             } catch (error) {
-                logToAI(`> [ERROR] Conexión neuronal fallida. Verifica api_symbiote.php.`, '#ef4444');
+                logToAI(`> [ERROR] Conexión neuronal fallida.`, '#ef4444');
             }
         }
+
         function logToAI(msg, color = '#a1a1aa') {
             const consoleBox = document.getElementById('aiResponse');
             consoleBox.innerHTML += `<br><span style="color:${color};">${msg}</span>`;
