@@ -29,7 +29,7 @@ if (!$apiKey) {
     exit;
 }
 
-$GEMINI_URL = 'https://googleapis.com' . $apiKey;
+$GEMINI_URL = 'https://googleapis.com?key=' . $apiKey;
 
 
 // Recibir el payload del frontend
