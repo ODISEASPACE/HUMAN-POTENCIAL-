@@ -118,8 +118,10 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
                     <?php foreach($projects as $p): ?>
                     <div class="project-card" id="proj-<?= $p['id'] ?>">
                         <div class="crud-actions">
-                            <button class="btn-icon edit" onclick="openCrudModal('edit', '<?= $p['id'] ?>', '<?= htmlspecialchars(addslashes($p['title'])) ?>', '<?= htmlspecialchars(addslashes($p['category'])) ?>', '<?= htmlspecialchars(addslashes($p['description'])) ?>')"><i class="fa-solid fa-pen"></i></button>
-                            <button class="btn-icon delete" onclick="deleteProject(<?= $p['id'] ?>)"><i class="fa-solid fa-trash"></i></button>
+                            <!-- BOTONES BLINDADOS: Evitan que comillas o saltos de línea rompan el HTML -->
+                            <button class="btn-icon edit" onclick='openCrudModal("edit", <?= json_encode($p['id']) ?>, <?= htmlspecialchars(json_encode($p['title']), ENT_QUOTES, "UTF-8") ?>, <?= htmlspecialchars(json_encode($p['category']), ENT_QUOTES, "UTF-8") ?>, <?= htmlspecialchars(json_encode($p['description']), ENT_QUOTES, "UTF-8") ?>)'><i class="fa-solid fa-pen"></i></button>
+                            
+                            <button class="btn-icon delete" onclick='deleteProject(<?= json_encode($p['id']) ?>)'><i class="fa-solid fa-trash"></i></button>
                         </div>
                         <h4><?= htmlspecialchars($p['title']) ?></h4>
                         <span style="font-size:0.75rem; color:#a1a1aa; display:block; margin-bottom:10px;"><?= htmlspecialchars($p['category']) ?></span>
@@ -168,7 +170,6 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
             <label style="font-size:0.8rem; color:#a1a1aa; font-family:'JetBrains Mono';">Título</label>
             <input type="text" class="input-field" id="crud-title" placeholder="Ej. Arquitectura Backend">
             
-            <!-- SECCIÓN MODIFICADA: Ahora es un Select -->
             <label style="font-size:0.8rem; color:#a1a1aa; font-family:'JetBrains Mono';">Categoría</label>
             <select class="input-field" id="crud-category">
                 <option value="Proyecto">Proyecto</option>
@@ -185,7 +186,6 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
     </div>
 
     <script>
-        // Inyectar eventos de PHP al entorno asíncrono de JS
         const calendarEvents = <?= json_encode($events) ?>;
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -221,7 +221,6 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
             new vis.Network(container, data, options);
         }
 
-        // Función para renderizar el mes entero sin ocultamiento
         function renderCalendar(events) {
             const grid = document.getElementById('calendar-grid');
             grid.innerHTML = ''; 
@@ -235,7 +234,7 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
                 
                 const dayEvents = events.filter(evt => {
                     const evtDate = new Date(evt.start_time);
-                    return evtDate.getDate() === i && evtDate.getMonth() === 7; // Agosto 2026
+                    return evtDate.getDate() === i && evtDate.getMonth() === 7; 
                 });
                 
                 dayEvents.forEach(evt => {
@@ -252,7 +251,6 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
             }
         }
 
-        // Navegación entre vistas
         function switchView(viewId) {
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
@@ -265,7 +263,6 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
             }
         }
 
-        // CONTROL DEL MODAL
         function openCrudModal(mode, id = '', title = '', category = 'Proyecto', desc = '') {
             document.getElementById('crud-modal').classList.add('active');
             document.getElementById('crud-id').value = id;
@@ -280,7 +277,6 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
             document.getElementById('crud-modal').classList.remove('active');
         }
 
-        // CREAR O ACTUALIZAR ASÍNCRONO
         async function saveProject() {
             const id = document.getElementById('crud-id').value;
             const title = document.getElementById('crud-title').value;
@@ -309,32 +305,39 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
                     logToAI(`> Operación [${action.toUpperCase()}] exitosa en la base de datos.`, '#10b981');
                     
                     if (action === 'create') {
+                        // Construcción de la tarjeta 100% segura mediante asignación de nodos DOM
                         const grid = document.querySelector('.project-grid');
-                        const newCard = `
-                            <div class="project-card" id="proj-${result.id}">
-                                <div class="crud-actions">
-                                    <button class="btn-icon edit" onclick="openCrudModal('edit', '${result.id}', '${title}', '${category}', '${desc}')"><i class="fa-solid fa-pen"></i></button>
-                                    <button class="btn-icon delete" onclick="deleteProject(${result.id})"><i class="fa-solid fa-trash"></i></button>
-                                </div>
-                                <h4>${title}</h4>
-                                <span style="font-size:0.75rem; color:#a1a1aa; display:block; margin-bottom:10px;">${category}</span>
-                                <p style="font-size:0.8rem; color:#e4e4e7; margin:0;">${desc}</p>
-                            </div>`;
-                        grid.insertAdjacentHTML('afterbegin', newCard);
+                        const newCard = document.createElement('div');
+                        newCard.className = 'project-card';
+                        newCard.id = `proj-${result.id}`;
+                        
+                        newCard.innerHTML = `
+                            <div class="crud-actions">
+                                <button class="btn-icon edit"><i class="fa-solid fa-pen"></i></button>
+                                <button class="btn-icon delete"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                            <h4>${title}</h4>
+                            <span style="font-size:0.75rem; color:#a1a1aa; display:block; margin-bottom:10px;">${category}</span>
+                            <p style="font-size:0.8rem; color:#e4e4e7; margin:0;">${desc}</p>
+                        `;
+                        
+                        // Asignamos las funciones directamente a los botones (Sin HTML roto)
+                        newCard.querySelector('.edit').onclick = () => openCrudModal('edit', result.id, title, category, desc);
+                        newCard.querySelector('.delete').onclick = () => deleteProject(result.id);
+                        
+                        grid.prepend(newCard);
                         logToAI(`> Nodo "${title}" materializado en la red neuronal.`);
                     } else {
-    // Es una actualización
-    const card = document.getElementById(`proj-${id}`);
-    card.querySelector('h4').innerText = title;
-    card.querySelector('span').innerText = category;
-    card.querySelector('p').innerText = desc;
-    
-    // EVITAMOS setAttribute. Usamos una función flecha directa para aislar variables.
-    const editBtn = card.querySelector('.edit');
-    editBtn.onclick = () => openCrudModal('edit', id, title, category, desc);
-    
-    logToAI(`> Nodo "${title}" reestructurado.`);
-}
+                        const card = document.getElementById(`proj-${id}`);
+                        card.querySelector('h4').innerText = title;
+                        card.querySelector('span').innerText = category;
+                        card.querySelector('p').innerText = desc;
+                        
+                        const editBtn = card.querySelector('.edit');
+                        editBtn.onclick = () => openCrudModal('edit', id, title, category, desc);
+                        
+                        logToAI(`> Nodo "${title}" reestructurado.`);
+                    }
                 } else {
                     logToAI(`> [ERROR SQL] ${result.message}`, '#ef4444');
                 }
@@ -343,7 +346,6 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
             }
         }
 
-        // ELIMINAR ASÍNCRONO
         async function deleteProject(id) {
             if(!confirm('¿Purgar este nodo de la red de memoria? La acción es irreversible.')) return;
 
@@ -360,7 +362,7 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
                 
                 if (result.status === 'success') {
                     const card = document.getElementById(`proj-${id}`);
-                    card.remove(); 
+                    if(card) card.remove(); 
                     logToAI(`> Nodo purgado con éxito. Espacio en disco y memoria liberado.`, '#10b981');
                 } else {
                     logToAI(`> [ERROR SQL] ${result.message}`, '#ef4444');
@@ -370,13 +372,11 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
             }
         }
 
-        // INGESTA A GEMINI API - MODIFICADA SEGÚN LA SOLICITUD
         async function ingestData() {
             const payload = document.getElementById('quick-log').value;
             if(!payload) return;
             document.getElementById('quick-log').value = '';
 
-            // 1. EL SISTEMA "LEE" LA PANTALLA ACTUAL
             let activeView = 'Módulo Desconocido';
             if (document.getElementById('view-calendar').classList.contains('active')) activeView = 'Cronograma Operativo (Calendario)';
             if (document.getElementById('view-repo').classList.contains('active')) activeView = 'Repositorio Central (Proyectos y Logros)';
@@ -389,7 +389,7 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                        action: 'analyze_context', // Nueva acción específica
+                        action: 'analyze_context',
                         payload: payload,
                         current_view: activeView 
                     })
@@ -398,25 +398,22 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
                 const result = await response.json();
                 
                 if (result.status === 'success') {
-            try {
-                // Verificamos si result.data ya es un objeto (porque PHP ya lo decodificó)
-                if (typeof result.data === 'object' && result.data !== null) {
-                    logToAI(`> Análisis de Conciencia:`, '#10b981');
-                    logToAI(`"${result.data.analysis}"`, '#d8b4fe');
-                } else {
-                    // Fallback de seguridad si por alguna razón llega como texto crudo con formato markdown
-                    let cleanJson = result.data.replace(/```json/g, '').replace(/```/g, '').trim();
-                    let aiData = JSON.parse(cleanJson);
-                    logToAI(`> Análisis de Conciencia:`, '#10b981');
-                    logToAI(`"${aiData.analysis}"`, '#d8b4fe');
+                    try {
+                        if (typeof result.data === 'object' && result.data !== null) {
+                            logToAI(`> Análisis de Conciencia:`, '#10b981');
+                            logToAI(`"${result.data.analysis}"`, '#d8b4fe');
+                        } else {
+                            let cleanJson = result.data.replace(/```json/g, '').replace(/```/g, '').trim();
+                            let aiData = JSON.parse(cleanJson);
+                            logToAI(`> Análisis de Conciencia:`, '#10b981');
+                            logToAI(`"${aiData.analysis}"`, '#d8b4fe');
+                        }
+                    } catch (e) {
+                        logToAI(`> [ERROR DE FORMATO]`, '#ef4444');
+                        logToAI(`"${JSON.stringify(result.data)}"`, '#d8b4fe');
+                        console.error("Error al procesar la data de la IA:", e);
+                    }
                 }
-            } catch (e) {
-                // Si todo falla, imprimimos el objeto convertido a string para ver qué falló
-                logToAI(`> [ERROR DE FORMATO]`, '#ef4444');
-                logToAI(`"${JSON.stringify(result.data)}"`, '#d8b4fe');
-                console.error("Error al procesar la data de la IA:", e);
-            }
-        }
             } catch (error) {
                 logToAI(`> [ERROR] Conexión neuronal fallida.`, '#ef4444');
             }
