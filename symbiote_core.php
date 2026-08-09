@@ -376,7 +376,18 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
                 const result = await response.json();
                 
                 if(result.status === 'success') {
-                    logToAI(`> Sistema: ${result.data}`, '#a855f7');
+                    // Extraemos las partes específicas del JSON estructurado
+                    const aiMsg = result.data.response_msg;
+                    const category = result.data.suggested_category;
+                    const impact = result.data.psique_impact;
+                    
+                    // Imprimimos la respuesta principal
+                    logToAI(`> Sistema: ${aiMsg}`, '#a855f7');
+                    
+                    // Imprimimos la metadata (Categoría e Impacto) en un tono más sutil
+                    let impactStr = impact > 0 ? `+${impact}` : impact;
+                    logToAI(`> [Cat: ${category} | Impacto Psique: ${impactStr}]`, '#52525b');
+                    
                 } else {
                     logToAI(`> [ERROR] ${result.error}`, '#ef4444');
                 }
@@ -384,7 +395,6 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
                 logToAI(`> [ERROR] Conexión neuronal fallida. Verifica api_symbiote.php.`, '#ef4444');
             }
         }
-
         function logToAI(msg, color = '#a1a1aa') {
             const consoleBox = document.getElementById('aiResponse');
             consoleBox.innerHTML += `<br><span style="color:${color};">${msg}</span>`;
