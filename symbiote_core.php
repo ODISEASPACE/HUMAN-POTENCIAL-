@@ -323,13 +323,18 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
                         grid.insertAdjacentHTML('afterbegin', newCard);
                         logToAI(`> Nodo "${title}" materializado en la red neuronal.`);
                     } else {
-                        const card = document.getElementById(`proj-${id}`);
-                        card.querySelector('h4').innerText = title;
-                        card.querySelector('span').innerText = category;
-                        card.querySelector('p').innerText = desc;
-                        card.querySelector('.edit').setAttribute('onclick', `openCrudModal('edit', '${id}', '${title}', '${category}', '${desc}')`);
-                        logToAI(`> Nodo "${title}" reestructurado.`);
-                    }
+    // Es una actualización
+    const card = document.getElementById(`proj-${id}`);
+    card.querySelector('h4').innerText = title;
+    card.querySelector('span').innerText = category;
+    card.querySelector('p').innerText = desc;
+    
+    // EVITAMOS setAttribute. Usamos una función flecha directa para aislar variables.
+    const editBtn = card.querySelector('.edit');
+    editBtn.onclick = () => openCrudModal('edit', id, title, category, desc);
+    
+    logToAI(`> Nodo "${title}" reestructurado.`);
+}
                 } else {
                     logToAI(`> [ERROR SQL] ${result.message}`, '#ef4444');
                 }
@@ -392,17 +397,26 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
                 
                 const result = await response.json();
                 
-                if(result.status === 'success') {
-                    try {
-                        let cleanJson = result.data.replace(/```json/g, '').replace(/```/g, '').trim();
-                        let aiData = JSON.parse(cleanJson);
-                        logToAI(`> Análisis de Conciencia:`, '#10b981');
-                        logToAI(`"${aiData.analysis}"`, '#d8b4fe');
-                    } catch(e) {
-                        // Fallback por si la IA devuelve texto en lugar de JSON
-                        logToAI(`"${result.data}"`, '#d8b4fe');
-                    }
+                if (result.status === 'success') {
+            try {
+                // Verificamos si result.data ya es un objeto (porque PHP ya lo decodificó)
+                if (typeof result.data === 'object' && result.data !== null) {
+                    logToAI(`> Análisis de Conciencia:`, '#10b981');
+                    logToAI(`"${result.data.analysis}"`, '#d8b4fe');
+                } else {
+                    // Fallback de seguridad si por alguna razón llega como texto crudo con formato markdown
+                    let cleanJson = result.data.replace(/```json/g, '').replace(/```/g, '').trim();
+                    let aiData = JSON.parse(cleanJson);
+                    logToAI(`> Análisis de Conciencia:`, '#10b981');
+                    logToAI(`"${aiData.analysis}"`, '#d8b4fe');
                 }
+            } catch (e) {
+                // Si todo falla, imprimimos el objeto convertido a string para ver qué falló
+                logToAI(`> [ERROR DE FORMATO]`, '#ef4444');
+                logToAI(`"${JSON.stringify(result.data)}"`, '#d8b4fe');
+                console.error("Error al procesar la data de la IA:", e);
+            }
+        }
             } catch (error) {
                 logToAI(`> [ERROR] Conexión neuronal fallida.`, '#ef4444');
             }
