@@ -89,8 +89,31 @@ if(curl_errno($ch)){
 curl_close($ch);
 
 $gemini_data = json_decode($response, true);
-$ai_text = $gemini_data['candidates'][0]['content']['parts'][0]['text'] ?? '{"response_msg": "Error cognitivo en la red Gemini."}';
 
-// Retornamos el JSON puro que nos entregó Gemini
-echo json_encode(['status' => 'success', 'data' => json_decode($ai_text, true)]);
+// 1. Detectar si Google rechazó la petición directamente
+if (isset($gemini_data['error'])) {
+    $error_msg = $gemini_data['error']['message'] ?? 'Error desconocido de la API';
+    echo json_encode(['error' => 'Google AI ha denegado el acceso: ' . $error_msg]);
+    exit;
+}
+
+// 2. Extraer el texto de la IA
+$ai_text = $gemini_data['candidates'][0]['content']['parts'][0]['text'] ?? null;
+
+// 3. Detectar bloqueos por seguridad o malformaciones
+if (!$ai_text) {
+    $finish_reason = $gemini_data['candidates'][0]['finishReason'] ?? 'Desconocida';
+    echo json_encode(['error' => 'Interrupción en la red neuronal. Razón: ' . $finish_reason]);
+    exit;
+}
+
+// 4. Decodificar el JSON interno que devuelve Gemini y enviarlo al frontend
+$parsed_data = json_decode($ai_text, true);
+
+if (json_last_error() !== JSON_ERROR_NONE) {
+    echo json_encode(['error' => 'La IA no respondió con un JSON válido.']);
+    exit;
+}
+
+echo json_encode(['status' => 'success', 'data' => $parsed_data]);
 ?>
