@@ -13,9 +13,18 @@ $user_id = $_SESSION['user_id'];
 
 try {
     if ($action === 'create') {
-        $stmt = $pdo->prepare("INSERT INTO projects_items (user_id, title, category, description, status) VALUES (?, ?, ?, ?, 'Activo')");
+        // SOLUCIÓN POSTGRESQL: Uso de RETURNING id en lugar de lastInsertId()
+        $stmt = $pdo->prepare("
+            INSERT INTO projects_items (user_id, title, category, description, status) 
+            VALUES (?, ?, ?, ?, 'Activo') 
+            RETURNING id
+        ");
         $stmt->execute([$user_id, $data['title'], $data['category'], $data['description']]);
-        echo json_encode(['status' => 'success', 'id' => $pdo->lastInsertId()]);
+        
+        // Capturar el ID devuelto por la consulta
+        $new_id = $stmt->fetchColumn(); 
+        
+        echo json_encode(['status' => 'success', 'id' => $new_id]);
         
     } elseif ($action === 'delete') {
         $stmt = $pdo->prepare("DELETE FROM projects_items WHERE id = ? AND user_id = ?");

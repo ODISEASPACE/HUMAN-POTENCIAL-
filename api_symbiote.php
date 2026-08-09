@@ -10,22 +10,22 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['is_symbiote']) || $_SESSIO
 
 header('Content-Type: application/json');
 
-// OPCIONAL: Si no usas composer/vlucas-phpdotenv, descomenta estas líneas para leer el .env nativamente
-/*
+// Lector nativo del archivo .env activo
 $envPath = __DIR__ . '/.env';
 if (file_exists($envPath)) {
     $envVars = parse_ini_file($envPath);
-    foreach ($envVars as $key => $value) {
-        $_ENV[$key] = $value;
+    if ($envVars !== false) {
+        foreach ($envVars as $key => $value) {
+            $_ENV[$key] = $value;
+        }
     }
 }
-*/
 
-// Extraer clave (Asegúrate de que el nombre coincida exactamente con tu .env)
+// Extraer clave del entorno
 $apiKey = $_ENV['GEMINI_API_KEY'] ?? getenv('GEMINI_API_KEY');
 
 if (!$apiKey) {
-    echo json_encode(['error' => 'No se encontró la clave de la API de Gemini en el entorno.']);
+    echo json_encode(['error' => 'No se encontró la clave de la API de Gemini en el entorno. Verifica el archivo .env.']);
     exit;
 }
 
@@ -91,5 +91,6 @@ curl_close($ch);
 $gemini_data = json_decode($response, true);
 $ai_text = $gemini_data['candidates'][0]['content']['parts'][0]['text'] ?? '{"response_msg": "Error cognitivo en la red Gemini."}';
 
+// Retornamos el JSON puro que nos entregó Gemini
 echo json_encode(['status' => 'success', 'data' => json_decode($ai_text, true)]);
 ?>
