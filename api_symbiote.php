@@ -29,7 +29,7 @@ if (!$apiKey) {
     exit;
 }
 
-$GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' . $apiKey;
+$GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' . $apiKey;
 
 // Recibir el payload del frontend
 $data = json_decode(file_get_contents('php://input'), true);
