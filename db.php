@@ -14,4 +14,17 @@ try {
 } catch (PDOException $e) {
     die("Error de conexión a la infraestructura: " . $e->getMessage());
 }
+function recordSymbioteLedger($pdo, $user_id, $action, $entity_type, $entity_id, $payload_array) {
+    $stmt = $pdo->prepare("
+        INSERT INTO symbiote_ledger (user_id, action, entity_type, entity_id, payload) 
+        VALUES (?, ?, ?, ?, ?)
+    ");
+    $stmt->execute([
+        $user_id, 
+        strtoupper($action), 
+        $entity_type, 
+        $entity_id, 
+        json_encode($payload_array) // Convertimos el array a JSONB
+    ]);
+}
 ?>

@@ -46,10 +46,23 @@ $stmtEvents = $pdo->prepare("SELECT title, start_time, end_time FROM calendar_ev
 $stmtEvents->execute([$user_id]);
 $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
 
-$contexto_base = "Eres el núcleo lógico del sistema APH. Tu objetivo es optimizar el neurodesarrollo y la productividad del usuario.
+// NUEVO: Extracción de la Memoria Inmutable (System Ledger)
+$stmtHistory = $pdo->prepare("
+    SELECT action, entity_type, payload, created_at 
+    FROM symbiote_ledger 
+    WHERE user_id = ? 
+    ORDER BY created_at DESC LIMIT 5
+");
+$stmtHistory->execute([$user_id]);
+$system_history = $stmtHistory->fetchAll(PDO::FETCH_ASSOC);
+$history_json = json_encode($system_history);
+
+// Se inyecta el Ledger al contexto base
+$contexto_base = "Eres el núcleo lógico y el Lóbulo Frontal Analítico del sistema APH. Tu objetivo es optimizar el neurodesarrollo y la productividad del usuario.
 Estado actual: Psique {$state['psique_score']}, Soma {$state['soma_score']}.
 Próximos eventos críticos: " . json_encode($events) . ".
-Reglas: No sugerir tareas en el bloque de sueño (08:00-14:00). El trabajo operativo es de 01:00 a 07:00.";
+Historial reciente de acciones en el sistema (System Ledger): {$history_json}.
+Reglas: No sugerir tareas en el bloque de sueño (08:00-14:00). El trabajo operativo es de 01:00 a 07:00. Utiliza el historial reciente para saber qué acaba de editar, crear o borrar el usuario en la plataforma.";
 
 $prompt = "";
 
@@ -63,15 +76,17 @@ if ($action === 'awaken') {
     - 'suggested_category': Categoría del proyecto o tarea.
     - 'psique_impact': Un número entero estimando el impacto en la métrica Psique (ej. -5 o +10).";
 } elseif ($action === 'analyze_context') {
-    // NUEVA LÓGICA INSERTADA AQUÍ
+    // NUEVA LÓGICA INSERTADA AQUÍ (Incluyendo lectura del Ledger y Live Data)
     $payload_text = $data['payload'] ?? '';
     $current_view = $data['current_view'] ?? 'Módulo Desconocido';
+    $live_data = isset($data['live_data']) ? json_encode($data['live_data']) : '[]';
     
     $prompt = $contexto_base . "\n\nCRÍTICO: NO vas a insertar datos en la base de datos. Solo actúas como el lóbulo frontal analítico del sistema.
     El usuario está actualmente visualizando el módulo: '{$current_view}'.
+    Datos visuales en tiempo real: {$live_data}.
     Ha introducido el siguiente pensamiento/dato en la consola: '{$payload_text}'.
     
-    Instrucción: Lee su input, cruza la información con el módulo que está viendo y dale una respuesta de alto rendimiento. Analiza cómo ese dato afecta su entorno actual.
+    Instrucción: Lee su input, revisa el System Ledger por si hizo alguna acción reciente (borrar/crear) y cruza la información con el módulo que está viendo. Dale una respuesta de alto rendimiento.
     
     Responde estrictamente con un objeto JSON válido con esta única clave:
     - 'analysis': Tu respuesta, análisis o consejo estratégico (máximo 4 líneas).";
