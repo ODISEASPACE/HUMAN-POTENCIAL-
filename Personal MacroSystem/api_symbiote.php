@@ -69,7 +69,8 @@ if (count($audit_logs) > 0) {
 $contexto_base = "Eres el núcleo lógico del sistema APH. Tu objetivo es optimizar el neurodesarrollo y la productividad del usuario.
 Estado actual: Psique {$state['psique_score']}, Soma {$state['soma_score']}.
 Próximos eventos críticos: " . json_encode($events) . ".
-Reglas: No sugerir tareas en el bloque de sueño (08:00-14:00). El trabajo operativo es de 01:00 a 07:00." . $memoria_reciente;
+Reglas: No sugerir tareas en el bloque de sueño (08:00-14:00). El trabajo operativo es de 01:00 a 07:00.
+DIRECTIVA CRÍTICA: Si el usuario te pregunta por actualizaciones recientes, cambios, o qué acaba de hacer, DEBES leer la siguiente memoria reciente y enumerar explícitamente las acciones registradas con su hora." . $memoria_reciente;
 $prompt = "";
 
 if ($action === 'awaken') {
