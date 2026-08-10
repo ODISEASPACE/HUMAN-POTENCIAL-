@@ -1,6 +1,6 @@
 <?php
 session_start();
-require 'db.php';
+require '../db.php';
 
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['is_symbiote']) || $_SESSION['is_symbiote'] !== true) {
     header("Location: index.php");
@@ -124,6 +124,10 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
                         <button class="btn-action" style="width: auto; padding: 5px 15px; background: #27272a; color: #fff;" onclick="switchCalendarView('weekly')">Semanal</button>
                         <button class="btn-action" style="width: auto; padding: 5px 15px;" id="btn-month" onclick="switchCalendarView('monthly')">Mensual</button>
                     </div>
+                    <div style="display: flex; gap: 10px;">
+    <!-- ... tus botones de Diaria, Semanal, Mensual ... -->
+    <button class="btn-action" style="width: auto; padding: 5px 15px; background: transparent; color: var(--accent); border: 1px solid var(--accent);" onclick="window.location.href='custom_routines.php'">+ Crear Rutina Propia</button>
+</div>
                 </div>
                 
                 <!-- Contenedor Dinámico -->

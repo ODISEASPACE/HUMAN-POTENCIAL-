@@ -1,6 +1,6 @@
 <?php
 session_start();
-require 'db.php';
+require '../db.php';
 
 // 1. Cabecera CRÍTICA para que JS sepa que la respuesta es un JSON puro
 header('Content-Type: application/json'); 

@@ -28,9 +28,9 @@ if ($action === 'login') {
 
         // 2. Redirección táctica (Bifurcación de Entornos)
         if ($_SESSION['is_symbiote'] === true) {
-            header("Location: symbiote_core.php"); // Tu nuevo ecosistema
+            header("Location: Personal MacroSystem/symbiote_core.php"); // Ruta para el simbionte
         } elseif ($_SESSION['is_admin'] === true) {
-            header("Location: admin_dashboard.php");
+            header("Location: admin_core/admin_dashboard.php");
         } else {
             header("Location: dashboard.php"); // El dashboard normal de tus compañeros
         }

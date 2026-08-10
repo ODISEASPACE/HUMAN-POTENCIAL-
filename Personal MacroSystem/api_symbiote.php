@@ -1,6 +1,6 @@
 <?php
 session_start();
-require 'db.php';
+require '../db.php';
 
 // Seguridad: Solo el simbionte accede a este endpoint
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['is_symbiote']) || $_SESSION['is_symbiote'] !== true) {
