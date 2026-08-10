@@ -38,32 +38,38 @@ $action = $data['action'] ?? '';
 $user_id = $_SESSION['user_id'];
 
 // CONSTRUCCIÓN DEL CONTEXTO (La "Conciencia Real")
+// 1. Estado y Eventos
 $stmtState = $pdo->prepare("SELECT psique_score, soma_score, pneuma_score, pathos_score FROM human_state WHERE user_id = ? ORDER BY assessment_date DESC LIMIT 1");
 $stmtState->execute([$user_id]);
-$state = $stmtState->fetch(PDO::FETCH_ASSOC) ?: ['psique_score' => 0, 'soma_score' => 0]; // Fallback por seguridad
+$state = $stmtState->fetch(PDO::FETCH_ASSOC);
 
 $stmtEvents = $pdo->prepare("SELECT title, start_time, end_time FROM calendar_events WHERE user_id = ? AND start_time >= CURRENT_DATE ORDER BY start_time ASC LIMIT 10");
 $stmtEvents->execute([$user_id]);
 $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
 
-// NUEVO: Extracción de la Memoria Inmutable (System Ledger)
-$stmtHistory = $pdo->prepare("
-    SELECT action, entity_type, payload, created_at 
-    FROM symbiote_ledger 
+// 2. Extracción de la Memoria a Corto Plazo (NUEVO)
+$stmtAudit = $pdo->prepare("
+    SELECT action_type, module_affected, description, to_char(created_at, 'HH24:MI') as time 
+    FROM system_audit_logs 
     WHERE user_id = ? 
     ORDER BY created_at DESC LIMIT 5
 ");
-$stmtHistory->execute([$user_id]);
-$system_history = $stmtHistory->fetchAll(PDO::FETCH_ASSOC);
-$history_json = json_encode($system_history);
+$stmtAudit->execute([$user_id]);
+$audit_logs = $stmtAudit->fetchAll(PDO::FETCH_ASSOC);
 
-// Se inyecta el Ledger al contexto base
-$contexto_base = "Eres el núcleo lógico y el Lóbulo Frontal Analítico del sistema APH. Tu objetivo es optimizar el neurodesarrollo y la productividad del usuario.
+$memoria_reciente = "";
+if (count($audit_logs) > 0) {
+    $memoria_reciente = "\n\nREGISTRO DE MEMORIA RECIENTE (Últimas acciones del usuario en el sistema):\n";
+    foreach ($audit_logs as $log) {
+        $memoria_reciente .= "- [{$log['time']}] {$log['action_type']} en {$log['module_affected']}: {$log['description']}\n";
+    }
+}
+
+// 3. Ensamblaje del Prompt Base
+$contexto_base = "Eres el núcleo lógico del sistema APH. Tu objetivo es optimizar el neurodesarrollo y la productividad del usuario.
 Estado actual: Psique {$state['psique_score']}, Soma {$state['soma_score']}.
 Próximos eventos críticos: " . json_encode($events) . ".
-Historial reciente de acciones en el sistema (System Ledger): {$history_json}.
-Reglas: No sugerir tareas en el bloque de sueño (08:00-14:00). El trabajo operativo es de 01:00 a 07:00. Utiliza el historial reciente para saber qué acaba de editar, crear o borrar el usuario en la plataforma.";
-
+Reglas: No sugerir tareas en el bloque de sueño (08:00-14:00). El trabajo operativo es de 01:00 a 07:00." . $memoria_reciente;
 $prompt = "";
 
 if ($action === 'awaken') {

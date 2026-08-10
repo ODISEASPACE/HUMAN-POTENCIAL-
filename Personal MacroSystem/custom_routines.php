@@ -15,7 +15,32 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['is_symbiote']) || $_SESSIO
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #09090b; --panel: #18181b; --text: #e4e4e7; --accent: #a855f7; --border: #27272a; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); padding: 40px; display: flex; flex-direction: column; align-items: center; }
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            margin: 0;
+            padding: 40px; 
+            
+            /* NUEVO LAYOUT GRID PARA INYECTAR IA */
+            display: grid; 
+            grid-template-columns: 1fr 350px; 
+            gap: 40px;
+            height: 100vh;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+        
+        /* Contenedor principal con scroll independiente */
+        .main-content {
+            overflow-y: auto;
+            padding-right: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Mantiene tu panel centrado */
+        }
+
         .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 30px; width: 100%; max-width: 800px; }
         h2 { font-family: 'JetBrains Mono'; color: var(--accent); margin-top: 0; border-bottom: 1px dashed var(--border); padding-bottom: 10px; }
         
@@ -31,31 +56,37 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['is_symbiote']) || $_SESSIO
     </style>
 </head>
 <body>
-    <button onclick="window.location.href='symbiote_core.php'" style="background:transparent; color:#a1a1aa; border:none; cursor:pointer; align-self:flex-start; margin-bottom:20px; font-family:'JetBrains Mono';">< Volver a la Consola</button>
-    
-    <div class="panel">
-        <h2>>> Diseño_Estructural_Personalizado</h2>
+    <!-- ENVOLTORIO DEL CONTENIDO PRINCIPAL -->
+    <div class="main-content">
+        <button onclick="window.location.href='symbiote_core.php'" style="background:transparent; color:#a1a1aa; border:none; cursor:pointer; align-self:flex-start; margin-bottom:20px; font-family:'JetBrains Mono';">< Volver a la Consola</button>
         
-        <div style="margin-bottom: 20px;">
-            <label style="font-size:0.8rem; color:#a1a1aa; font-family:'JetBrains Mono';">Identificador de la Rutina</label>
-            <input type="text" class="input-field" style="width: 100%;" placeholder="Ej. Protocolo Deep Work V2">
-        </div>
+        <div class="panel">
+            <h2>>> Diseño_Estructural_Personalizado</h2>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="font-size:0.8rem; color:#a1a1aa; font-family:'JetBrains Mono';">Identificador de la Rutina</label>
+                <input type="text" class="input-field" style="width: 100%; box-sizing: border-box;" placeholder="Ej. Protocolo Deep Work V2">
+            </div>
 
-        <div id="blocks-container" class="routine-builder">
-            <!-- Bloque Base por defecto -->
-            <div class="block-row">
-                <input type="time" class="input-field input-time" value="06:00">
-                <input type="text" class="input-field" placeholder="Nombre de la actividad (Ej. Meditación / Lectura)">
-                <input type="color" value="#3b82f6" style="border:none; background:none; cursor:pointer; height:35px;">
+            <div id="blocks-container" class="routine-builder">
+                <!-- Bloque Base por defecto -->
+                <div class="block-row">
+                    <input type="time" class="input-field input-time" value="06:00">
+                    <input type="text" class="input-field" placeholder="Nombre de la actividad (Ej. Meditación / Lectura)">
+                    <input type="color" value="#3b82f6" style="border:none; background:none; cursor:pointer; height:35px;">
+                </div>
+            </div>
+            
+            <button class="btn-add" onclick="addBlock()">+ Añadir Bloque Horario</button>
+            
+            <div style="margin-top: 30px; border-top: 1px solid var(--border); padding-top: 20px; text-align: right;">
+                <button class="btn-action" onclick="compileRoutine()">Compilar e Inyectar a la BD</button>
             </div>
         </div>
-        
-        <button class="btn-add" onclick="addBlock()">+ Añadir Bloque Horario</button>
-        
-        <div style="margin-top: 30px; border-top: 1px solid var(--border); padding-top: 20px; text-align: right;">
-            <button class="btn-action" onclick="compileRoutine()">Compilar e Inyectar a la BD</button>
-        </div>
     </div>
+
+    <!-- INYECCIÓN DEL MÓDULO IA -->
+    <?php include 'ai_module.php'; ?>
 
     <script>
         function addBlock() {

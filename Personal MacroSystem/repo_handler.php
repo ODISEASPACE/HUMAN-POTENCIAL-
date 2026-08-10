@@ -33,49 +33,40 @@ if (!function_exists('recordSymbioteLedger')) {
 
 try {
     if ($action === 'create') {
-        $stmt = $pdo->prepare("
-            INSERT INTO projects_items (user_id, title, category, description, status) 
-            VALUES (?, ?, ?, ?, 'Activo') 
-            RETURNING id
-        ");
+        // 1. Crear el nodo
+        $stmt = $pdo->prepare("INSERT INTO projects_items (user_id, title, category, description, status) VALUES (?, ?, ?, ?, 'Activo')");
         $stmt->execute([$user_id, $data['title'], $data['category'], $data['description']]);
+        $new_id = $pdo->lastInsertId();
         
-        $new_id = $stmt->fetchColumn(); 
-        
-        // REGISTRO EN LA MEMORIA INMUTABLE
-        recordSymbioteLedger($pdo, $user_id, 'CREATE', 'projects_items', $new_id, [
-            'title' => $data['title'],
-            'category' => $data['category'],
-            'description' => $data['description']
-        ]);
+        // 2. Registrar en Auditoría (Memoria del Sistema)
+        $stmtLog = $pdo->prepare("INSERT INTO system_audit_logs (user_id, action_category, action_type, module_affected, description) VALUES (?, 'CRUD', 'CREATE', 'Repositorio Central', ?)");
+        $stmtLog->execute([$user_id, "Creó el nodo '{$data['title']}' en la categoría {$data['category']}"]);
         
         echo json_encode(['status' => 'success', 'id' => $new_id]);
         
     } elseif ($action === 'delete') {
+        // 1. Registrar en Auditoría ANTES de borrar (para tener el nombre o ID seguro)
+        $stmtLog = $pdo->prepare("INSERT INTO system_audit_logs (user_id, action_category, action_type, module_affected, description) VALUES (?, 'CRUD', 'DELETE', 'Repositorio Central', ?)");
+        $stmtLog->execute([$user_id, "Eliminó un nodo con ID: {$data['id']}"]);
+        
+        // 2. Eliminar el nodo
         $stmt = $pdo->prepare("DELETE FROM projects_items WHERE id = ? AND user_id = ?");
         $stmt->execute([$data['id'], $user_id]);
-        
-        // REGISTRO EN LA MEMORIA INMUTABLE
-        recordSymbioteLedger($pdo, $user_id, 'DELETE', 'projects_items', $data['id'], [
-            'nota' => 'El nodo fue purgado del repositorio central.'
-        ]);
         
         echo json_encode(['status' => 'success']);
         
     } elseif ($action === 'update') {
+        // 1. Actualizar el nodo
         $stmt = $pdo->prepare("UPDATE projects_items SET title = ?, category = ?, description = ? WHERE id = ? AND user_id = ?");
         $stmt->execute([$data['title'], $data['category'], $data['description'], $data['id'], $user_id]);
         
-        // REGISTRO EN LA MEMORIA INMUTABLE
-        recordSymbioteLedger($pdo, $user_id, 'UPDATE', 'projects_items', $data['id'], [
-            'title' => $data['title'],
-            'category' => $data['category'],
-            'description' => $data['description']
-        ]);
+        // 2. Registrar en Auditoría
+        $stmtLog = $pdo->prepare("INSERT INTO system_audit_logs (user_id, action_category, action_type, module_affected, description) VALUES (?, 'CRUD', 'UPDATE', 'Repositorio Central', ?)");
+        $stmtLog->execute([$user_id, "Actualizó el nodo '{$data['title']}'"]);
         
         echo json_encode(['status' => 'success']);
     }
-} catch (PDOException $e) {
+} catch (Exception $e) {
     echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
 }
 ?>
