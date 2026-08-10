@@ -11,7 +11,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['is_symbiote']) || $_SESSIO
 header('Content-Type: application/json');
 
 // Lector nativo del archivo .env activo
-$envPath = __DIR__ . '/.env';
+$envPath = __DIR__ . '/../.env';
 if (file_exists($envPath)) {
     $envVars = parse_ini_file($envPath);
     if ($envVars !== false) {
