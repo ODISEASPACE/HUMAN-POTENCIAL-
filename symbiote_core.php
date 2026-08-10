@@ -372,26 +372,51 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
             }
         }
 
+        // ==========================================
+        // FASE 1: INYECCIÓN DE CONTEXTO DINÁMICO
+        // ==========================================
         async function ingestData() {
             const payload = document.getElementById('quick-log').value;
             if(!payload) return;
             document.getElementById('quick-log').value = '';
 
             let activeView = 'Módulo Desconocido';
-            if (document.getElementById('view-calendar').classList.contains('active')) activeView = 'Cronograma Operativo (Calendario)';
-            if (document.getElementById('view-repo').classList.contains('active')) activeView = 'Repositorio Central (Proyectos y Logros)';
-            if (document.getElementById('view-skills').classList.contains('active')) activeView = 'Matriz de Habilidades (Nodos)';
+            let viewContext = {}; // Este objeto atrapará la información visual del momento
+
+            // 1. Escaneo del DOM y memoria actual dependiendo de la vista
+            if (document.getElementById('view-calendar').classList.contains('active')) {
+                activeView = 'Cronograma Operativo (Calendario)';
+                viewContext = calendarEvents; // Pasamos los eventos mapeados en PHP
+            }
+            
+            if (document.getElementById('view-repo').classList.contains('active')) {
+                activeView = 'Repositorio Central (Proyectos y Logros)';
+                // Extracción en tiempo real de las tarjetas del DOM
+                const projectCards = document.querySelectorAll('.project-card');
+                viewContext = Array.from(projectCards).map(card => ({
+                    id: card.id.replace('proj-', ''),
+                    title: card.querySelector('h4').innerText,
+                    category: card.querySelector('span').innerText
+                }));
+            }
+
+            if (document.getElementById('view-skills').classList.contains('active')) {
+                activeView = 'Matriz de Habilidades (Nodos)';
+                viewContext = { info: "Matriz 3D visualizada por el usuario. Nodos base activos." };
+            }
             
             logToAI(`> Analizando input desde el módulo: [${activeView}]...`, '#f59e0b');
             
             try {
+                // Inyectamos el contexto en vivo hacia el Lóbulo Frontal Analítico
                 const response = await fetch('api_symbiote.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                         action: 'analyze_context',
                         payload: payload,
-                        current_view: activeView 
+                        current_view: activeView,
+                        live_data: viewContext // El superpoder para Jarvis/Viernes
                     })
                 });
                 
@@ -413,6 +438,8 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
                         logToAI(`"${JSON.stringify(result.data)}"`, '#d8b4fe');
                         console.error("Error al procesar la data de la IA:", e);
                     }
+                } else {
+                    logToAI(`> [ERROR IA] ${result.error}`, '#ef4444');
                 }
             } catch (error) {
                 logToAI(`> [ERROR] Conexión neuronal fallida.`, '#ef4444');
