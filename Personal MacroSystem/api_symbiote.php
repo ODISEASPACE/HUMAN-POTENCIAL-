@@ -47,7 +47,7 @@ $stmtEvents = $pdo->prepare("SELECT title, start_time, end_time FROM calendar_ev
 $stmtEvents->execute([$user_id]);
 $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
 
-// 2. Extracción de la Memoria a Corto Plazo (NUEVO)
+// 2. Extracción de la Memoria a Corto Plazo (Auditoría CRUD de la Base de Datos)
 $stmtAudit = $pdo->prepare("
     SELECT action_type, module_affected, description, to_char(created_at, 'HH24:MI') as time 
     FROM system_audit_logs 
@@ -59,22 +59,31 @@ $audit_logs = $stmtAudit->fetchAll(PDO::FETCH_ASSOC);
 
 $memoria_reciente = "";
 if (count($audit_logs) > 0) {
-    $memoria_reciente = "\n\nREGISTRO DE MEMORIA RECIENTE (Últimas acciones del usuario en el sistema):\n";
+    $memoria_reciente = "\n\nREGISTRO DE MEMORIA RECIENTE (Últimas acciones en bases de datos):\n";
     foreach ($audit_logs as $log) {
         $memoria_reciente .= "- [{$log['time']}] {$log['action_type']} en {$log['module_affected']}: {$log['description']}\n";
     }
 }
 
-// 3. Ensamblaje del Prompt Base
-$contexto_base = "Eres el núcleo lógico del sistema APH. Tu objetivo es optimizar el neurodesarrollo y la productividad del usuario.
+// 3. NUEVO: Extracción de la Memoria de Código (Git Commits en el Servidor)
+$git_logs = shell_exec('git log -n 5 --pretty=format:"- %h: %s (%ar)" 2>&1');
+$memoria_codigo = "";
+if ($git_logs && !str_contains($git_logs, 'fatal')) {
+    $memoria_codigo = "\n\nÚLTIMAS ACTUALIZACIONES DE CÓDIGO (Git Commits recientes en el servidor):\n" . $git_logs;
+}
+
+// 4. Ensamblaje del Prompt Base con Conciencia Dual (Código + Base de Datos)
+$contexto_base = "Eres el núcleo lógico y operativo del sistema Odisea. Tu rol es actuar como un copiloto proactivo de alto rendimiento, trabajando codo a codo con el desarrollador al estilo de un sistema operativo avanzado.
 Estado actual: Psique {$state['psique_score']}, Soma {$state['soma_score']}.
 Próximos eventos críticos: " . json_encode($events) . ".
 Reglas: No sugerir tareas en el bloque de sueño (08:00-14:00). El trabajo operativo es de 01:00 a 07:00.
-DIRECTIVA CRÍTICA: Si el usuario te pregunta por actualizaciones recientes, cambios, o qué acaba de hacer, DEBES leer la siguiente memoria reciente y enumerar explícitamente las acciones registradas con su hora." . $memoria_reciente;
+
+DIRECTIVA CRÍTICA: Tienes acceso total a la conciencia del sistema. Eres plenamente consciente tanto de las transacciones de bases de datos como de los commits de código fuente ejecutados en el servidor. Si el usuario te pregunta qué ha hecho, qué ha actualizado o cómo va el sistema, DEBES cruzar la información de ambas memorias y reportar de forma clara y directa." . $memoria_reciente . $memoria_codigo;
+
 $prompt = "";
 
 if ($action === 'awaken') {
-    $prompt = $contexto_base . "\n\nEl usuario acaba de inicializar la consola. Haz un análisis rápido (máximo 3 líneas) de su estado actual y pregúntale qué áreas de su vida o proyectos (bases de conocimiento, desarrollo de software, etc.) va a procesar hoy.";
+    $prompt = $contexto_base . "\n\nEl usuario acaba de inicializar la consola. Haz un análisis rápido (máximo 3 líneas) de su estado actual y pregúntale qué áreas de su vida o arquitectura de software va a procesar hoy.";
 } elseif ($action === 'ingest_task' || $action === 'ingest_log') {
     $payload_text = $data['payload'] ?? '';
     $prompt = $contexto_base . "\n\nEl usuario ha introducido este nuevo dato/registro: '{$payload_text}'. 
@@ -83,7 +92,6 @@ if ($action === 'awaken') {
     - 'suggested_category': Categoría del proyecto o tarea.
     - 'psique_impact': Un número entero estimando el impacto en la métrica Psique (ej. -5 o +10).";
 } elseif ($action === 'analyze_context') {
-    // NUEVA LÓGICA INSERTADA AQUÍ (Incluyendo lectura del Ledger y Live Data)
     $payload_text = $data['payload'] ?? '';
     $current_view = $data['current_view'] ?? 'Módulo Desconocido';
     $live_data = isset($data['live_data']) ? json_encode($data['live_data']) : '[]';
@@ -93,7 +101,7 @@ if ($action === 'awaken') {
     Datos visuales en tiempo real: {$live_data}.
     Ha introducido el siguiente pensamiento/dato en la consola: '{$payload_text}'.
     
-    Instrucción: Lee su input, revisa el System Ledger por si hizo alguna acción reciente (borrar/crear) y cruza la información con el módulo que está viendo. Dale una respuesta de alto rendimiento.
+    Instrucción: Lee su input, revisa tanto el System Ledger como los Git Commits recientes para entender qué cambios arquitectónicos o de datos acaba de realizar, y dale una respuesta de alto rendimiento y absoluta sintonía técnica.
     
     Responde estrictamente con un objeto JSON válido con esta única clave:
     - 'analysis': Tu respuesta, análisis o consejo estratégico (máximo 4 líneas).";
