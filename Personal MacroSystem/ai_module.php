@@ -96,27 +96,44 @@
         
         logToAI(`> Analizando input desde: [${activeContext}]...`, '#f59e0b');
         
-        if(result.status === 'success') {
-    // 1. Verificamos si 'data' ya es un objeto procesado
-    if (typeof result.data === 'object' && result.data !== null) {
-        logToAI(`> Análisis de Conciencia:`, '#10b981');
-        // Si el objeto trae la propiedad 'analysis', la mostramos. 
-        // Si no, convertimos todo el objeto a texto visible para que sepas qué llegó.
-        let textoSalida = result.data.analysis ? result.data.analysis : JSON.stringify(result.data, null, 2);
-        logToAI(`"${textoSalida}"`, '#d8b4fe');
-        
-    } else {
-        // 2. Si 'data' es un string (ej: la IA respondió con bloques de código Markdown)
         try {
-            let cleanJson = result.data.replace(/```json/g, '').replace(/```/g, '').trim();
-            let aiData = JSON.parse(cleanJson);
-            logToAI(`> Análisis de Conciencia:`, '#10b981');
-            logToAI(`"${aiData.analysis}"`, '#d8b4fe');
-        } catch(e) {
-            // Si el parseo falla, mostramos el texto crudo.
-            logToAI(`"${result.data}"`, '#d8b4fe');
+            // AQUÍ ESTÁ LA CONEXIÓN QUE FALTABA
+            const response = await fetch('api_symbiote.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    action: 'analyze_context', 
+                    payload: payload,
+                    current_view: activeContext 
+                })
+            });
+            
+            const result = await response.json();
+            
+            if(result.status === 'success') {
+                // 1. Verificamos si 'data' ya es un objeto procesado
+                if (typeof result.data === 'object' && result.data !== null) {
+                    logToAI(`> Análisis de Conciencia:`, '#10b981');
+                    // Si el objeto trae la propiedad 'analysis', la mostramos. 
+                    // Si no, convertimos todo el objeto a texto visible para que sepas qué llegó.
+                    let textoSalida = result.data.analysis ? result.data.analysis : JSON.stringify(result.data, null, 2);
+                    logToAI(`"${textoSalida}"`, '#d8b4fe');
+                    
+                } else {
+                    // 2. Si 'data' es un string (ej: la IA respondió con bloques de código Markdown)
+                    try {
+                        let cleanJson = result.data.replace(/```json/g, '').replace(/```/g, '').trim();
+                        let aiData = JSON.parse(cleanJson);
+                        logToAI(`> Análisis de Conciencia:`, '#10b981');
+                        logToAI(`"${aiData.analysis}"`, '#d8b4fe');
+                    } catch(e) {
+                        // Si el parseo falla, mostramos el texto crudo.
+                        logToAI(`"${result.data}"`, '#d8b4fe');
+                    }
+                }
+            }
+        } catch (error) {
+            logToAI(`> [ERROR] Conexión neuronal fallida.`, '#ef4444');
         }
-    }
-}
     }
 </script>
