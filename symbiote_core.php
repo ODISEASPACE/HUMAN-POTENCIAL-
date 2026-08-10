@@ -115,9 +115,20 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
         <!-- VISTA: Calendario Integral -->
         <div id="view-calendar" class="view-section active">
             <div class="panel">
-                <h2>>> Cronograma_Operativo (Mes Completo Expuesto)</h2>
-                <div class="month-grid" id="calendar-grid">
-                    <!-- Se renderiza por JS -->
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+                    <h2 style="border: none; padding: 0; margin: 0;">>> Cronograma_Operativo</h2>
+                    
+                    <!-- Controles de Tiempo -->
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-action" style="width: auto; padding: 5px 15px; background: #27272a; color: #fff;" onclick="switchCalendarView('daily')">Diaria</button>
+                        <button class="btn-action" style="width: auto; padding: 5px 15px; background: #27272a; color: #fff;" onclick="switchCalendarView('weekly')">Semanal</button>
+                        <button class="btn-action" style="width: auto; padding: 5px 15px;" id="btn-month" onclick="switchCalendarView('monthly')">Mensual</button>
+                    </div>
+                </div>
+                
+                <!-- Contenedor Dinámico -->
+                <div id="calendar-container" style="margin-top: 15px;">
+                    <!-- El JS inyectará aquí la cuadrícula correspondiente -->
                 </div>
             </div>
         </div>
@@ -204,13 +215,158 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
     </div>
 
     <script>
-        const calendarEvents = <?= json_encode($events) ?>;
+        // Configuración de Hábitos Base
+        const baseRoutine = [
+            { title: "Bloque Operativo", time: "01:00", type: "rutina", color: "#3b82f6" },
+            { title: "Santuario Biológico (Sueño)", time: "08:00", type: "rutina", color: "#10b981" },
+            { title: "Desarrollo / Proyectos", time: "18:00", type: "rutina", color: "#a855f7" }
+        ];
+
+        const restDayRoutine = [
+            { title: "Recuperación Total (Descanso)", time: "Todo el día", type: "descanso", color: "#52525b" }
+        ];
+
+        // Se obtienen los eventos de la DB directamente en el motor principal
+        let currentEvents = <?= json_encode($events) ?>;
 
         document.addEventListener('DOMContentLoaded', () => {
-            renderCalendar(calendarEvents);
+            // Disparador inicial de la vista mensual exhaustiva
+            document.getElementById('btn-month').click(); 
         });
 
-        /* FUNCIÓN NUEVA: Modo Expansión IA */
+        // Función principal para cambiar la vista de calendario
+        function switchCalendarView(viewType) {
+            // Resaltar botón activo
+            document.querySelectorAll('#view-calendar .btn-action').forEach(btn => {
+                btn.style.background = '#27272a';
+                btn.style.color = '#fff';
+            });
+            event.currentTarget.style.background = 'var(--accent)';
+            event.currentTarget.style.color = '#000';
+
+            const container = document.getElementById('calendar-container');
+            container.innerHTML = '';
+
+            if (viewType === 'monthly') renderMonthly(container);
+            if (viewType === 'weekly') renderWeekly(container);
+            if (viewType === 'daily') renderDaily(container);
+        }
+
+        // 1. VISTA MENSUAL: Exhaustiva, sin ocultar datos
+        function renderMonthly(container) {
+            const grid = document.createElement('div');
+            grid.className = 'month-grid';
+            grid.style.display = 'grid';
+            grid.style.gridTemplateColumns = 'repeat(7, 1fr)';
+            grid.style.gap = '5px';
+
+            const daysInMonth = 31; // Ajustable según el mes real
+            
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dayCell = document.createElement('div');
+                dayCell.className = 'day-cell';
+                dayCell.style.background = '#000';
+                dayCell.style.border = '1px solid var(--border)';
+                dayCell.style.minHeight = '100px';
+                dayCell.style.padding = '5px';
+                dayCell.style.borderRadius = '4px';
+
+                dayCell.innerHTML = `<span style="font-family:'JetBrains Mono'; font-size:0.7rem; color:#52525b;">${i < 10 ? '0'+i : i}</span>`;
+
+                // Filtrar eventos del día
+                const dayEvents = currentEvents.filter(evt => {
+                    const evtDate = new Date(evt.start_time);
+                    return evtDate.getDate() === i;
+                });
+
+                const isRestDay = (i % 7 === 0); // Asumiendo el día 7, 14, 21, 28 como descanso
+
+                if (dayEvents.length > 0) {
+                    // Renderizar eventos específicos
+                    dayEvents.forEach(evt => {
+                        const time = new Date(evt.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                        dayCell.innerHTML += createEventBlock(evt.title, time, evt.color || 'var(--accent)');
+                    });
+                } else {
+                    // Inyectar rutina habitual o descanso
+                    const routineToApply = isRestDay ? restDayRoutine : baseRoutine;
+                    routineToApply.forEach(rut => {
+                        dayCell.innerHTML += createEventBlock(rut.title, rut.time, rut.color);
+                    });
+                }
+                grid.appendChild(dayCell);
+            }
+            container.appendChild(grid);
+        }
+
+        // 2. VISTA SEMANAL: Solo títulos para panorama rápido
+        function renderWeekly(container) {
+            const grid = document.createElement('div');
+            grid.style.display = 'grid';
+            grid.style.gridTemplateColumns = 'repeat(7, 1fr)';
+            grid.style.gap = '10px';
+
+            const today = new Date().getDate();
+            
+            for (let i = 0; i < 7; i++) {
+                const dayNum = today + i; // Días de la semana en curso
+                const col = document.createElement('div');
+                col.style.background = 'rgba(255,255,255,0.02)';
+                col.style.border = '1px solid var(--border)';
+                col.style.borderRadius = '6px';
+                col.style.padding = '10px';
+
+                col.innerHTML = `<div style="text-align:center; font-family:'JetBrains Mono'; font-size:0.8rem; color:var(--accent); margin-bottom:10px;">Día ${dayNum}</div>`;
+                
+                // Simulación rápida de llenado semanal
+                const isRestDay = (dayNum % 7 === 0);
+                const routine = isRestDay ? restDayRoutine : baseRoutine;
+                
+                routine.forEach(rut => {
+                    col.innerHTML += `<div style="background: rgba(255,255,255,0.05); padding: 5px; margin-bottom: 5px; border-radius: 4px; font-size: 0.75rem; color: #e4e4e7; text-align: center;">${rut.title}</div>`;
+                });
+
+                grid.appendChild(col);
+            }
+            container.appendChild(grid);
+        }
+
+        // 3. VISTA DIARIA: Detallada con horas y descripciones
+        function renderDaily(container) {
+            const timeline = document.createElement('div');
+            timeline.style.display = 'flex';
+            timeline.style.flexDirection = 'column';
+            timeline.style.gap = '15px';
+
+            const today = new Date().getDate();
+            const isRestDay = (today % 7 === 0);
+            const routine = isRestDay ? restDayRoutine : baseRoutine;
+
+            routine.forEach(rut => {
+                timeline.innerHTML += `
+                    <div style="display: grid; grid-template-columns: 80px 1fr; gap: 15px; align-items: start; background: #000; padding: 15px; border-radius: 8px; border-left: 3px solid ${rut.color};">
+                        <div style="font-family: 'JetBrains Mono'; color: #a1a1aa; font-size: 0.85rem; padding-top: 2px;">${rut.time}</div>
+                        <div>
+                            <div style="font-weight: bold; color: #fff; margin-bottom: 5px;">${rut.title}</div>
+                            <div style="font-size: 0.8rem; color: #a1a1aa;">Parámetro operativo establecido según la matriz de hábitos. Ejecución obligatoria para mantener el núcleo en óptimas condiciones.</div>
+                        </div>
+                    </div>
+                `;
+            });
+            container.appendChild(timeline);
+        }
+
+        // Componente visual para los bloques del calendario
+        function createEventBlock(title, time, color) {
+            return `
+                <div style="background: rgba(255,255,255,0.05); border-left: 2px solid ${color}; font-size: 0.65rem; padding: 4px; margin-bottom: 3px; border-radius: 2px; color: #e4e4e7;">
+                    <div style="font-weight:bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${title}</div>
+                    <div style="color: #a1a1aa; font-family: 'JetBrains Mono'; margin-top:2px;">${time}</div>
+                </div>
+            `;
+        }
+
+        /* FUNCIÓN: Modo Expansión IA */
         function toggleAIPanel() {
             document.body.classList.toggle('ai-expanded');
             const icon = document.getElementById('expand-icon');
@@ -250,36 +406,6 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
             };
 
             new vis.Network(container, data, options);
-        }
-
-        function renderCalendar(events) {
-            const grid = document.getElementById('calendar-grid');
-            grid.innerHTML = ''; 
-            
-            const daysInMonth = 31; 
-            
-            for (let i = 1; i <= daysInMonth; i++) {
-                const dayCell = document.createElement('div');
-                dayCell.className = 'day-cell';
-                dayCell.innerHTML = `<span class="day-num">${i < 10 ? '0'+i : i}</span>`;
-                
-                const dayEvents = events.filter(evt => {
-                    const evtDate = new Date(evt.start_time);
-                    return evtDate.getDate() === i && evtDate.getMonth() === 7; 
-                });
-                
-                dayEvents.forEach(evt => {
-                    const timeString = new Date(evt.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                    dayCell.innerHTML += `
-                        <div class="evt-block">
-                            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${evt.title}</span>
-                            <span>${timeString}</span>
-                        </div>
-                    `;
-                });
-                
-                grid.appendChild(dayCell);
-            }
         }
 
         function switchView(viewId) {
@@ -411,7 +537,7 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
 
             if (document.getElementById('view-calendar').classList.contains('active')) {
                 activeView = 'Cronograma Operativo (Calendario)';
-                viewContext = calendarEvents; 
+                viewContext = currentEvents; // Vinculado a tu nuevo motor
             }
             
             if (document.getElementById('view-repo').classList.contains('active')) {
@@ -475,6 +601,7 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
             // Auto-scroll forzado
             consoleBox.scrollTop = consoleBox.scrollHeight;
         }
+        
     </script>
 </body>
 </html>
