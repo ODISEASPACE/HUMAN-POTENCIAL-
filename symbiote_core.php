@@ -34,15 +34,29 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
     <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <style>
         :root { --bg: #09090b; --panel: #18181b; --text: #e4e4e7; --accent: #a855f7; --border: #27272a; --danger: #ef4444; --success: #10b981; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; display: grid; grid-template-columns: 60px 1fr 350px; height: 100vh; overflow: hidden; }
+        
+        /* Modificación CRÍTICA: Transición añadida para expandir fluidamente */
+        body { 
+            font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); 
+            margin: 0; padding: 0; 
+            display: grid; 
+            grid-template-columns: 60px 1fr 350px; 
+            height: 100vh; overflow: hidden; 
+            transition: grid-template-columns 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Clase activadora del Modo Expansión */
+        body.ai-expanded {
+            grid-template-columns: 60px 1fr 60vw;
+        }
         
         /* BARRA LATERAL (Navegación Simbionte) */
-        .sidebar { background: #000; border-right: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; padding-top: 20px; gap: 25px; }
+        .sidebar { background: #000; border-right: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; padding-top: 20px; gap: 25px; z-index: 10; }
         .nav-btn { color: #52525b; font-size: 1.2rem; cursor: pointer; transition: 0.3s; background: none; border: none; }
         .nav-btn:hover, .nav-btn.active { color: var(--accent); }
 
         /* ÁREA CENTRAL MULTIVISTA */
-        .main-workspace { padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
+        .main-workspace { padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; min-width: 0; }
         .view-section { display: none; animation: fadeIn 0.3s; }
         .view-section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -50,7 +64,7 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
         .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 20px; }
         h2 { font-family: 'JetBrains Mono'; font-size: 1rem; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-top: 0; }
 
-        /* CALENDARIO PANORÁMICO (Mes entero, cero dropdowns) */
+        /* CALENDARIO PANORÁMICO */
         .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 15px; }
         .day-cell { background: #000; border: 1px solid var(--border); min-height: 100px; padding: 5px; border-radius: 4px; }
         .day-num { font-family: 'JetBrains Mono'; font-size: 0.7rem; color: #52525b; margin-bottom: 5px; display: block; }
@@ -63,16 +77,18 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
         .project-card h4 { margin: 0 0 10px 0; color: #fff; }
         .crud-actions { position: absolute; top: 10px; right: 10px; display: flex; gap: 5px; opacity: 0.2; transition: 0.3s; }
         .project-card:hover .crud-actions { opacity: 1; }
-        .btn-icon { background: none; border: none; cursor: pointer; color: #a1a1aa; font-size: 0.8rem; }
+        .btn-icon { background: none; border: none; cursor: pointer; color: #a1a1aa; font-size: 0.8rem; transition: 0.2s;}
+        .btn-icon:hover { transform: scale(1.1); }
         .btn-icon.edit:hover { color: var(--success); }
         .btn-icon.delete:hover { color: var(--danger); }
 
-        /* PANEL IA DERECHO */
-        .ia-panel { border-left: 1px solid var(--border); background: var(--panel); padding: 20px; display: flex; flex-direction: column; }
-        .ai-console { flex: 1; background: #000; border: 1px solid var(--border); border-radius: 6px; padding: 15px; font-family: 'JetBrains Mono'; font-size: 0.8rem; color: #a1a1aa; overflow-y: auto; margin-top: 15px; }
-        .input-card { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 6px; padding: 15px; margin-top: 15px; }
+        /* PANEL IA DERECHO - Modificado con min-height: 0 para evitar fallos de scroll */
+        .ia-panel { border-left: 1px solid var(--border); background: var(--panel); padding: 20px; display: flex; flex-direction: column; min-height: 0; z-index: 5;}
+        .ai-console { flex: 1; background: #000; border: 1px solid var(--border); border-radius: 6px; padding: 15px; font-family: 'JetBrains Mono'; font-size: 0.85rem; color: #a1a1aa; overflow-y: auto; margin-top: 15px; line-height: 1.5; min-height: 0; }
+        .input-card { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 6px; padding: 15px; margin-top: 15px; flex-shrink: 0; }
         .input-field { width: 100%; background: #000; border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 4px; font-family: 'Inter'; font-size: 0.85rem; margin-bottom: 10px; box-sizing: border-box; }
-        .btn-action { width: 100%; background: var(--accent); color: #000; border: none; padding: 8px; border-radius: 4px; cursor: pointer; font-weight: bold; font-family: 'JetBrains Mono'; }
+        .btn-action { width: 100%; background: var(--accent); color: #000; border: none; padding: 8px; border-radius: 4px; cursor: pointer; font-weight: bold; font-family: 'JetBrains Mono'; transition: 0.2s;}
+        .btn-action:hover { opacity: 0.9; }
 
         /* MODAL CRUD SIMBIONTE */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 100; }
@@ -118,7 +134,6 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
                     <?php foreach($projects as $p): ?>
                     <div class="project-card" id="proj-<?= $p['id'] ?>">
                         <div class="crud-actions">
-                            <!-- BOTONES BLINDADOS: Evitan que comillas o saltos de línea rompan el HTML -->
                             <button class="btn-icon edit" onclick='openCrudModal("edit", <?= json_encode($p['id']) ?>, <?= htmlspecialchars(json_encode($p['title']), ENT_QUOTES, "UTF-8") ?>, <?= htmlspecialchars(json_encode($p['category']), ENT_QUOTES, "UTF-8") ?>, <?= htmlspecialchars(json_encode($p['description']), ENT_QUOTES, "UTF-8") ?>)'><i class="fa-solid fa-pen"></i></button>
                             
                             <button class="btn-icon delete" onclick='deleteProject(<?= json_encode($p['id']) ?>)'><i class="fa-solid fa-trash"></i></button>
@@ -146,7 +161,10 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
 
     <!-- 3. PANEL DE INGESTA E IA (Siempre visible) -->
     <div class="ia-panel">
-        <h2 style="font-size: 0.9rem;">>> Enlace_Gemini_Flash</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+            <h2 style="font-size: 0.9rem; margin:0; border:none;">>> Enlace_Gemini_Flash</h2>
+            <button class="btn-icon" onclick="toggleAIPanel()" style="color: var(--accent); font-size: 1rem;" title="Expandir/Contraer Consola"><i class="fa-solid fa-expand" id="expand-icon"></i></button>
+        </div>
         
         <div class="ai-console" id="aiResponse">
             > Sistema esperando comandos...
@@ -191,6 +209,19 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
         document.addEventListener('DOMContentLoaded', () => {
             renderCalendar(calendarEvents);
         });
+
+        /* FUNCIÓN NUEVA: Modo Expansión IA */
+        function toggleAIPanel() {
+            document.body.classList.toggle('ai-expanded');
+            const icon = document.getElementById('expand-icon');
+            
+            if (document.body.classList.contains('ai-expanded')) {
+                icon.classList.replace('fa-expand', 'fa-compress');
+                logToAI('> Matriz visual expandida. Lóbulo Frontal en modo lectura focalizada.', '#a855f7');
+            } else {
+                icon.classList.replace('fa-compress', 'fa-expand');
+            }
+        }
 
         function initSkillMatrix() {
             const container = document.getElementById('skill-tree-container');
@@ -305,7 +336,6 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
                     logToAI(`> Operación [${action.toUpperCase()}] exitosa en la base de datos.`, '#10b981');
                     
                     if (action === 'create') {
-                        // Construcción de la tarjeta 100% segura mediante asignación de nodos DOM
                         const grid = document.querySelector('.project-grid');
                         const newCard = document.createElement('div');
                         newCard.className = 'project-card';
@@ -321,7 +351,6 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
                             <p style="font-size:0.8rem; color:#e4e4e7; margin:0;">${desc}</p>
                         `;
                         
-                        // Asignamos las funciones directamente a los botones (Sin HTML roto)
                         newCard.querySelector('.edit').onclick = () => openCrudModal('edit', result.id, title, category, desc);
                         newCard.querySelector('.delete').onclick = () => deleteProject(result.id);
                         
@@ -372,26 +401,21 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
             }
         }
 
-        // ==========================================
-        // FASE 1: INYECCIÓN DE CONTEXTO DINÁMICO
-        // ==========================================
         async function ingestData() {
             const payload = document.getElementById('quick-log').value;
             if(!payload) return;
             document.getElementById('quick-log').value = '';
 
             let activeView = 'Módulo Desconocido';
-            let viewContext = {}; // Este objeto atrapará la información visual del momento
+            let viewContext = {}; 
 
-            // 1. Escaneo del DOM y memoria actual dependiendo de la vista
             if (document.getElementById('view-calendar').classList.contains('active')) {
                 activeView = 'Cronograma Operativo (Calendario)';
-                viewContext = calendarEvents; // Pasamos los eventos mapeados en PHP
+                viewContext = calendarEvents; 
             }
             
             if (document.getElementById('view-repo').classList.contains('active')) {
                 activeView = 'Repositorio Central (Proyectos y Logros)';
-                // Extracción en tiempo real de las tarjetas del DOM
                 const projectCards = document.querySelectorAll('.project-card');
                 viewContext = Array.from(projectCards).map(card => ({
                     id: card.id.replace('proj-', ''),
@@ -408,7 +432,6 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
             logToAI(`> Analizando input desde el módulo: [${activeView}]...`, '#f59e0b');
             
             try {
-                // Inyectamos el contexto en vivo hacia el Lóbulo Frontal Analítico
                 const response = await fetch('api_symbiote.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -416,7 +439,7 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
                         action: 'analyze_context',
                         payload: payload,
                         current_view: activeView,
-                        live_data: viewContext // El superpoder para Jarvis/Viernes
+                        live_data: viewContext 
                     })
                 });
                 
@@ -449,6 +472,7 @@ $events = $stmtEvents->fetchAll(PDO::FETCH_ASSOC);
         function logToAI(msg, color = '#a1a1aa') {
             const consoleBox = document.getElementById('aiResponse');
             consoleBox.innerHTML += `<br><span style="color:${color};">${msg}</span>`;
+            // Auto-scroll forzado
             consoleBox.scrollTop = consoleBox.scrollHeight;
         }
     </script>
